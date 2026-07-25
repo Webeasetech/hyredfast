@@ -37,7 +37,7 @@ export async function POST(request) {
     console.log(userInfo);
     // Create payment with DodoPayments
     const payment = await client.payments.create({
-      return_url: `https://app.denshees.com/dashboard`,
+      return_url: `${process.env.APP_URL || "http://localhost:3000"}/dashboard`,
       payment_link: true,
       billing: {
         city: userInfo.city || "Unknown",

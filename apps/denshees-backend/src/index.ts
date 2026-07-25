@@ -3,7 +3,6 @@ import { serve } from "@hono/node-server";
 import { queueRoutes } from "./routes/queue.routes.js";
 import imapQueue from "./queues/imap.queue.js";
 import { campaignWorker } from "./workers/campaign.worker.js";
-import { authWorker } from "./workers/auth.worker.js";
 import { batchemailWorker } from "./workers/batchemail.worker.js";
 import { imapWorker } from "./workers/imap.worker.js";
 

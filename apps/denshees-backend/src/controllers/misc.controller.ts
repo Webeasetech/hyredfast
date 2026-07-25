@@ -3,7 +3,7 @@ import { performHealthCheck } from "../services/misc.service.js";
 
 /**
  * Health check endpoint controller
- * Checks the status of all critical services including PocketBase and Redis
+ * Checks the status of all critical services (database and Redis)
  */
 export async function handleHealthCheck(c: Context) {
   try {
