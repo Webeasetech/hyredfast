@@ -14,6 +14,9 @@ jobs:
   deploy:
     needs: checks
     runs-on: ubuntu-latest
+    # No VPS provisioned yet — flip the DEPLOY_ENABLED repo variable to "true"
+    # once real SSH_HOST/SSH_USER/SSH_PASSWORD secrets are set.
+    if: vars.DEPLOY_ENABLED == 'true'
 
     steps:
       - name: Deploy via SSH
