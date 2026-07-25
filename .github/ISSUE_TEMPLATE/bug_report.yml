@@ -66,7 +66,7 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: OS, Node/pnpm version, browser, deployment (local / Docker / Hetzner)
+      description: OS, Node/pnpm version, browser, deployment (local / Docker / VPS)
       placeholder: macOS 15, Node 20, pnpm 9, local dev
     validations:
       required: false

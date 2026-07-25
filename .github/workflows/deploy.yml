@@ -1,4 +1,4 @@
-name: Deploy to Hetzner
+name: Deploy to VPS
 
 on:
   push:
@@ -14,6 +14,9 @@ jobs:
   deploy:
     needs: checks
     runs-on: ubuntu-latest
+    # No VPS provisioned yet — flip the DEPLOY_ENABLED repo variable to "true"
+    # once real SSH_HOST/SSH_USER/SSH_PASSWORD secrets are set.
+    if: vars.DEPLOY_ENABLED == 'true'
 
     steps:
       - name: Deploy via SSH
@@ -26,7 +29,7 @@ jobs:
           script: |
             # Clone repo on first deploy, pull on subsequent ones
             if [ ! -d /app ]; then
-              git clone https://github.com/Webeasetech/denshees.git /app
+              git clone https://github.com/Webeasetech/denshees-jobs.git /app
             fi
 
             cd /app
@@ -47,6 +50,9 @@ jobs:
             LANGSMITH_PROJECT=${{ secrets.LANGSMITH_PROJECT }}
             LANGSMITH_TRACING=${{ secrets.LANGSMITH_TRACING }}
             LETSENCRYPT_EMAIL=${{ secrets.LETSENCRYPT_EMAIL }}
+            APP_DOMAIN=${{ secrets.APP_DOMAIN }}
+            APP_URL=${{ secrets.APP_URL }}
+            TRACKING_BASE_URL=${{ secrets.TRACKING_BASE_URL }}
             REDIS_PORT=6379
             EOF
 
