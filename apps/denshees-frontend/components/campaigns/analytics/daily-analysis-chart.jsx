@@ -1,123 +1,81 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Line } from "react-chartjs-2";
-import { DateTime } from "luxon";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-} from "chart.js";
+import { useMemo } from "react";
 
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-);
+import { EChart } from "@/components/ui/echart";
 
-// Helper function to convert date strings to readable format
 function formatDate(dateString) {
   if (!dateString) return "";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return new Date(dateString).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+  });
 }
 
-const DailyAnalysisChart = ({ campaignId, dailyData, todayData }) => {
-  const [chartData, setChartData] = useState({
-    labels: [],
-    datasets: [],
-  });
+const DailyAnalysisChart = ({ dailyData, todayData }) => {
+  const { labels, sent, opened } = useMemo(() => {
+    const days = Array.isArray(dailyData) ? dailyData : [];
 
-  useEffect(() => {
-    if (!dailyData || !Array.isArray(dailyData) || dailyData.length === 0)
-      return;
+    const labels = days.map((item) => formatDate(item.date));
+    const sent = days.map((item) => item.emails_sent || 0);
+    const opened = days.map((item) => item.opened || 0);
 
-    // Extract dates and format them
-    const labels = dailyData.map((item) => formatDate(item.date));
-
-    // Add today's data if available
-    if (todayData?.data) {
+    // The axios response interceptor already unwraps response.data, so the
+    // today-analysis payload lands here flat — { stages_sum, opened_sum,
+    // total } — not nested under another `.data`.
+    if (todayData) {
       labels.push("Today");
+      sent.push(todayData.stages_sum ?? 0);
+      opened.push(todayData.opened_sum ?? 0);
     }
 
-    // Extract emails opened data
-    // Extract emails sent data
-    const emailsSent = dailyData.map((item) => item.emails_sent || 0);
-    if (todayData?.data?.stages_sum !== undefined) {
-      emailsSent.push(todayData.data.stages_sum);
-    }
-
-    setChartData({
-      labels,
-      datasets: [
-        {
-          label: "Emails Sent",
-          data: emailsSent,
-          borderColor: "rgb(0, 0, 0)",
-          backgroundColor: "rgba(255, 204, 102, 0.5)",
-          fill: true,
-          tension: 0.4,
-        },
-      ],
-    });
+    return { labels, sent, opened };
   }, [dailyData, todayData]);
 
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: "top",
-        labels: {
-          boxWidth: 15,
-          usePointStyle: true,
-          pointStyle: "circle",
-        },
+  const option = useMemo(
+    () => ({
+      legend: { data: ["Sent", "Opened"] },
+      tooltip: { trigger: "axis" },
+      // containLabel already reserves exactly what the axis labels need;
+      // the default chrome's extra left/bottom padding was on top of that.
+      grid: { top: 28, right: 8, bottom: 4, left: 8 },
+      xAxis: {
+        type: "category",
+        data: labels,
+        axisLabel: { fontSize: 10, maxRotation: 0 },
       },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: {
-          color: "rgba(0, 0, 0, 0.1)",
+      yAxis: { type: "value", minInterval: 1 },
+      series: [
+        {
+          name: "Sent",
+          type: "line",
+          smooth: true,
+          symbolSize: 6,
+          areaStyle: { opacity: 0.12 },
+          data: sent,
         },
-        ticks: {
-          precision: 0,
+        {
+          name: "Opened",
+          type: "line",
+          smooth: true,
+          symbolSize: 6,
+          areaStyle: { opacity: 0.12 },
+          data: opened,
         },
-      },
-      x: {
-        grid: { display: false },
-        ticks: {
-          font: { size: 10 },
-          maxRotation: 0,
-        },
-      },
-    },
-  };
-
-  return (
-    <div className="h-[300px] w-full">
-      {chartData.labels.length > 0 ? (
-        <Line data={chartData} options={options} />
-      ) : (
-        <div className="flex items-center justify-center h-full">
-          <p className="text-muted-foreground">No data available</p>
-        </div>
-      )}
-    </div>
+      ],
+    }),
+    [labels, sent, opened],
   );
+
+  if (labels.length === 0) {
+    return (
+      <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+        No data available
+      </div>
+    );
+  }
+
+  return <EChart option={option} className="h-[280px] w-full" />;
 };
 
 export default DailyAnalysisChart;

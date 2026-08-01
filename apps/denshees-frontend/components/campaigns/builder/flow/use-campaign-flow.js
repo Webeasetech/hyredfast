@@ -5,13 +5,20 @@ import { NODE_SIZE, layoutSequence, positionOutcomes } from "./layout";
 const SEQUENCE_EDGE = {
   type: "smoothstep",
   style: { stroke: "hsl(var(--border))", strokeWidth: 1.5 },
-  markerEnd: { type: MarkerType.ArrowClosed, color: "#000000" },
+  markerEnd: { type: MarkerType.ArrowClosed, color: "hsl(var(--border))" },
 };
 
+// Matches the OutcomeNode variants — same two accents the rest of the app
+// already uses for "replied"/"active" states, plus the neutral text token for
+// the inactive outcome rather than a fourth hue.
 const OUTCOME_EDGES = [
-  { id: "replied", label: "Replied", color: "#15803d" },
-  { id: "opened", label: "Opened", color: "#1d4ed8" },
-  { id: "no-reply", label: "No reply", color: "#4b5563" },
+  {
+    id: "replied",
+    label: "Replied",
+    color: "var(--color-emerald-600)",
+  },
+  { id: "opened", label: "Opened", color: "var(--color-blue-600)" },
+  { id: "no-reply", label: "No reply", color: "hsl(var(--muted-foreground))" },
 ];
 
 const labelFor = (index) =>
@@ -117,7 +124,11 @@ export function useCampaignFlow({ pitches, stats, handlers, selectedPitchId }) {
       id: `${lastEmailId}->add`,
       source: lastEmailId,
       target: "add",
-      style: { stroke: "#9ca3af", strokeWidth: 1.5, strokeDasharray: "4 4" },
+      style: {
+        stroke: "hsl(var(--border))",
+        strokeWidth: 1.5,
+        strokeDasharray: "4 4",
+      },
       markerEnd: undefined,
     });
 
@@ -148,8 +159,8 @@ export function useCampaignFlow({ pitches, stats, handlers, selectedPitchId }) {
       type: "smoothstep",
       animated: true,
       label,
-      labelStyle: { fontSize: 10, fontWeight: 600, fill: color },
-      labelBgStyle: { fill: "#ffffff", fillOpacity: 0.9 },
+      labelStyle: { fontSize: 11, fontWeight: 500, fill: color },
+      labelBgStyle: { fill: "hsl(var(--background))", fillOpacity: 0.9 },
       style: { stroke: color, strokeWidth: 1.5 },
       markerEnd: { type: MarkerType.ArrowClosed, color },
     }));

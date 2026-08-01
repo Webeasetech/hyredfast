@@ -11,7 +11,6 @@ import { TourProvider } from "@/components/tour/tour-provider";
 export default function ProtectedLayout({ children }) {
   const router = useRouter();
   const { isAuthenticated, user, clearAuth } = useAuthStore();
-  const [sidebarWidth, setSidebarWidth] = useState(240);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -33,18 +32,14 @@ export default function ProtectedLayout({ children }) {
 
   return (
     <TourProvider>
-      <div className="h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1 relative overflow-hidden">
-          <Sidebar onWidthChange={setSidebarWidth} />
-          <main
-            className="absolute top-0 right-0 h-full overflow-y-auto bg-muted p-4 md:p-6 pb-20 md:pb-6 transition-all duration-300"
-            style={{
-              width:
-                sidebarWidth === 0 ? "100%" : `calc(100% - ${sidebarWidth}px)`,
-              left: sidebarWidth === 0 ? "0" : `${sidebarWidth}px`,
-            }}
-          >
+      {/* Two columns: the sidebar is its own full-height rail, and the navbar
+          sits inside the content column so it spans only the content width.
+          The sidebar sizes itself, so the shell no longer tracks its width. */}
+      <div className="flex h-screen bg-muted">
+        <Sidebar />
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <Navbar />
+          <main className="flex-1 overflow-y-auto px-4 py-3 pb-20 md:px-6 md:py-4 md:pb-6">
             {children}
           </main>
         </div>

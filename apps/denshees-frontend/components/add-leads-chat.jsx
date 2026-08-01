@@ -113,7 +113,7 @@ function RunTracker({ runId, accessToken, onComplete, listId }) {
       )}
       <ProgressIndicator progress={progress} />
       {isComplete && run?.output && (
-        <div className="border border-green-200 bg-green-50 p-2.5">
+        <div className="rounded-lg border border-green-200 bg-green-50 p-2.5">
           <div className="flex items-center gap-1.5 text-xs font-medium text-green-700">
             <CheckCircleIcon className="w-3.5 h-3.5" />
             Done! {run.output.created} lead
@@ -127,7 +127,7 @@ function RunTracker({ runId, accessToken, onComplete, listId }) {
         </div>
       )}
       {isFailed && (
-        <div className="border border-red-200 bg-red-50 p-2.5">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-2.5">
           <div className="flex items-center gap-1.5 text-xs text-red-600">
             <ExclamationCircleIcon className="w-3.5 h-3.5" />
             Task failed. Please try again.
@@ -218,7 +218,7 @@ function ChatMessage({ message }) {
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[85%] px-3 py-2 text-xs ${
+        className={`rounded-lg max-w-[85%] px-3 py-2 text-xs ${
           isUser
             ? "bg-primary text-primary-foreground"
             : "bg-accent text-foreground border border-border"
@@ -422,7 +422,7 @@ export default function AddLeadsChat({ listId }) {
               setButtonContentVisible(false);
               setIsOpen(true);
             }}
-            className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 border transition-colors duration-50 ${buttonContentVisible ? "bg-primary text-primary-foreground border-border  hover:bg-primary/90" : "bg-white text-transparent border-border "}`}
+            className={`rounded-full fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 border transition-colors duration-50 ${buttonContentVisible ? "bg-primary text-primary-foreground border-border  hover:bg-primary/90" : "bg-white text-transparent border-border "}`}
           >
             <div
               className={`flex items-center gap-2 transition-opacity duration-50 ${buttonContentVisible ? "opacity-100" : "opacity-0"}`}

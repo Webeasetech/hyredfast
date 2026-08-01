@@ -46,7 +46,7 @@ const CampaignDropdown = ({ campaignId, campaignTitle, onDelete }) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-sm">
+        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md">
           <DotsSquareIcon className="w-4 h-4" />
         </Button>
       </DropdownMenuTrigger>

@@ -48,7 +48,7 @@ function ChatMessage({ message }) {
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[85%] px-3 py-2 text-xs ${
+        className={`rounded-lg max-w-[85%] px-3 py-2 text-xs ${
           isUser
             ? "bg-primary text-primary-foreground whitespace-pre-wrap"
             : "bg-accent text-foreground border border-border prose prose-xs prose-gray max-w-none [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_pre]:my-1 [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:overflow-x-auto [&_code]:text-[11px] [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_h1]:text-sm [&_h2]:text-xs [&_h3]:text-xs [&_h1]:font-bold [&_h2]:font-bold [&_h3]:font-semibold [&_h1]:my-1.5 [&_h2]:my-1 [&_h3]:my-1 [&_a]:text-blue-600 [&_a]:underline [&_table]:text-xs [&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-1 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-2 [&_blockquote]:my-1 [&_blockquote]:text-muted-foreground [&_hr]:my-2"
@@ -325,7 +325,7 @@ export default function AgentChat() {
               setButtonContentVisible(false);
               setIsOpen(true);
             }}
-            className={`fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-3 border transition-colors duration-50 ${
+            className={`rounded-full fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-3 border transition-colors duration-50 ${
               buttonContentVisible
                 ? "bg-primary text-primary-foreground border-border  hover:bg-primary/90"
                 : "bg-white text-transparent border-border "
@@ -408,7 +408,7 @@ export default function AgentChat() {
                       <button
                         key={t.threadId}
                         onClick={() => switchThread(t.threadId)}
-                        className={`w-full text-left px-3 py-2 text-xs border transition-colors ${
+                        className={`rounded-lg w-full text-left px-3 py-2 text-xs border transition-colors ${
                           t.threadId === threadId
                             ? "bg-primary text-primary-foreground border-border"
                             : "bg-muted text-foreground border-border hover:bg-accent"
@@ -416,7 +416,7 @@ export default function AgentChat() {
                       >
                         <div className="truncate font-medium">{t.preview}</div>
                         <div
-                          className={`text-[10px] mt-0.5 ${t.threadId === threadId ? "text-muted-foreground" : "text-muted-foreground"}`}
+                          className={`text-[10px] mt-0.5 ${t.threadId === threadId ? "text-primary-foreground/70" : "text-muted-foreground"}`}
                         >
                           {new Date(t.lastMessage).toLocaleDateString(
                             undefined,

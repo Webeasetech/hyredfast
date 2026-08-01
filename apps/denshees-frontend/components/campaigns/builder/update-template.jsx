@@ -1,23 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import useSWRMutation from "swr/mutation";
-import dynamic from "next/dynamic";
 import { patch } from "@/lib/apis";
 import { mutate } from "swr";
 import { Input } from "@/components/ui/input";
-import { InformationCircleIcon, SaveFloppyIcon } from "mage-icons-react/bulk";
+import { Label } from "@/components/ui/label";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { SaveStatus } from "@/components/save-status";
+import { useAutosave } from "@/hooks/use-autosave";
+import { InformationCircleIcon } from "mage-icons-react/bulk";
 import { AnimatePresence, motion } from "framer-motion";
 import AIButton from "@/components/campaigns/builder/ai-button";
 
-// Dynamically import JoditEditor to avoid SSR issues
-const JoditEditor = dynamic(() => import("jodit-react"), {
-  ssr: false,
-});
+// Mirrors the personalization data the send path builds for every contact.
+// Anything outside this list renders as an empty string in the delivered mail.
+const TEMPLATE_VARIABLES = ["name", "email"];
 
 const UpdateTemplate = ({ message, stage, campaign, subject }) => {
-  const subjectRef = useRef(null);
-
   const [text, updateText] = useState(message);
   const [subjectValue, updateSubjectValue] = useState(subject);
   const [loading, setLoading] = useState(false);
@@ -32,28 +32,26 @@ const UpdateTemplate = ({ message, stage, campaign, subject }) => {
     },
   );
 
-  useEffect(() => {
-    handleSaveTemplate();
-  }, [text]);
+  const { status, save } = useAutosave(
+    useCallback((payload) => trigger(payload), [trigger]),
+  );
 
   useEffect(() => {
     updateText(message);
     updateSubjectValue(subject);
   }, [stage, message, subject]);
 
-  const handleSaveTemplate = () => {
-    trigger({
-      message: text,
-      subject: subjectValue,
-    });
-  };
+  // Callers pass what they just changed: state hasn't flushed when a control
+  // fires its blur handler.
+  const commit = (overrides = {}) =>
+    save({ message: text, subject: subjectValue, ...overrides });
 
   return (
-    <div className="relative flex flex-col justify-start items-start gap-4">
+    <div className="relative flex min-h-0 flex-1 flex-col gap-4">
       <AnimatePresence>
         {loading && (
           <motion.div
-            className="absolute top-0 bottom-0 right-0 left-0 z-10 bg-white/90 flex flex-col items-center justify-center border border-border rounded-lg"
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-white/90"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -65,137 +63,77 @@ const UpdateTemplate = ({ message, stage, campaign, subject }) => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.6, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="flex flex-col items-center"
+              className="rounded-lg border border-border bg-white p-6 text-center"
             >
-              <div className="border-2 border-border p-6 bg-white rounded-lg">
-                <p className="text-lg font-medium mb-2">Enhancing your email</p>
-                <div className="flex justify-center">
-                  <div className="animate-pulse flex space-x-1">
-                    <div className="h-2 w-2 bg-primary rounded-full"></div>
-                    <div className="h-2 w-2 bg-primary rounded-full"></div>
-                    <div className="h-2 w-2 bg-primary rounded-full"></div>
-                  </div>
-                </div>
+              <p className="mb-2 text-sm font-medium">Enhancing your email</p>
+              <div className="flex animate-pulse justify-center space-x-1">
+                <div className="size-2 rounded-full bg-primary" />
+                <div className="size-2 rounded-full bg-primary" />
+                <div className="size-2 rounded-full bg-primary" />
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <p className="text-left w-full text-sm font-medium">
-        To: contacts in campaign
-      </p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          To: contacts in campaign
+        </p>
+        <SaveStatus status={status} />
+      </div>
 
-      <div className="w-full">
-        <label htmlFor="subject" className="block text-sm font-medium mb-1">
+      <div>
+        <Label htmlFor="subject" className="mb-2 block">
           Subject Line
-        </label>
+        </Label>
         <Input
           id="subject"
-          ref={subjectRef}
           value={subjectValue}
           onChange={(event) => updateSubjectValue(event.target.value)}
           placeholder="Subject"
-          className="w-full border-border"
-          onBlur={handleSaveTemplate}
+          className="border-border"
+          onBlur={() => commit()}
         />
       </div>
 
-      <div className="w-full">
-        <label htmlFor="email-body" className="block text-sm font-medium mb-1">
-          Email Body
-        </label>
-        <div className="border border-border h-[400px]">
-          <TemplateEditor
-            value={text}
-            onSave={(value) => {
-              updateText(value);
-            }}
-          />
-        </div>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <Label className="mb-2 block">Email Body</Label>
+        <RichTextEditor
+          className="min-h-[260px] flex-1"
+          content={text}
+          variables={TEMPLATE_VARIABLES}
+          placeholder="Start typing your email content..."
+          onChange={updateText}
+          onBlur={(html) => commit({ message: html })}
+        />
       </div>
 
-      <div className="flex justify-start items-center gap-4 mt-2 w-full">
-        <AIButton text={text} updateText={updateText} setLoading={setLoading} />
-      </div>
-
-      <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2 border-t border-border pt-4">
-        <div className="flex items-start gap-2 text-xs text-foreground">
-          <InformationCircleIcon className="w-4 h-4 shrink-0 mt-0.5" />
-          <div>
-            <p>
-              Available variables:{" "}
-              <code className="bg-accent px-1 py-0.5 border border-border rounded-lg">
-                {"{{name}}"}
-              </code>{" "}
-              and{" "}
-              <code className="bg-accent px-1 py-0.5 border border-border rounded-lg">
-                {"{{email}}"}
-              </code>
-            </p>
-            <p>We are working on adding more variables soon!</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-foreground">
-          <SaveFloppyIcon className="w-4 h-4" />
-          <span>Templates are autosaved</span>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const TemplateEditor = ({ value, onSave }) => {
-  const editor = useRef(null);
-
-  const config = {
-    readonly: false,
-    placeholder: "Start typing your email content...",
-    height: "400px",
-    width: "100%",
-    fullSize: false,
-    // Emit <br> per line instead of <p> — <p> carries ~1em top/bottom margin,
-    // which renders as the oversized double-gaps that make mail look templated.
-    // <br> gives single-line spacing, like a hand-typed email.
-    enter: "br",
-    // Force pasted content to plain text — strips inline styles, fonts, images,
-    // and markup carried in from Docs/Word/web, the other "this looks automated" tell.
-    defaultActionOnPaste: "insert_only_text",
-    askBeforePasteHTML: false,
-    askBeforePasteFromWord: false,
-    // Lean toolbar: no bold/color/font/image styling. Links kept (humans send links).
-    toolbarAdaptive: false,
-    buttons: ["undo", "redo", "|", "link", "|", "eraser"],
-    disablePlugins: [
-      "add-new-line",
-      "iframe",
-      "table",
-      "audio",
-      "video",
-      "speech-recognize",
-    ],
-    events: {
-      afterInit: (instance) => {
-        instance.editor.style.height = "100%";
-      },
-    },
-    theme: "default",
-    style: {
-      font: "16px Arial",
-    },
-  };
-
-  if (typeof window === "undefined") return null;
-
-  return (
-    <div style={{ height: "300px", width: "100%" }}>
-      <JoditEditor
-        ref={editor}
-        value={value}
-        config={config}
-        tabIndex={1}
-        onBlur={(newContent) => onSave(newContent)}
+      {/* The rewrite replaces the body without the editor ever blurring, so it
+          persists its own result rather than waiting for the next blur. */}
+      <AIButton
+        text={text}
+        updateText={(html) => {
+          updateText(html);
+          commit({ message: html });
+        }}
+        setLoading={setLoading}
       />
+
+      <div className="flex items-start gap-2 border-t border-border pt-4 text-xs text-muted-foreground">
+        <InformationCircleIcon className="mt-0.5 size-4 shrink-0" />
+        <p>
+          Available variables:{" "}
+          <code className="rounded border border-border bg-accent px-1 py-0.5">
+            {"{{name}}"}
+          </code>{" "}
+          and{" "}
+          <code className="rounded border border-border bg-accent px-1 py-0.5">
+            {"{{email}}"}
+          </code>
+          . More are on the way.
+        </p>
+      </div>
     </div>
   );
 };

@@ -7,27 +7,21 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { CreditCardIcon, ZapIcon, EmailIcon } from "mage-icons-react/bulk";
 import { ReloadIcon } from "mage-icons-react/stroke";
-import { SettingsNav } from "@/components/settings/settings-nav";
-import { CreditsDisplay } from "@/components/credits-display";
 import useAuthStore from "@/store/auth.store";
 import useSWRMutation from "swr/mutation";
 import { post } from "@/lib/apis";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 
 export default function BillingSettingsPage() {
   return (
-    <div className="container mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+    <div className="space-y-4">
+      <PageHeader
+        title="Billing & credits"
+        description="Track your balance and top up email or AI credits"
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-1">
-          <SettingsNav />
-        </div>
-
-        <div className="md:col-span-3">
-          <BillingSettings />
-        </div>
-      </div>
+      <BillingSettings />
     </div>
   );
 }
@@ -90,19 +84,13 @@ function BillingSettings() {
 
   return (
     <div id="billing-settings" className="space-y-6">
-      {/* Current Credits Display */}
-      <div className="border border-border bg-white p-6 rounded-lg">
-        <h2 className="text-xl font-bold mb-6">Current Credits</h2>
-        <CreditsDisplay user={user} />
-      </div>
-
       {/* Credit Pricing Calculator */}
       <div className="border border-border bg-white p-6 rounded-lg">
         <h2 className="text-xl font-bold mb-6">Purchase Credits</h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Email Credits */}
-          <div className="border-2 border-border bg-white p-6 rounded-lg">
+          <div>
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
               <EmailIcon className="h-5 w-5" />
               Email Credits
@@ -166,7 +154,7 @@ function BillingSettings() {
           </div>
 
           {/* AI Credits */}
-          <div className="border-2 border-border bg-white p-6 rounded-lg">
+          <div>
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
               <ZapIcon className="h-5 w-5" />
               AI Credits

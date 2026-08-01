@@ -1,20 +1,27 @@
 "use client";
 
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { DateTime } from "luxon";
 import {
   EmailIcon,
   EmailOpenedIcon,
   StarIcon,
-  UserIcon,
   DotsHorizontalSquareIcon,
-  CancelIcon,
   AeroplaneIcon,
 } from "mage-icons-react/bulk";
-import { ArrowLeftIcon, ReloadIcon } from "mage-icons-react/stroke";
+import { ReloadIcon } from "mage-icons-react/stroke";
 import { motion, AnimatePresence } from "framer-motion";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import useSWR from "swr";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import useSWRInfinite from "swr/infinite";
 import fetcher from "@/lib/fetcher";
 import instance from "@/lib/axios";
 import { cn } from "@/lib/utils";
@@ -59,10 +66,11 @@ function CollapsibleThread({ text }) {
     <div className="text-sm leading-relaxed text-foreground">
       <div className="whitespace-pre-wrap">{body}</div>
       <button
+        type="button"
         onClick={() => setExpanded((p) => !p)}
-        className="my-2 inline-flex items-center gap-1 px-2 py-0.5 text-xs text-muted-foreground bg-accent border border-border rounded hover:bg-muted transition-colors"
+        className="my-2 inline-flex items-center gap-1 rounded-md border border-border bg-accent px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
       >
-        <DotsHorizontalSquareIcon className="w-3.5 h-3.5" />
+        <DotsHorizontalSquareIcon className="size-3.5" />
       </button>
       <AnimatePresence initial={false}>
         {expanded && (
@@ -73,7 +81,7 @@ function CollapsibleThread({ text }) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="whitespace-pre-wrap text-muted-foreground border-l-2 border-border pl-3 mt-1">
+            <div className="mt-1 border-l-2 border-border pl-3 whitespace-pre-wrap text-muted-foreground">
               {quoted}
             </div>
           </motion.div>
@@ -83,19 +91,61 @@ function CollapsibleThread({ text }) {
   );
 }
 
-const MessageInbox = ({ campaignId }) => {
-  const { data, error, isLoading, mutate } = useSWR(
-    campaignId ? `/api/inbox/${campaignId}` : null,
-    fetcher,
+function ContactAvatar({ name, className }) {
+  return (
+    <div
+      className={cn(
+        "flex shrink-0 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground",
+        className,
+      )}
+    >
+      {(name?.[0] || "?").toUpperCase()}
+    </div>
   );
+}
+
+const getInboxKey = (campaignId) => (pageIndex, previousPage) => {
+  if (!campaignId) return null;
+  // The last page's null cursor is the "no more messages" signal.
+  if (previousPage && !previousPage.nextCursor) return null;
+  if (pageIndex === 0) return `/api/inbox/${campaignId}`;
+  return `/api/inbox/${campaignId}?cursor=${previousPage.nextCursor}`;
+};
+
+const MessageInbox = ({ campaignId }) => {
+  const { data, error, isLoading, isValidating, size, setSize, mutate } =
+    useSWRInfinite(getInboxKey(campaignId), fetcher);
 
   const [selectedId, setSelectedId] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const [starredIds, setStarredIds] = useState(new Set());
   const textareaRef = useRef(null);
+  const sentinelRef = useRef(null);
 
-  const messages = data || [];
+  const messages = useMemo(
+    () => (data ?? []).flatMap((page) => page.items),
+    [data],
+  );
+  const hasMore = data ? Boolean(data[data.length - 1]?.nextCursor) : false;
+  const isLoadingMore = isLoading || (isValidating && size > 0);
+
+  // Loads the next page once the last row scrolls into view, rather than a
+  // fixed slice(0, 6) that never revealed anything past the first screen.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isValidating) setSize((s) => s + 1);
+      },
+      { rootMargin: "80px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, isValidating, setSize]);
+
   const selectedMessage = messages.find((m) => m.id === selectedId) || null;
 
   const handleSelect = useCallback((msg) => {
@@ -103,9 +153,11 @@ const MessageInbox = ({ campaignId }) => {
     setReplyText("");
   }, []);
 
-  const handleBack = useCallback(() => {
-    setSelectedId(null);
-    setReplyText("");
+  const handleOpenChange = useCallback((open) => {
+    if (!open) {
+      setSelectedId(null);
+      setReplyText("");
+    }
   }, []);
 
   const toggleStar = useCallback((e, id) => {
@@ -145,224 +197,185 @@ const MessageInbox = ({ campaignId }) => {
 
   if (error) {
     return (
-      <div className="border border-border bg-white p-4 h-[300px] flex items-center justify-center rounded-lg">
-        <p className="text-red-600 text-sm">Error loading messages</p>
+      <div className="flex h-[300px] items-center justify-center rounded-lg border border-border bg-background p-4">
+        <p className="text-sm text-destructive">Error loading messages</p>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="border border-border bg-white h-[400px] flex items-center justify-center rounded-lg">
-        <ReloadIcon className="h-5 w-5 animate-spin text-muted-foreground" />
+      <div className="flex h-[400px] items-center justify-center rounded-lg border border-border bg-background">
+        <ReloadIcon className="size-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
     <>
-      {/* Overlay + Expanded message */}
-      <AnimatePresence>
-        {selectedMessage && (
-          <>
-            <motion.div
-              key="overlay"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-primary/20 backdrop-blur-[2px] z-40"
-              onClick={handleBack}
-            />
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-              <motion.div
-                key="expanded"
-                layoutId={`message-card-${selectedId}`}
-                className="bg-white border border-border w-full max-w-2xl max-h-[80vh] flex flex-col pointer-events-auto rounded-lg"
-                onClick={(e) => e.stopPropagation()}
-                transition={{ type: "spring", stiffness: 350, damping: 30 }}
-              >
-                {/* Expanded header */}
-                <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-muted">
-                  <button
-                    onClick={handleBack}
-                    className="flex items-center gap-2 text-sm font-medium hover:bg-muted px-2 py-1 rounded transition-colors"
-                  >
-                    <ArrowLeftIcon className="w-4 h-4" />
-                    Back to inbox
-                  </button>
-                  <button
-                    onClick={handleBack}
-                    className="hover:bg-muted p-1 rounded transition-colors"
-                  >
-                    <CancelIcon className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Sender info */}
-                <div className="px-4 py-3 border-b border-border">
-                  <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">
-                      {(
-                        selectedMessage.expand?.campaign_email?.name?.[0] || "?"
-                      ).toUpperCase()}
+      <Dialog open={!!selectedMessage} onOpenChange={handleOpenChange}>
+        <DialogContent className="flex max-h-[80vh] w-full max-w-2xl flex-col gap-0 overflow-hidden p-0">
+          {selectedMessage && (
+            <>
+              <DialogHeader className="border-b border-border px-4 py-3 pr-10">
+                <div className="flex items-start gap-3">
+                  <ContactAvatar
+                    name={selectedMessage.expand?.campaign_email?.name}
+                    className="mt-0.5 size-10 text-sm"
+                  />
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="flex items-center gap-2">
+                      <DialogTitle className="text-sm font-semibold">
+                        {selectedMessage.expand?.campaign_email?.name ||
+                          "Unknown Contact"}
+                      </DialogTitle>
+                      <span className="text-xs text-muted-foreground">
+                        {DateTime.fromJSDate(
+                          new Date(selectedMessage.created),
+                        ).toRelative()}
+                      </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm">
-                          {selectedMessage.expand?.campaign_email?.name ||
-                            "Unknown Contact"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {DateTime.fromJSDate(
-                            new Date(selectedMessage.created),
-                          ).toRelative()}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedMessage.expand?.campaign_email?.email ||
-                          "No email"}
-                      </p>
-                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedMessage.expand?.campaign_email?.email ||
+                        "No email"}
+                    </p>
                   </div>
                 </div>
+              </DialogHeader>
 
-                {/* Message body */}
-                <div className="flex-1 min-h-0 overflow-y-auto">
-                  <div className="px-4 py-4">
-                    <CollapsibleThread text={selectedMessage.text} />
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+                <CollapsibleThread text={selectedMessage.text} />
+              </div>
+
+              <div className="border-t border-border bg-muted p-4">
+                <div className="rounded-lg border border-border bg-background focus-within:border-ring">
+                  <Textarea
+                    ref={textareaRef}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={`Reply to ${selectedMessage.expand?.campaign_email?.name || "contact"}...`}
+                    rows={3}
+                    className="min-h-0 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+                  />
+                  <div className="flex items-center justify-between px-3 pb-2.5">
+                    <p className="text-xs text-muted-foreground">
+                      {typeof navigator !== "undefined" &&
+                      navigator?.platform?.includes("Mac")
+                        ? "⌘"
+                        : "Ctrl"}{" "}
+                      + Enter to send
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={handleReply}
+                      disabled={!replyText.trim() || sending}
+                    >
+                      {sending ? (
+                        <ReloadIcon className="size-3.5 animate-spin" />
+                      ) : (
+                        <AeroplaneIcon className="size-3.5" />
+                      )}
+                      Send
+                    </Button>
                   </div>
                 </div>
-
-                {/* Reply area */}
-                <div className="border-t border-border bg-muted p-4">
-                  <div className="border border-border rounded bg-white focus-within:border-border focus-within: transition-all">
-                    <textarea
-                      ref={textareaRef}
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder={`Reply to ${selectedMessage.expand?.campaign_email?.name || "contact"}...`}
-                      rows={3}
-                      className="w-full resize-none text-sm p-3 outline-hidden bg-transparent placeholder:text-muted-foreground"
-                    />
-                    <div className="flex items-center justify-between px-3 pb-2">
-                      <p className="text-[11px] text-muted-foreground">
-                        {typeof navigator !== "undefined" &&
-                        navigator?.platform?.includes("Mac")
-                          ? "⌘"
-                          : "Ctrl"}{" "}
-                        + Enter to send
-                      </p>
-                      <button
-                        onClick={handleReply}
-                        disabled={!replyText.trim() || sending}
-                        className={cn(
-                          "inline-flex items-center gap-2 px-4 py-1.5 text-sm font-medium border border-border transition-all",
-                          replyText.trim() && !sending
-                            ? "bg-primary text-primary-foreground  hover:translate-x-px hover:translate-y-px "
-                            : "bg-accent text-muted-foreground cursor-not-allowed",
-                        )}
-                      >
-                        {sending ? (
-                          <ReloadIcon className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <AeroplaneIcon className="w-3.5 h-3.5" />
-                        )}
-                        Send
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Inbox list */}
-      <div className="border border-border bg-white h-[400px] overflow-hidden flex flex-col rounded-lg">
+      <div className="flex h-[400px] flex-col overflow-hidden rounded-lg border border-border bg-background">
         {/* Inbox header */}
-        <div className="flex items-center justify-between border-b border-border bg-muted px-4 py-3">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
-            <EmailIcon className="w-4 h-4 text-foreground" />
-            <h3 className="font-semibold text-sm">Inbox</h3>
+            <EmailIcon className="size-4 text-foreground" />
+            <h3 className="text-sm font-semibold">Inbox</h3>
             {messages.length > 0 && (
-              <span className="text-[11px] bg-primary text-primary-foreground px-1.5 py-0.5 font-mono font-bold">
+              <Badge className="h-4.5 min-w-4.5 justify-center px-1 text-[11px] tabular-nums">
                 {messages.length}
-              </span>
+              </Badge>
             )}
           </div>
-          <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
+          <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
             Recent Replies
           </span>
         </div>
 
         {/* Message list */}
-        <ScrollArea className="flex-1">
+        <ScrollArea className="min-h-0 flex-1">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
-              <EmailOpenedIcon className="w-8 h-8 mb-2" />
+            <div className="flex h-[300px] flex-col items-center justify-center text-muted-foreground">
+              <EmailOpenedIcon className="mb-2 size-8" />
               <p className="text-sm">No replies yet</p>
-              <p className="text-xs mt-1">Replies will appear here</p>
+              <p className="mt-1 text-xs">Replies will appear here</p>
             </div>
           ) : (
             <div>
-              {messages.slice(0, 6).map((message) => (
-                <motion.div
+              {messages.map((message) => (
+                <button
                   key={message.id}
-                  layoutId={`message-card-${message.id}`}
+                  type="button"
                   onClick={() => handleSelect(message)}
-                  className={cn(
-                    "flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-border group",
-                    "hover:bg-muted hover:shadow-[inset_3px_0_0_0_black]",
-                    selectedId === message.id && "opacity-0",
-                  )}
-                  transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                  className="group flex w-full items-start gap-3 border-b border-border px-4 py-3 text-left transition-colors hover:bg-accent"
                 >
-                  {/* Avatar */}
-                  <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                    {(
-                      message.expand?.campaign_email?.name?.[0] || "?"
-                    ).toUpperCase()}
-                  </div>
+                  <ContactAvatar
+                    name={message.expand?.campaign_email?.name}
+                    className="mt-0.5 size-8 text-xs"
+                  />
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0 overflow-hidden">
+                  <div className="min-w-0 flex-1 overflow-hidden">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm truncate">
+                      <span className="truncate text-sm font-semibold">
                         {message.expand?.campaign_email?.name ||
                           "Unknown Contact"}
                       </span>
-                      <span className="text-[11px] text-muted-foreground whitespace-nowrap ml-auto shrink-0">
+                      <span className="ml-auto shrink-0 text-[11px] whitespace-nowrap text-muted-foreground">
                         {DateTime.fromJSDate(
                           new Date(message.created),
                         ).toRelative()}
                       </span>
                     </div>
-                    <p className="text-sm text-foreground truncate mt-0.5">
+                    <p className="mt-0.5 truncate text-sm text-muted-foreground">
                       {message.text?.slice(0, 60)}
                       {message.text?.length > 60 ? "..." : ""}
                     </p>
                   </div>
 
                   {/* Star */}
-                  <button
+                  <span
+                    role="button"
+                    tabIndex={0}
                     onClick={(e) => toggleStar(e, message.id)}
-                    className="shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggleStar(e, message.id);
+                      }
+                    }}
+                    className="mt-0.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                   >
                     <StarIcon
                       className={cn(
-                        "w-3.5 h-3.5",
-                        "transition-colors",
+                        "size-3.5 transition-colors",
                         starredIds.has(message.id)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-muted-foreground hover:text-muted-foreground",
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-muted-foreground hover:text-foreground",
                       )}
                     />
-                  </button>
-                </motion.div>
+                  </span>
+                </button>
               ))}
+
+              {hasMore && (
+                <div ref={sentinelRef} className="flex justify-center py-3">
+                  {isLoadingMore && (
+                    <ReloadIcon className="size-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+              )}
             </div>
           )}
         </ScrollArea>

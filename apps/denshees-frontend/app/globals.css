@@ -1,11 +1,39 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @plugin 'tailwindcss-animate';
 
 @custom-variant dark (&:is(.dark *));
 
+/* `inline` is required here: next/font defines --font-host-grotesk at runtime on
+   a body class, and a plain @theme would try to resolve it at build time and
+   silently fall back to Tailwind's default system stack. */
+@theme inline {
+  --font-sans: var(--font-host-grotesk), system-ui, sans-serif;
+}
+
 @theme {
-  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+  /* Compact type scale. These override Tailwind's defaults, so every existing
+     `text-sm` / `text-base` / `text-2xl` in the app tightens up without a single
+     class changing. Roughly one step denser than stock Tailwind, anchored on a
+     14px base with line-heights on a 4px rhythm. */
+  --text-xs: 0.6875rem; /* 11px */
+  --text-xs--line-height: 1rem; /* 16 */
+  --text-sm: 0.8125rem; /* 13px */
+  --text-sm--line-height: 1.125rem; /* 18 */
+  --text-base: 0.875rem; /* 14px — body */
+  --text-base--line-height: 1.25rem; /* 20 */
+  --text-lg: 1rem; /* 16px */
+  --text-lg--line-height: 1.5rem; /* 24 */
+  --text-xl: 1.125rem; /* 18px */
+  --text-xl--line-height: 1.5rem; /* 24 */
+  --text-2xl: 1.25rem; /* 20px */
+  --text-2xl--line-height: 1.75rem; /* 28 */
+  --text-3xl: 1.5rem; /* 24px */
+  --text-3xl--line-height: 2rem; /* 32 */
+  --text-4xl: 1.75rem; /* 28px */
+  --text-4xl--line-height: 2.25rem; /* 36 */
+  --text-5xl: 2rem; /* 32px */
+  --text-5xl--line-height: 2.5rem; /* 40 */
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -94,11 +122,14 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    /* Softened ink: pure-black text is harsh on a white surface, so primary
+       text sits at ~18% lightness (#2e2e2e, 12.6:1 on white — comfortably past
+       AA) and secondary stays at 45%. */
+    --foreground: 0 0% 18%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 0 0% 18%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
+    --popover-foreground: 0 0% 18%;
     /* Brand primary — #0a66c2 */
     --primary: 210 90.2% 40%;
     --primary-foreground: 0 0% 100%;
@@ -160,10 +191,51 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* LinkedIn-style density: 14px base on a 20px line, so UI copy sits tighter
-       than the 16px browser default. Set on body rather than html so the rem
-       spacing scale stays anchored to 16px and layouts don't shift. */
-    font-size: 0.875rem;
-    line-height: 1.42857;
+    /* Body inherits the scale's base step rather than restating a number, so
+       retuning --text-base retunes the app. Set on body rather than html so the
+       rem spacing scale stays anchored to 16px and layouts don't shift. */
+    font-size: var(--text-base);
+    line-height: var(--text-base--line-height);
+  }
+}
+
+@layer components {
+  /* Merge-field chips in the email editor. The braces stay in the document
+     text — the Mustache renderer on the send path parses them — but render at
+     zero width, so the writer sees the field name and not the syntax. */
+  .email-variable-brace {
+    font-size: 0;
+  }
+
+  .email-variable {
+    --variable-hue: var(--primary);
+    border-radius: var(--radius-sm);
+    border: 1px solid hsl(var(--variable-hue) / 0.3);
+    background: hsl(var(--variable-hue) / 0.1);
+    padding: 1px 6px;
+    font-size: 0.9em;
+    font-weight: 500;
+    color: hsl(var(--variable-hue));
+  }
+
+  /* Each known variable takes the next hue, so a template with several fields
+     stays scannable. Index comes from the editor's `variables` prop. */
+  .email-variable-1 {
+    --variable-hue: var(--chart-3);
+  }
+  .email-variable-2 {
+    --variable-hue: var(--chart-4);
+  }
+  .email-variable-3 {
+    --variable-hue: var(--chart-2);
+  }
+  .email-variable-4 {
+    --variable-hue: var(--chart-5);
+  }
+
+  /* Mustache renders an unknown tag as an empty string, so a typo silently
+     drops the word from every email — worth flagging as an error, not a hue. */
+  .email-variable-unknown {
+    --variable-hue: var(--destructive);
   }
 }

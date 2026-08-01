@@ -24,6 +24,7 @@ import ExportLeadsButton from "@/components/campaigns/export-leads-button";
 import LeadsFilters from "@/components/campaigns/leads-filters";
 import LeadsGrowthChart from "@/components/campaigns/analytics/leads-growth-chart";
 import fetcher from "@/lib/fetcher";
+import { cn } from "@/lib/utils";
 import { remove } from "@/lib/apis";
 import { buildLeadsQuery } from "@/lib/leads-query";
 import { DEFAULT_LEAD_STATUSES } from "@/lib/constants/lead-status";
@@ -34,6 +35,28 @@ const DEFAULT_FILTERS = {
   stageFilter: "ALL",
   statuses: DEFAULT_LEAD_STATUSES,
 };
+
+// One segment per stage in the sequence, rather than a single bar — a lead
+// at stage 5 of 7 should read as "5 steps done, 2 to go", not a fill percentage.
+function StageStepper({ current, total }) {
+  return (
+    <div
+      role="img"
+      aria-label={`${current} of ${total} emails sent`}
+      className="flex flex-1 gap-1"
+    >
+      {Array.from({ length: total }, (_, i) => (
+        <span
+          key={i}
+          className={cn(
+            "h-1.5 flex-1 rounded-full",
+            i < current ? "bg-primary" : "bg-muted",
+          )}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function CampaignLeadsPage() {
   const params = useParams();
@@ -238,18 +261,9 @@ export default function CampaignLeadsPage() {
         cell: ({ row }) => {
           const currentStage = row.getValue("stage") || 0;
           const totalStages = currentCampaign?.maxStageCount || 5;
-          const progress = (currentStage / totalStages) * 100;
           return (
-            <div className="flex items-center gap-2 min-w-[120px]">
-              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden border border-border">
-                <div
-                  className="h-full bg-primary transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <span className="text-xs font-medium whitespace-nowrap">
-                {currentStage}/{totalStages}
-              </span>
+            <div className="min-w-[120px]">
+              <StageStepper current={currentStage} total={totalStages} />
             </div>
           );
         },
@@ -370,7 +384,7 @@ export default function CampaignLeadsPage() {
 
       {/* Error message */}
       {error && (
-        <div className="border border-red-300 bg-red-50 p-4">
+        <div className="rounded-lg border border-red-300 bg-red-50 p-4">
           <p className="text-red-800">Failed to load leads</p>
         </div>
       )}

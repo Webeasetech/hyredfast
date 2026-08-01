@@ -31,6 +31,10 @@ export function readChartTokens(el) {
     ink: token(styles, "--foreground", "#0b0b0b"),
     muted: token(styles, "--muted-foreground", "#898781"),
     border: token(styles, "--border", "#e1e0d9"),
+    // Resolved rather than passed through as `var(--font-…)`: the SVG renderer
+    // writes font-family as an attribute, where CSS variables never resolve, so
+    // the chart would silently fall back to the browser default.
+    fontFamily: styles.fontFamily,
   };
 }
 
@@ -43,14 +47,13 @@ export function readChartTokens(el) {
 function baseOption(t) {
   return {
     color: t.series,
-    textStyle: { fontFamily: "var(--font-dm-sans), system-ui, sans-serif" },
+    textStyle: { fontFamily: t.fontFamily },
     grid: { top: 28, right: 16, bottom: 24, left: 44, containLabel: true },
+    // Text-only — no colored swatch per series.
     legend: {
       top: 0,
       left: 0,
-      icon: "roundRect",
-      itemWidth: 10,
-      itemHeight: 10,
+      icon: "none",
       itemGap: 16,
       textStyle: { color: t.muted, fontSize: 12 },
     },
@@ -60,7 +63,13 @@ function baseOption(t) {
       borderWidth: 1,
       padding: [8, 10],
       textStyle: { color: t.ink, fontSize: 12 },
-      axisPointer: { lineStyle: { color: t.border, width: 1 } },
+      axisPointer: {
+        lineStyle: { color: t.border, width: 1 },
+        // On category axes ECharts defaults this pointer to a solid grey block
+        // painted *over* the hovered bar, which reads as the colour vanishing.
+        // Keep it as a faint wash behind the mark instead.
+        shadowStyle: { color: "rgba(0,0,0,0.04)" },
+      },
     },
     categoryAxis: {
       axisLine: { lineStyle: { color: t.border } },
@@ -74,6 +83,28 @@ function baseOption(t) {
       axisLabel: { color: t.muted, fontSize: 11 },
       splitLine: { lineStyle: { color: t.border, width: 1, type: "solid" } },
     },
+  };
+}
+
+/**
+ * `emphasis` and `blur` are per-series in ECharts, not top-level. Without this,
+ * hovering puts every other mark into the default blur state and they fade to
+ * near-invisible — so pin blur back to full opacity and turn off focus.
+ */
+function withSeriesDefaults(option) {
+  if (!Array.isArray(option.series)) return option;
+  return {
+    ...option,
+    series: option.series.map((s) => ({
+      ...s,
+      emphasis: { focus: "none", ...s.emphasis },
+      blur: {
+        itemStyle: { opacity: 1 },
+        lineStyle: { opacity: 1 },
+        areaStyle: { opacity: s.areaStyle?.opacity ?? 1 },
+        ...s.blur,
+      },
+    })),
   };
 }
 
@@ -124,17 +155,19 @@ export function EChart({ option, className, style, ...props }) {
     const { categoryAxis, valueAxis, ...chrome } = base;
 
     chart.setOption(
-      withAxisDefaults(
-        {
-          ...chrome,
-          ...option,
-          legend: option.legend
-            ? { ...chrome.legend, ...option.legend }
-            : { show: false },
-          tooltip: { ...chrome.tooltip, ...option.tooltip },
-          grid: { ...chrome.grid, ...option.grid },
-        },
-        base,
+      withSeriesDefaults(
+        withAxisDefaults(
+          {
+            ...chrome,
+            ...option,
+            legend: option.legend
+              ? { ...chrome.legend, ...option.legend }
+              : { show: false },
+            tooltip: { ...chrome.tooltip, ...option.tooltip },
+            grid: { ...chrome.grid, ...option.grid },
+          },
+          base,
+        ),
       ),
       { notMerge: true },
     );

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   DashboardIcon,
@@ -11,10 +12,14 @@ import {
   QuestionMarkCircleIcon,
   MessageSquareIcon,
 } from "mage-icons-react/bulk";
-import { ChevronLeftIcon, ChevronRightIcon } from "mage-icons-react/stroke";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronDownIcon,
+} from "mage-icons-react/stroke";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import useAuthStore from "@/store/auth.store";
+import densheesPNG from "@/assets/logos/denshees.png";
 
 const sidebarLinks = [
   {
@@ -32,11 +37,18 @@ const sidebarLinks = [
     icon: ChecklistNoteIcon,
     href: "/lists",
   },
-  {
-    label: "Settings",
-    icon: SettingsIcon,
-    href: "/settings",
-  },
+];
+
+const settingsLink = {
+  label: "Settings",
+  icon: SettingsIcon,
+  href: "/settings",
+};
+
+const settingsSubLinks = [
+  { label: "Email settings", href: "/settings" },
+  { label: "Account", href: "/settings/account" },
+  { label: "Billing", href: "/settings/billing" },
 ];
 
 const supportLinks = [
@@ -54,7 +66,7 @@ const supportLinks = [
 
 /**
  * A single sidebar row. Rows sit inside a padded track so the active pill is
- * inset from the sidebar edges rather than bleeding into the border, and it
+ * inset from the sidebar edges rather than running the full width, and it
  * carries the same radius/weight as a button.
  */
 function NavItem({ link, active, collapsed }) {
@@ -63,8 +75,11 @@ function NavItem({ link, active, collapsed }) {
       href={link.href}
       title={collapsed ? link.label : undefined}
       className={cn(
-        "flex items-center gap-3 rounded-md py-2 text-sm font-medium whitespace-nowrap transition-colors",
-        collapsed ? "justify-center px-2" : "px-3",
+        "flex items-center gap-3 rounded-md text-sm font-medium whitespace-nowrap transition-colors",
+        // Collapsed, the row has no label to stretch it, so a full-width pill
+        // reads as a wide rectangle. Pin it to a square the size of the row
+        // height instead and centre it in the rail.
+        collapsed ? "size-10 justify-center self-center p-0" : "px-3 py-2",
         active
           ? "bg-primary text-primary-foreground"
           : "text-muted-foreground hover:bg-accent hover:text-foreground",
@@ -76,11 +91,77 @@ function NavItem({ link, active, collapsed }) {
   );
 }
 
-export function Sidebar({ onWidthChange }) {
+/**
+ * Settings used to render its sub-pages' nav as a separate card inside the
+ * page content. That meant two left-hand navs stacked side by side once the
+ * app already had an outer sidebar. This nests those same three links here
+ * instead, as an expand/collapse section rather than a second sidebar.
+ */
+function SettingsSection({ active, collapsed, open, onOpenChange, pathname }) {
+  if (collapsed) {
+    return <NavItem link={settingsLink} active={active} collapsed />;
+  }
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => onOpenChange(!open)}
+        aria-expanded={open}
+        className={cn(
+          "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors",
+          active
+            ? "text-foreground"
+            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+        )}
+      >
+        <settingsLink.icon className="size-5 shrink-0" />
+        <span className="flex-1 truncate text-left">{settingsLink.label}</span>
+        <ChevronDownIcon
+          className={cn(
+            "size-3.5 shrink-0 transition-transform",
+            open && "rotate-180",
+          )}
+        />
+      </button>
+
+      {open && (
+        <div className="mt-1 flex flex-col gap-1 border-l border-border pl-4">
+          {settingsSubLinks.map((link) => {
+            const subActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "rounded-md px-3 py-1.5 text-sm whitespace-nowrap transition-colors",
+                  subActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function Sidebar() {
   const pathname = usePathname();
-  const { user } = useAuthStore();
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const isSettingsRoute = pathname.startsWith("/settings");
+  const [settingsOpen, setSettingsOpen] = useState(isSettingsRoute);
+
+  // Auto-expand on arrival at any settings page; manual toggles afterward
+  // are left alone rather than fought on every render.
+  useEffect(() => {
+    if (isSettingsRoute) setSettingsOpen(true);
+  }, [isSettingsRoute]);
 
   // Check for mobile screen size
   useEffect(() => {
@@ -92,16 +173,6 @@ export function Sidebar({ onWidthChange }) {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
-  // Update parent component when width changes
-  useEffect(() => {
-    if (isMobile) {
-      onWidthChange?.(0);
-    } else {
-      const width = collapsed ? 70 : 240;
-      onWidthChange?.(width);
-    }
-  }, [collapsed, isMobile, onWidthChange]);
 
   // Check if a link is active based on the current pathname
   const isActive = (href) => {
@@ -116,53 +187,64 @@ export function Sidebar({ onWidthChange }) {
   // Mobile bottom bar
   if (isMobile) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-muted/90 backdrop-blur">
         <nav className="flex items-center justify-between gap-1 px-2 py-2">
-          {[...sidebarLinks, ...supportLinks.slice(0, 1)].map((link) => (
-            <Link
-              key={link.href + link.label}
-              href={link.href}
-              className={cn(
-                "flex min-w-[60px] flex-1 flex-col items-center justify-center gap-1 rounded-md px-3 py-2 text-xs font-medium transition-colors",
-                isActive(link.href)
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
-              )}
-            >
-              <link.icon className="size-5" />
-              <span>{link.label}</span>
-            </Link>
-          ))}
+          {[...sidebarLinks, settingsLink, ...supportLinks.slice(0, 1)].map(
+            (link) => (
+              <Link
+                key={link.href + link.label}
+                href={link.href}
+                className={cn(
+                  "flex min-w-[60px] flex-1 flex-col items-center justify-center gap-1 rounded-md px-3 py-2 text-xs font-medium transition-colors",
+                  isActive(link.href)
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
+              >
+                <link.icon className="size-5" />
+                <span>{link.label}</span>
+              </Link>
+            ),
+          )}
         </nav>
       </div>
     );
   }
 
-  // Desktop sidebar
+  // Desktop sidebar — a full-height left column with its own right edge.
   return (
     <div
       className={cn(
-        "absolute left-0 top-0 hidden h-full flex-col overflow-hidden border-r border-border bg-background transition-all duration-300 md:flex",
+        "hidden h-full shrink-0 flex-col overflow-hidden border-r border-border bg-transparent transition-all duration-300 md:flex",
         collapsed ? "w-[70px]" : "w-[240px]",
       )}
     >
       <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden py-4">
-        <div className="mb-4 flex items-center justify-between px-3">
+        {/* The logo lives in the rail now that the navbar only spans content. */}
+        <div className="mb-4 flex items-center justify-between gap-2 px-3">
           {!collapsed && (
-            <h2 className="truncate text-sm font-semibold">
-              Welcome, {user?.name?.split(" ")[0] || "User"}
-            </h2>
+            <Link href="/" className="flex min-w-0 items-center">
+              <Image
+                src={densheesPNG}
+                alt="Denshees"
+                width={80}
+                height={80}
+                className="h-auto w-[92px]"
+                priority
+              />
+            </Link>
           )}
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             onClick={() => setCollapsed(!collapsed)}
-            className="ml-auto"
+            className="ml-auto shrink-0 text-muted-foreground"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? (
-              <ChevronRightIcon className="w-5 h-5" />
+              <ChevronRightIcon className="size-4" />
             ) : (
-              <ChevronLeftIcon className="w-5 h-5" />
+              <ChevronLeftIcon className="size-4" />
             )}
           </Button>
         </div>
@@ -176,9 +258,16 @@ export function Sidebar({ onWidthChange }) {
               collapsed={collapsed}
             />
           ))}
+          <SettingsSection
+            active={isSettingsRoute}
+            collapsed={collapsed}
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            pathname={pathname}
+          />
         </nav>
 
-        <div className="mt-auto flex flex-col gap-1 border-t border-border px-2 pt-4">
+        <div className="mt-auto flex flex-col gap-1 px-2 pt-4">
           {supportLinks.map((link) => (
             <NavItem
               key={link.label}

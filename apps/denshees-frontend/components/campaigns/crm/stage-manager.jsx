@@ -98,7 +98,9 @@ function SortableStageItem({
               <button
                 key={c}
                 className={`w-4 h-4 rounded-full border ${
-                  editColor === c ? "border-border scale-125" : "border-border"
+                  editColor === c
+                    ? "border-foreground ring-2 ring-primary ring-offset-1 scale-125"
+                    : "border-border"
                 }`}
                 style={{ backgroundColor: c }}
                 onClick={() => setEditColor(c)}
@@ -125,12 +127,12 @@ function SortableStageItem({
           </span>
 
           {stage.is_won && (
-            <span className="text-[10px] bg-green-100 text-green-700 border border-green-300 px-1.5 py-0.5">
+            <span className="rounded-full text-[10px] bg-green-100 text-green-700 border border-green-300 px-1.5 py-0.5">
               WON
             </span>
           )}
           {stage.is_lost && (
-            <span className="text-[10px] bg-red-100 text-red-700 border border-red-300 px-1.5 py-0.5">
+            <span className="rounded-full text-[10px] bg-red-100 text-red-700 border border-red-300 px-1.5 py-0.5">
               LOST
             </span>
           )}
@@ -322,7 +324,7 @@ export default function StageManager({
                 key={c}
                 className={`w-4 h-4 rounded-full border ${
                   newStageColor === c
-                    ? "border-border scale-125"
+                    ? "border-foreground ring-2 ring-primary ring-offset-1 scale-125"
                     : "border-border"
                 }`}
                 style={{ backgroundColor: c }}

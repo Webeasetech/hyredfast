@@ -81,7 +81,7 @@ const EmailProgressBar = ({
               style={{ width: animate ? "0%" : `${sentPercentage}%` }}
             />
           </TooltipTrigger>
-          <TooltipContent className="bg-white border border-border rounded-lg">
+          <TooltipContent>
             <p className="text-sm font-mono">Emails sent: {sentEmails}</p>
           </TooltipContent>
         </Tooltip>
@@ -96,7 +96,7 @@ const EmailProgressBar = ({
               style={{ width: animate ? "0%" : `${openedPercentage}%` }}
             />
           </TooltipTrigger>
-          <TooltipContent className="bg-white border border-border rounded-lg">
+          <TooltipContent>
             <p className="text-sm font-mono">Emails opened: {openedEmails}</p>
           </TooltipContent>
         </Tooltip>
@@ -111,7 +111,7 @@ const EmailProgressBar = ({
               style={{ width: animate ? "0%" : `${repliedPercentage}%` }}
             />
           </TooltipTrigger>
-          <TooltipContent className="bg-white border border-border rounded-lg">
+          <TooltipContent>
             <p className="text-sm font-mono">Emails replied: {repliedEmails}</p>
           </TooltipContent>
         </Tooltip>

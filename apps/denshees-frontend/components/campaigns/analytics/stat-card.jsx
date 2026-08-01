@@ -1,13 +1,11 @@
 const StatCard = ({ title, value, icon }) => {
   return (
-    <div className="border border-border bg-white p-4 flex flex-col items-center justify-between gap-3 rounded-lg">
-      <div className="w-12 h-12 border border-border bg-accent flex items-center justify-center rounded-lg">
-        {icon}
+    <div className="flex-1 p-4">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm text-muted-foreground">{title}</p>
+        <span className="text-primary">{icon}</span>
       </div>
-      <div className="text-center">
-        <p className="text-2xl font-bold">{value}</p>
-        <p className="text-sm text-foreground">{title}</p>
-      </div>
+      <p className="mt-2 text-2xl font-bold">{value}</p>
     </div>
   );
 };

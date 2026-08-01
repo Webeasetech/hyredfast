@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   flexRender,
   getCoreRowModel,
@@ -77,15 +78,17 @@ export function DataTable({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-[300px] text-center"
-                >
-                  <div className="flex items-center justify-center h-full">
-                    <div className="border border-border p-4">
-                      <p className="text-lg font-medium">Loading...</p>
+                <TableCell colSpan={columns.length} className="p-0">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-4 border-b border-border px-4 py-3 last:border-0"
+                    >
+                      <Skeleton className="h-3.5 w-40" />
+                      <Skeleton className="h-3.5 w-56" />
+                      <Skeleton className="ml-auto h-5 w-20 rounded-full" />
                     </div>
-                  </div>
+                  ))}
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (

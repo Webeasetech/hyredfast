@@ -12,7 +12,15 @@ function Table({ className, ...props }) {
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        // The browser default (border-collapse: separate; border-spacing: 2px)
+        // adds a couple of stray pixels between the table's edge and its
+        // outermost cells on top of any declared padding, so cell content
+        // never quite lines up with padding on a sibling element — no matter
+        // how that padding is tuned. Collapsing removes that baked-in offset.
+        className={cn(
+          "w-full border-collapse caption-bottom text-sm",
+          className,
+        )}
         {...props}
       />
     </div>

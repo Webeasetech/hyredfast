@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useCallback } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import useSWR from "swr";
 import { format, isToday, isYesterday } from "date-fns";
 import {
@@ -114,9 +115,16 @@ function DayCard({ campaignId, day }) {
       {/* Body */}
       <div className="p-4 flex-1 flex flex-col">
         {isLoading ? (
-          <div className="flex items-center justify-center py-5 text-muted-foreground">
-            <ReloadIcon className="h-4 w-4 animate-spin mr-2" />
-            <span className="text-xs">Loading…</span>
+          <div className="flex items-stretch gap-6">
+            <div className="flex min-w-[90px] flex-col justify-center gap-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="space-y-1">
+                  <Skeleton className="h-10 w-16" />
+                  <Skeleton className="h-2.5 w-12" />
+                </div>
+              ))}
+            </div>
+            <Skeleton className="min-h-[200px] flex-1 rounded-lg" />
           </div>
         ) : error ? (
           <p className="text-xs text-red-400 text-center py-4">
@@ -313,7 +321,7 @@ function TimelineItem({ activity }) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 border border-border bg-white px-3 py-2.5 rounded-sm transition-colors group-hover:bg-muted group-hover:border-border">
+      <div className="flex-1 border border-border bg-white px-3 py-2.5 rounded-lg transition-colors group-hover:bg-muted group-hover:border-border">
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm font-medium text-foreground">
             {activity.type}
@@ -426,11 +434,6 @@ function ActivityCalendar({
           onSelect={(date) => date && onSelectDate(date)}
           modifiers={modifiers}
           modifiersStyles={modifiersStyles}
-          classNames={{
-            // react-day-picker v10 renamed this key from `day_selected`.
-            selected:
-              "ring-2 ring-neutral-800 ring-offset-1 font-bold text-foreground hover:bg-transparent focus:bg-transparent",
-          }}
           className="p-2!"
         />
       </div>
@@ -520,7 +523,7 @@ function ActivitySkeleton() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2">
-        <div className="border border-border bg-white rounded-sm">
+        <div className="border border-border bg-white rounded-lg">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted">
             <div className="h-4 w-32 bg-muted animate-pulse rounded" />
             <div className="h-4 w-16 bg-muted animate-pulse rounded" />
@@ -529,7 +532,7 @@ function ActivitySkeleton() {
             {[...Array(3)].map((_, j) => (
               <div key={j} className="flex items-start gap-3 pl-6">
                 <div className="h-4 w-4 rounded-full bg-muted animate-pulse" />
-                <div className="flex-1 border border-border p-3 rounded-sm">
+                <div className="flex-1 border border-border p-3 rounded-lg">
                   <div className="h-3.5 w-24 bg-muted animate-pulse rounded mb-2" />
                   <div className="h-3 w-36 bg-muted animate-pulse rounded" />
                 </div>
@@ -539,8 +542,8 @@ function ActivitySkeleton() {
         </div>
       </div>
       <div className="space-y-4">
-        <div className="border border-border bg-white rounded-sm h-80 animate-pulse" />
-        <div className="border border-border bg-white rounded-sm h-44 animate-pulse" />
+        <div className="border border-border bg-white rounded-lg h-80 animate-pulse" />
+        <div className="border border-border bg-white rounded-lg h-44 animate-pulse" />
       </div>
     </div>
   );

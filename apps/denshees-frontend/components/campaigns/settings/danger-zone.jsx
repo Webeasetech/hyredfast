@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ExclamationTriangleIcon, TrashIcon } from "mage-icons-react/bulk";
 import { useRouter } from "next/navigation";
@@ -51,68 +53,72 @@ const DangerZone = ({ campaignId }) => {
   };
 
   return (
-    <div className="border border-red-300 bg-red-50 p-6">
-      <div className="flex items-start space-x-3">
-        <ExclamationTriangleIcon className="h-6 w-6 text-red-600 shrink-0 mt-1" />
-        <div className="flex-1">
-          <h2 className="text-xl font-bold text-red-700 mb-2">Danger Zone</h2>
-          <p className="text-red-600 mb-6">
-            Actions in this section can lead to data loss and cannot be undone.
-            Please proceed with caution.
+    // A neutral card with a destructive edge, rather than a wall of red: the
+    // tint is reserved for the action row so the risky control is what stands
+    // out instead of the whole panel.
+    <div className="overflow-hidden rounded-lg border border-destructive/30 bg-background">
+      <div className="flex items-start gap-3 p-4 md:p-6">
+        <ExclamationTriangleIcon className="mt-0.5 size-5 shrink-0 text-destructive" />
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold">Danger zone</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Actions here cause permanent data loss and cannot be undone.
           </p>
-
-          {!showConfirm ? (
-            <div className="flex justify-between items-center border-t border-red-200 pt-4">
-              <div>
-                <h3 className="font-medium text-red-700">Delete Campaign</h3>
-                <p className="text-sm text-red-600">
-                  This will permanently delete this campaign and all its data.
-                </p>
-              </div>
-              <Button
-                variant="destructive"
-                onClick={handleDeleteClick}
-                className="bg-white text-red-600 border-red-600 hover:bg-red-50 rounded-lg"
-              >
-                <TrashIcon className="mr-2 h-4 w-4" />
-                Delete Campaign
-              </Button>
-            </div>
-          ) : (
-            <div className="border-t border-red-200 pt-4 space-y-4">
-              <p className="font-medium text-red-700">
-                Please type &apos;delete&apos; to confirm that you want to
-                delete this campaign:
-              </p>
-              <input
-                type="text"
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                className="w-full p-2 border border-red-300 focus:outline-hidden focus:ring-2 focus:ring-red-500"
-                placeholder="Type 'delete' to confirm"
-              />
-              <div className="flex justify-end space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowConfirm(false);
-                    setConfirmText("");
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleConfirmDelete}
-                  disabled={isDeleting || confirmText !== "delete"}
-                >
-                  {isDeleting ? "Deleting..." : "Confirm Delete"}
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {!showConfirm ? (
+        <div className="flex flex-col gap-3 border-t border-destructive/20 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between md:px-6">
+          <div className="min-w-0">
+            <h3 className="text-sm font-medium">Delete campaign</h3>
+            <p className="text-sm text-muted-foreground">
+              Permanently removes this campaign and all of its data.
+            </p>
+          </div>
+          <Button
+            variant="destructive"
+            onClick={handleDeleteClick}
+            className="shrink-0"
+          >
+            <TrashIcon className="mr-2 size-4" />
+            Delete campaign
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3 border-t border-destructive/20 bg-destructive/5 p-4 md:px-6">
+          <div className="space-y-1.5">
+            <Label htmlFor="danger-confirm" className="text-sm font-medium">
+              Type <span className="font-semibold">delete</span> to confirm
+            </Label>
+            <Input
+              id="danger-confirm"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="delete"
+              autoComplete="off"
+              className="max-w-sm bg-background"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowConfirm(false);
+                setConfirmText("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting || confirmText !== "delete"}
+            >
+              {isDeleting ? "Deleting…" : "Delete campaign"}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

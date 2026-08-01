@@ -1,11 +1,12 @@
-import { DM_Sans } from "next/font/google";
+import { Host_Grotesk } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
-const dmSans = DM_Sans({
+// Loaded as a variable font (wght 300–800) rather than discrete cuts, so the
+// browser fetches one file for every weight the UI uses.
+const hostGrotesk = Host_Grotesk({
   subsets: ["latin"],
-  variable: "--font-dm-sans",
-  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-host-grotesk",
   display: "swap",
 });
 
@@ -17,7 +18,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${dmSans.variable} antialiased font-sans`}>
+      <body className={`${hostGrotesk.variable} antialiased font-sans`}>
         {children}
         <Toaster />
       </body>

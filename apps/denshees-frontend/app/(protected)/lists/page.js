@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ListRowsSkeleton } from "@/components/skeletons";
 import Link from "next/link";
 import { DateTime } from "luxon";
 import {
@@ -26,6 +27,7 @@ import {
 import fetcher from "@/lib/fetcher";
 import { post, remove } from "@/lib/apis";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 
 export default function ListsPage() {
   const { data, error, isLoading } = useSWR("/api/lead-lists", fetcher);
@@ -75,80 +77,72 @@ export default function ListsPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Lead Lists</h1>
-          <p className="text-foreground mt-1">Manage your lead lists</p>
-        </div>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusIcon className="w-4 h-4 mr-2" />
-              New List
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Lead List</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g. SaaS Companies Q1"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  placeholder="Optional description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                />
-              </div>
-              <Button type="submit" disabled={isCreating} className="w-full">
-                {isCreating ? (
-                  <>
-                    <ReloadIcon className="w-4 h-4 mr-2 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create List"
-                )}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+    <div className="space-y-4">
+      <PageHeader title="Lead Lists" description="Manage your lead lists" />
 
       <div className="border border-border bg-white rounded-lg">
-        <div className="p-4 border-b border-border">
+        <div className="flex items-center gap-3 p-4 border-b border-border">
           <Input
             placeholder="Search lists..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-md"
           />
+
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="ml-auto shrink-0">
+                <PlusIcon className="w-4 h-4 mr-2" />
+                New List
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Lead List</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g. SaaS Companies Q1"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Input
+                    id="description"
+                    placeholder="Optional description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                  />
+                </div>
+                <Button type="submit" disabled={isCreating} className="w-full">
+                  {isCreating ? (
+                    <>
+                      <ReloadIcon className="w-4 h-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create List"
+                  )}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {isLoading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block border border-border p-4">
-              <p className="text-lg font-medium">Loading lists...</p>
-            </div>
-          </div>
+          <ListRowsSkeleton />
         ) : error ? (
           <div className="p-8 text-center">
-            <div className="inline-block border border-border p-4 bg-red-50">
+            <div className="rounded-lg inline-block border border-border p-4 bg-red-50">
               <p className="text-lg font-medium text-red-600">
                 Error loading lists
               </p>

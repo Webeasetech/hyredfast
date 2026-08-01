@@ -13,6 +13,7 @@ import useAuthStore from "@/store/auth.store";
 import useSWR from "swr";
 import fetcher from "@/lib/fetcher";
 import { formatDistanceToNow } from "date-fns";
+import { PageHeader } from "@/components/page-header";
 
 export default function Dashboard() {
   const { user } = useAuthStore();
@@ -34,13 +35,11 @@ export default function Dashboard() {
   const recentActivities = data?.recent_activities || [];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-foreground mt-1">
-          Welcome back, {user?.name || "User"}
-        </p>
-      </div>
+    <div className="space-y-4">
+      <PageHeader
+        title="Dashboard"
+        description={`Welcome back, ${user?.name || "User"}`}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
@@ -81,10 +80,7 @@ export default function Dashboard() {
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between border-b border-border pb-4"
-                >
+                <div key={i} className="flex items-center justify-between">
                   <div className="h-6 w-32 bg-muted animate-pulse rounded"></div>
                   <div className="h-6 w-16 bg-muted animate-pulse rounded"></div>
                 </div>
@@ -95,7 +91,7 @@ export default function Dashboard() {
               {recentCampaigns.map((campaign) => (
                 <div
                   key={campaign.id}
-                  className="flex items-center justify-between border-b border-border pb-4"
+                  className="flex items-center justify-between"
                 >
                   <div>
                     <h3 className="font-medium">{campaign.title}</h3>
@@ -122,10 +118,7 @@ export default function Dashboard() {
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-start space-x-3 border-b border-border pb-4"
-                >
+                <div key={i} className="flex items-start space-x-3">
                   <div className="w-8 h-8 bg-muted animate-pulse rounded"></div>
                   <div className="flex-1">
                     <div className="h-5 w-32 bg-muted animate-pulse rounded mb-2"></div>
@@ -169,7 +162,7 @@ function ActivityItem({ activity }) {
   };
 
   return (
-    <div className="flex items-start space-x-3 border-b border-border pb-4">
+    <div className="flex items-start space-x-3">
       <div className="w-8 h-8 bg-accent border border-border flex items-center justify-center rounded-lg">
         {getActivityIcon(activity.type)}
       </div>

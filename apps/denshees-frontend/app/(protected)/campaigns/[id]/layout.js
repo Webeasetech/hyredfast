@@ -8,12 +8,10 @@ import {
   PauseIcon,
   PlayIcon,
 } from "mage-icons-react/bulk";
-import { ArrowLeftIcon } from "mage-icons-react/stroke";
 import { toast } from "sonner";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { Button } from "@/components/ui/button";
-import StatusChip from "@/components/ui/status-chip";
 import useCampaignStore from "@/store/campaign.store";
 import fetcher from "@/lib/fetcher";
 import { patch } from "@/lib/apis";
@@ -146,26 +144,12 @@ export default function CampaignLayout({ children }) {
   return (
     <div className="space-y-6">
       <div className="header">
-        {/* Back button and campaign title */}
-        <div className="flex items-center gap-2 min-w-0">
-          <Link href="/campaigns" className="shrink-0">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <ArrowLeftIcon className="w-[18px] h-[18px]" />
-            </Button>
-          </Link>
-          <h1 className="text-xl md:text-2xl font-bold truncate min-w-0">
-            {isLoading
-              ? "Loading..."
-              : currentCampaign?.title || "Campaign Details"}
-          </h1>
-          {!isLoading && currentCampaign && (
-            <StatusChip status={currentCampaign.status} className="shrink-0" />
-          )}
-        </div>
+        {/* No title row here — the breadcrumb names the campaign, and the
+            start/pause control beside the tabs already conveys its status. */}
 
         {/* Error message */}
         {error && (
-          <div className="border border-red-300 bg-red-50 p-4">
+          <div className="rounded-lg border border-red-300 bg-red-50 p-4">
             <p className="text-red-800">Failed to load campaign details</p>
           </div>
         )}
@@ -182,7 +166,7 @@ export default function CampaignLayout({ children }) {
                   href={tab.href}
                   className={`inline-flex items-center px-3 md:px-4 py-2 border-b-2 text-sm font-medium whitespace-nowrap ${
                     isTabActive(tab.href)
-                      ? "border-border text-black"
+                      ? "border-primary text-primary"
                       : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                   }`}
                 >
@@ -209,7 +193,7 @@ export default function CampaignLayout({ children }) {
                           </Button>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent className="bg-white border border-border p-2 rounded-lg">
+                      <TooltipContent>
                         <div className="flex items-center">
                           <ExclamationCircleIcon className="w-3.5 h-3.5 mr-2 text-amber-500" />
                           <p>Configure email accounts in Settings first</p>

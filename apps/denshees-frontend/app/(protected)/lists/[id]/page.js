@@ -441,7 +441,7 @@ export default function ListDetailPage() {
   if (hasError) {
     return (
       <div className="p-8 text-center">
-        <div className="inline-block border border-border p-4 bg-red-50">
+        <div className="rounded-lg inline-block border border-border p-4 bg-red-50">
           <p className="text-lg font-medium text-red-600">Error loading list</p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { PanelSkeleton } from "@/components/skeletons";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,22 +19,19 @@ import fetcher from "@/lib/fetcher";
 import useSWRMutation from "swr/mutation";
 import { patch, post } from "@/lib/apis";
 import { toast } from "sonner";
-import { SettingsNav } from "@/components/settings/settings-nav";
+import { PageHeader } from "@/components/page-header";
 
 export default function AccountSettingsPage() {
   return (
-    <div className="container mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+    <div className="space-y-4">
+      <PageHeader
+        title="Your account"
+        description="Update your profile details and password"
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-1">
-          <SettingsNav />
-        </div>
-
-        <div className="md:col-span-3 space-y-6">
-          <AccountSettings />
-          <PasswordSettings />
-        </div>
+      <div className="space-y-6">
+        <AccountSettings />
+        <PasswordSettings />
       </div>
     </div>
   );
@@ -103,14 +101,7 @@ function AccountSettings() {
   };
 
   if (isLoading) {
-    return (
-      <div className="border border-border bg-white p-6 rounded-lg">
-        <div className="flex justify-center items-center h-40">
-          <ReloadIcon className="h-8 w-8 animate-spin" />
-          <p className="ml-2 text-lg">Loading account information...</p>
-        </div>
-      </div>
-    );
+    return <PanelSkeleton lines={4} />;
   }
 
   if (error) {
@@ -131,11 +122,40 @@ function AccountSettings() {
   return (
     <div id="account-settings" className="space-y-6">
       <div className="border border-border bg-white p-6 rounded-lg">
-        <h2 className="text-xl font-bold mb-6">Account Information</h2>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-bold">Account Information</h2>
+            <p className="text-sm text-foreground mt-1">
+              Your name, username, and how leads get verified.
+            </p>
+          </div>
+          <Button
+            type="submit"
+            form="account-info-form"
+            disabled={isUpdating}
+            className="flex shrink-0 items-center"
+          >
+            {isUpdating ? (
+              <>
+                <ReloadIcon className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <SaveFloppyIcon className="h-4 w-4 mr-2" />
+                Save Changes
+              </>
+            )}
+          </Button>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="flex items-center justify-center mb-8">
-            <div className="relative">
+        <form
+          id="account-info-form"
+          onSubmit={handleSubmit(onSubmit)}
+          className="space-y-6"
+        >
+          <div className="flex items-start gap-6">
+            <div className="relative shrink-0">
               <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-border">
                 {userData?.avatar ? (
                   <img
@@ -158,33 +178,35 @@ function AccountSettings() {
                 +
               </Button>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                {...register("name", { required: "Name is required" })}
-                className={errors.name ? "border-red-500" : ""}
-              />
-              {errors.name && (
-                <p className="text-red-500 text-sm">{errors.name.message}</p>
-              )}
-            </div>
+            <div className="flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  {...register("name", { required: "Name is required" })}
+                  className={errors.name ? "border-red-500" : ""}
+                />
+                {errors.name && (
+                  <p className="text-red-500 text-sm">{errors.name.message}</p>
+                )}
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                {...register("username", { required: "Username is required" })}
-                className={errors.username ? "border-red-500" : ""}
-              />
-              {errors.username && (
-                <p className="text-red-500 text-sm">
-                  {errors.username.message}
-                </p>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  {...register("username", {
+                    required: "Username is required",
+                  })}
+                  className={errors.username ? "border-red-500" : ""}
+                />
+                {errors.username && (
+                  <p className="text-red-500 text-sm">
+                    {errors.username.message}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -227,51 +249,26 @@ function AccountSettings() {
             </p>
           </div>
 
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              disabled={isUpdating}
-              className="flex items-center"
-            >
-              {isUpdating ? (
-                <>
-                  <ReloadIcon className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <SaveFloppyIcon className="h-4 w-4 mr-2" />
-                  Save Changes
-                </>
-              )}
-            </Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" value={userData?.email || ""} disabled />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="accountCreated">Account Created</Label>
+              <Input
+                id="accountCreated"
+                value={
+                  userData?.created
+                    ? new Date(userData.created).toLocaleDateString()
+                    : "N/A"
+                }
+                disabled
+              />
+            </div>
           </div>
         </form>
-      </div>
-
-      <div
-        id="account-details"
-        className="border border-border bg-white p-6 rounded-lg"
-      >
-        <h2 className="text-xl font-bold mb-6">Account Details</h2>
-
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Email</p>
-              <p className="font-medium">{userData?.email}</p>
-            </div>
-
-            <div>
-              <p className="text-sm text-muted-foreground">Account Created</p>
-              <p className="font-medium">
-                {userData?.created
-                  ? new Date(userData.created).toLocaleDateString()
-                  : "N/A"}
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -331,16 +328,42 @@ function PasswordSettings() {
 
   return (
     <div className="border border-border bg-white p-6 rounded-lg">
-      <h2 className="text-xl font-bold mb-2">
-        {hasPassword ? "Change password" : "Set a password"}
-      </h2>
-      <p className="text-sm text-foreground mb-6">
-        {hasPassword
-          ? "Update the password used for email & password login."
-          : "Set a password to enable email & password login in addition to Google sign-in."}
-      </p>
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold">
+            {hasPassword ? "Change password" : "Set a password"}
+          </h2>
+          <p className="text-sm text-foreground mt-1">
+            {hasPassword
+              ? "Update the password used for email & password login."
+              : "Set a password to enable email & password login in addition to Google sign-in."}
+          </p>
+        </div>
+        <Button
+          type="submit"
+          form="password-form"
+          disabled={isMutating}
+          className="flex shrink-0 items-center"
+        >
+          {isMutating ? (
+            <>
+              <ReloadIcon className="h-4 w-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <SaveFloppyIcon className="h-4 w-4 mr-2" />
+              {hasPassword ? "Update password" : "Set password"}
+            </>
+          )}
+        </Button>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form
+        id="password-form"
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-6"
+      >
         {hasPassword && (
           <div className="space-y-2">
             <Label htmlFor="currentPassword">Current password</Label>
@@ -401,26 +424,6 @@ function PasswordSettings() {
               </p>
             )}
           </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button
-            type="submit"
-            disabled={isMutating}
-            className="flex items-center"
-          >
-            {isMutating ? (
-              <>
-                <ReloadIcon className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <SaveFloppyIcon className="h-4 w-4 mr-2" />
-                {hasPassword ? "Update password" : "Set password"}
-              </>
-            )}
-          </Button>
         </div>
       </form>
     </div>

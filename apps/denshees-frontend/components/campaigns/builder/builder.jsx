@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ReactFlow,
   Background,
@@ -13,6 +14,7 @@ import "@xyflow/react/dist/style.css";
 import useSWR from "swr";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
+import { ReloadIcon } from "mage-icons-react/stroke";
 import fetcher from "@/lib/fetcher";
 import { patch, post, remove } from "@/lib/apis";
 import UpdateTemplate from "@/components/campaigns/builder/update-template";
@@ -33,6 +35,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 const nodeTypes = {
   start: StartNode,
@@ -195,17 +204,15 @@ const Builder = ({ campaign }) => {
 
   if (pitchesLoading || contactsLoading) {
     return (
-      <div className="flex items-center justify-center h-[500px]">
-        <div className="border-2 border-border p-4">
-          <p className="text-lg font-medium">Loading flow...</p>
-        </div>
+      <div className="h-[500px] rounded-lg border border-border p-4">
+        <Skeleton className="h-full w-full" />
       </div>
     );
   }
 
   return (
     <div className="w-full grow">
-      <div className="relative h-[560px] border-2 border-border bg-[#fafafa]">
+      <div className="relative h-[560px] overflow-hidden rounded-lg border border-border bg-muted/40">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -223,70 +230,84 @@ const Builder = ({ campaign }) => {
           maxZoom={1.5}
         >
           <AutoFit structureKey={structureKey} />
-          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-          <Controls showInteractive={false} />
-          <MiniMap pannable zoomable className="border-2! border-border!" />
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={16}
+            size={1}
+            color="hsl(var(--border))"
+          />
+          <Controls
+            showInteractive={false}
+            className="overflow-hidden! rounded-lg! border! border-border!"
+          />
+          <MiniMap
+            pannable
+            zoomable
+            className="rounded-lg! border! border-border!"
+          />
 
           <Panel
             position="top-left"
-            className="bg-white p-3 border-2 border-border rounded-lg"
+            className="rounded-lg border border-border bg-background p-3"
           >
-            <h3 className="text-sm font-bold">Email Campaign Flow</h3>
-            <p className="mt-1 text-xs text-foreground">
+            <h3 className="text-sm font-semibold">Email Campaign Flow</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
               Click an email to edit it, or a delay to change its wait.
             </p>
           </Panel>
         </ReactFlow>
 
         <AnimatePresence>
-          {selectedPitch && (
-            <motion.div
-              className="absolute inset-0 z-10 bg-white p-4 overflow-auto"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.15 }}
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold">
-                  {selectedPitch.stage === 0
-                    ? "First email"
-                    : `Follow-up ${selectedPitch.stage}`}
-                </h3>
-                <button
-                  onClick={() => setSelectedPitch(null)}
-                  className="px-3 py-1 border-2 border-border hover:translate-x-px hover:translate-y-px transition-all"
-                >
-                  Back to flow
-                </button>
-              </div>
-              <UpdateTemplate
-                campaign={campaign}
-                stage={selectedPitch}
-                message={selectedPitch.message}
-                subject={selectedPitch.subject}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
           {busy && (
             <motion.div
-              className="absolute inset-0 z-20 flex items-center justify-center bg-white/70 backdrop-blur-[1px]"
+              className="absolute inset-0 z-20 flex items-center justify-center bg-background/70 backdrop-blur-[1px]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <div className="flex items-center gap-3 bg-white px-4 py-3 border-2 border-border rounded-lg">
-                <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-4 py-3">
+                <ReloadIcon className="size-4 animate-spin text-muted-foreground" />
                 <span className="text-sm font-medium">Updating flow...</span>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {/* The template editor opens beside the flow rather than covering it, so
+          the sequence stays visible while an email is being written. */}
+      <Sheet
+        open={!!selectedPitch}
+        onOpenChange={(open) => !open && setSelectedPitch(null)}
+      >
+        <SheetContent
+          side="right"
+          className="w-full gap-0 p-0 sm:max-w-xl lg:max-w-2xl"
+        >
+          <SheetHeader className="border-b border-border px-6 py-4">
+            <SheetTitle className="text-base">
+              {selectedPitch?.stage === 0
+                ? "First email"
+                : `Follow-up ${selectedPitch?.stage}`}
+            </SheetTitle>
+            <SheetDescription>
+              Changes are saved automatically.
+            </SheetDescription>
+          </SheetHeader>
+
+          {selectedPitch && (
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-4">
+              <UpdateTemplate
+                campaign={campaign}
+                stage={selectedPitch}
+                message={selectedPitch.message}
+                subject={selectedPitch.subject}
+              />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
       <AlertDialog
         open={!!pendingDelete}
@@ -304,8 +325,8 @@ const Builder = ({ campaign }) => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              variant="destructive"
               onClick={confirmDeletePitch}
-              className="bg-red-600 hover:bg-red-700 text-white"
             >
               Delete
             </AlertDialogAction>

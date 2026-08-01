@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
 import StatusChip from "@/components/ui/status-chip";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -104,35 +105,56 @@ const TYPE_SCALE = [
   {
     name: "Display",
     cls: "text-5xl font-bold tracking-tight",
+    size: "32/40",
     note: "Hero numbers, empty-state headlines. One per view.",
   },
-  { name: "H1", cls: "text-3xl font-bold tracking-tight", note: "Page title" },
+  {
+    name: "H1",
+    cls: "text-3xl font-bold tracking-tight",
+    size: "24/32",
+    note: "Page title",
+  },
   {
     name: "H2",
     cls: "text-2xl font-semibold tracking-tight",
+    size: "20/28",
     note: "Section heading",
   },
-  { name: "H3", cls: "text-xl font-semibold", note: "Card / panel heading" },
+  {
+    name: "H3",
+    cls: "text-xl font-semibold",
+    size: "18/24",
+    note: "Card / panel heading",
+  },
   {
     name: "H4",
     cls: "text-lg font-semibold",
+    size: "16/24",
     note: "Sub-heading, dialog title",
   },
   {
     name: "Body large",
     cls: "text-base",
+    size: "14/20",
     note: "Intro copy, dialog description",
   },
-  { name: "Body", cls: "text-sm", note: "Default UI text" },
-  { name: "Small", cls: "text-xs", note: "Helper text, table meta" },
+  { name: "Body", cls: "text-sm", size: "13/18", note: "Default UI text" },
+  {
+    name: "Small",
+    cls: "text-xs",
+    size: "11/16",
+    note: "Helper text, table meta",
+  },
   {
     name: "Muted",
     cls: "text-sm text-muted-foreground",
+    size: "13/18",
     note: "De-emphasised body",
   },
   {
     name: "Overline",
     cls: "text-xs font-medium uppercase tracking-wide text-muted-foreground",
+    size: "11/16",
     note: "Group label above a control",
   },
 ];
@@ -318,7 +340,7 @@ export default function DesignSystemPage() {
           <Section
             id="typography"
             title="Typography"
-            description="DM Sans throughout &mdash; one family, weight and size carry the hierarchy."
+            description="Host Grotesk throughout &mdash; one family, weight and size carry the hierarchy. The scale is set on Tailwind's own --text-* tokens, so these class names resolve to a denser scale app-wide."
           >
             <div className="flex flex-col divide-y divide-border">
               {TYPE_SCALE.map((t) => (
@@ -333,6 +355,11 @@ export default function DesignSystemPage() {
                     <code className="text-[11px] leading-relaxed text-muted-foreground">
                       {t.cls}
                     </code>
+                    {t.size && (
+                      <div className="text-[11px] tabular-nums text-muted-foreground">
+                        {t.size} px
+                      </div>
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className={t.cls}>The quick brown fox</div>
@@ -451,6 +478,14 @@ export default function DesignSystemPage() {
                 className="w-96"
                 placeholder="Write a message..."
                 rows={3}
+              />
+            </Row>
+            <Row label="rich-text-editor">
+              <RichTextEditor
+                className="h-48 w-full max-w-xl"
+                variables={["name", "email"]}
+                content="<p>Hi {{name}}, quick question about {{comapny}} — mistyped variables are flagged.</p>"
+                placeholder="Start typing your email content..."
               />
             </Row>
           </Section>

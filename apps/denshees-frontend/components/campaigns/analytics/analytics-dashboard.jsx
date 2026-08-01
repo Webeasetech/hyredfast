@@ -1,6 +1,7 @@
 "use client";
 
 import useSWR from "swr";
+import { CardsSkeleton, ChartSkeleton } from "@/components/skeletons";
 import fetcher from "@/lib/fetcher";
 import StatCard from "@/components/campaigns/analytics/stat-card";
 import EmailTimelineChart from "@/components/campaigns/analytics/email-timeline-chart";
@@ -45,10 +46,9 @@ const AnalyticsDashboard = ({ campaignId, campaign }) => {
 
   if (contactsLoading || dailyAnalysisLoading || todayAnalysisLoading) {
     return (
-      <div className="flex items-center justify-center h-[400px]">
-        <div className="border border-border p-4">
-          <p className="text-lg font-medium">Loading analytics data...</p>
-        </div>
+      <div className="space-y-4">
+        <CardsSkeleton count={5} className="lg:grid-cols-5" />
+        <ChartSkeleton />
       </div>
     );
   }
@@ -75,9 +75,13 @@ const AnalyticsDashboard = ({ campaignId, campaign }) => {
     maxPossibleEmails > 0 ? (emailsSent / maxPossibleEmails) * 100 : 0;
 
   return (
-    <div className="space-y-8">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="space-y-6">
+      {/* Stats Cards — one connected strip, cells separated by a divider
+          instead of five isolated cards with gaps between them. Stacks to a
+          column with horizontal dividers below sm; a row of 5 never wraps,
+          so the divider math (border only between DOM siblings) stays
+          correct at every width. */}
+      <div className="flex flex-col divide-y divide-border rounded-lg border border-border bg-white sm:flex-row sm:divide-x sm:divide-y-0">
         <StatCard
           title="Active Leads"
           value={
@@ -86,32 +90,32 @@ const AnalyticsDashboard = ({ campaignId, campaign }) => {
               <span className="text-muted-foreground"> / {totalContacts}</span>
             </>
           }
-          icon={<EmailIcon className="w-6 h-6" />}
+          icon={<EmailIcon className="size-4" />}
         />
         <StatCard
           title="Verified"
           value={verifiedContacts}
-          icon={<CheckCircleIcon className="w-6 h-6" />}
+          icon={<CheckCircleIcon className="size-4" />}
         />
         <StatCard
           title="Emails Sent"
           value={emailsSent}
-          icon={<AeroplaneIcon className="w-6 h-6" />}
+          icon={<AeroplaneIcon className="size-4" />}
         />
         <StatCard
           title="Emails Opened"
           value={emailsOpened}
-          icon={<EyeIcon className="w-6 h-6" />}
+          icon={<EyeIcon className="size-4" />}
         />
         <StatCard
           title="Replies"
           value={emailsReplied}
-          icon={<MessageSquareIcon className="w-6 h-6" />}
+          icon={<MessageSquareIcon className="size-4" />}
         />
       </div>
 
       {/* Email send / schedule timeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-stretch min-h-[140px]">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch min-h-[140px]">
         <div className="lg:col-span-4 h-full">
           <EmailTimelineChart
             contacts={contacts}
@@ -119,28 +123,52 @@ const AnalyticsDashboard = ({ campaignId, campaign }) => {
             dailyStatsRaw={dailyStatsRaw}
           />
         </div>
-        <div className="border border-border bg-white p-4 flex flex-col items-center justify-center rounded-lg">
-          <p className="text-sm font-medium mb-2">Campaign Progress</p>
-          <div className="w-full h-6 border border-border bg-white relative rounded-lg">
-            <div
-              className="absolute top-0 left-0 bottom-0 bg-muted transition-all duration-1000"
-              style={{ width: `${Math.min(completionPercentage, 100)}%` }}
-            ></div>
-            <p className="text-xs absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-medium">
-              {Math.round(completionPercentage)}%
-            </p>
-          </div>
+        {/* No label, no bar — the number carries the whole card. Three
+            layered gradients (a directional wash plus a light and a dark
+            pool) stand in for a single flat fill. The grain is a real paper
+            texture (public/paper.svg) multiplied over the gradient. The scan
+            itself is almost uniformly pale (RGB ~150-196, nothing darker),
+            so it's contrast-boosted first — otherwise multiply has nearly
+            nothing to darken and the texture is invisible — then masked to a
+            radial patch so it still reads as a worn corner, not a filter
+            over everything. */}
+        <div
+          className="relative flex items-center justify-center overflow-hidden rounded-lg"
+          style={{
+            backgroundImage: [
+              "radial-gradient(circle at 22% 18%, hsl(var(--primary-foreground) / 0.35), transparent 42%)",
+              "radial-gradient(circle at 82% 88%, hsl(0 0% 0% / 0.35), transparent 50%)",
+              "linear-gradient(135deg, hsl(var(--primary) / 1) 0%, hsl(var(--primary) / 0.82) 35%, hsl(var(--primary) / 0.95) 60%, hsl(var(--primary) / 0.7) 100%)",
+            ].join(", "),
+          }}
+          title="Campaign progress"
+        >
+          <div
+            className="pointer-events-none absolute inset-0 mix-blend-multiply"
+            style={{
+              backgroundImage: "url(/paper.svg)",
+              backgroundSize: "48px 48px",
+              backgroundRepeat: "repeat",
+              filter: "contrast(6) brightness(1.3)",
+              maskImage:
+                "radial-gradient(circle at 72% 78%, black 0%, black 35%, transparent 75%)",
+              WebkitMaskImage:
+                "radial-gradient(circle at 72% 78%, black 0%, black 35%, transparent 75%)",
+            }}
+          />
+          <span className="relative text-7xl font-bold tabular-nums text-primary-foreground">
+            {Math.round(completionPercentage)}%
+          </span>
         </div>
       </div>
 
       {/* Charts and Inbox */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="border border-border bg-white p-4 rounded-lg">
-          <h3 className="text-lg font-medium mb-4">Daily Activity</h3>
+        <div className="rounded-lg border border-border bg-background p-4">
+          <h3 className="mb-3 text-sm font-medium">Daily Activity</h3>
 
           {totalContacts > 0 ? (
             <DailyAnalysisChart
-              campaignId={campaignId}
               dailyData={dailyAnalysisData}
               todayData={todayAnalysisData}
             />

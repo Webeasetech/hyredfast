@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { BoardSkeleton } from "@/components/skeletons";
 import { useParams } from "next/navigation";
 import { SettingsIcon, UserPlusIcon } from "mage-icons-react/bulk";
 import { RefreshIcon } from "mage-icons-react/stroke";
@@ -313,11 +314,7 @@ export default function CampaignCRMPage() {
 
       {/* Kanban Board */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-[500px] border border-border bg-white rounded-lg">
-          <div className="border border-border p-4">
-            <p className="text-lg font-medium">Loading pipeline...</p>
-          </div>
-        </div>
+        <BoardSkeleton />
       ) : (
         <KanbanBoard
           stages={stages}

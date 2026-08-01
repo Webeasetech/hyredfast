@@ -2,11 +2,10 @@
 
 import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
-import {
-  EmailIcon,
-  AeroplaneIcon,
-  MessageSquareIcon,
-} from "mage-icons-react/bulk";
+import { EmailIcon, MessageSquareIcon } from "mage-icons-react/bulk";
+import { ArrowUpIcon } from "mage-icons-react/stroke";
+import { XIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const EmailNode = ({ data }) => {
   const {
@@ -28,16 +27,17 @@ const EmailNode = ({ data }) => {
   return (
     <div
       onClick={() => onOpen(pitch)}
-      className={`relative h-full px-4 py-3 border-2 border-border  cursor-pointer transition-all hover:translate-x-px hover:translate-y-px  ${
+      className={cn(
+        "relative h-full cursor-pointer rounded-lg border px-4 py-3 transition-colors",
         isSelected
-          ? "bg-primary text-primary-foreground"
-          : "bg-white text-black"
-      }`}
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-border bg-background text-foreground hover:border-primary/40",
+      )}
     >
       <Handle
         type="target"
         position={Position.Left}
-        className="bg-primary! border-2! border-white! w-3! h-3!"
+        className="size-2! rounded-full! border-2! border-background! bg-border!"
       />
 
       {isDeletable && (
@@ -48,38 +48,56 @@ const EmailNode = ({ data }) => {
             event.stopPropagation();
             onDelete(pitch);
           }}
-          className="absolute -top-2.5 -right-2.5 w-5 h-5 flex items-center justify-center bg-white text-black border-2 border-border text-xs font-bold leading-none hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors rounded-lg"
+          className="absolute -top-2 -right-2 flex size-5 items-center justify-center rounded-full border border-border bg-background text-muted-foreground transition-colors hover:border-destructive hover:bg-destructive hover:text-white"
         >
-          ×
+          <XIcon className="size-3" />
         </button>
       )}
 
       <div className="flex items-center gap-2">
-        <EmailIcon className="w-[18px] h-[18px] shrink-0" />
+        <EmailIcon className="size-4 shrink-0" />
         <div className="min-w-0">
-          <div className="text-sm font-bold leading-tight">{label}</div>
-          <div className="text-xs truncate max-w-[160px] opacity-80">
+          <div className="text-sm font-semibold leading-tight">{label}</div>
+          <div
+            className={cn(
+              "max-w-[160px] truncate text-xs",
+              isSelected
+                ? "text-primary-foreground/75"
+                : "text-muted-foreground",
+            )}
+          >
             {pitch.subject || "No subject"}
           </div>
         </div>
       </div>
 
       <div
-        className={`mt-2 pt-2 border-t space-y-1 ${
-          isSelected ? "border-white/25" : "border-border/15"
-        }`}
+        className={cn(
+          "mt-2 space-y-1 border-t pt-2",
+          isSelected ? "border-primary-foreground/20" : "border-border",
+        )}
       >
         <div className="flex items-center justify-between text-xs">
-          <span className="flex items-center gap-1">
-            <AeroplaneIcon className="w-3 h-3" />
+          <span
+            className={cn(
+              "flex items-center gap-1",
+              isSelected
+                ? "text-primary-foreground/75"
+                : "text-muted-foreground",
+            )}
+          >
+            <ArrowUpIcon className="size-3" />
             Contacts
           </span>
-          <span className="font-bold">
+          <span className="font-medium">
             {contactCount}
             <span
-              className={`ml-1 text-[10px] ${
-                isSelected ? "text-white/60" : "text-muted-foreground"
-              }`}
+              className={cn(
+                "ml-1 text-[10px]",
+                isSelected
+                  ? "text-primary-foreground/60"
+                  : "text-muted-foreground",
+              )}
             >
               ({contactPercentage}%)
             </span>
@@ -88,20 +106,17 @@ const EmailNode = ({ data }) => {
 
         <div className="flex items-center justify-between text-xs">
           <span
-            className={`flex items-center gap-1 ${
-              isSelected ? "text-green-400" : "text-green-700"
-            }`}
+            className={cn(
+              "flex items-center gap-1",
+              isSelected
+                ? "text-primary-foreground/75"
+                : "text-muted-foreground",
+            )}
           >
-            <MessageSquareIcon className="w-3 h-3" />
+            <MessageSquareIcon className="size-3" />
             Replies
           </span>
-          <span
-            className={`font-bold ${
-              isSelected ? "text-green-400" : "text-green-700"
-            }`}
-          >
-            {replyCount}
-          </span>
+          <span className="font-medium">{replyCount}</span>
         </div>
       </div>
 
@@ -109,7 +124,7 @@ const EmailNode = ({ data }) => {
         id="next"
         type="source"
         position={Position.Right}
-        className="bg-primary! border-2! border-white! w-3! h-3!"
+        className="size-2! rounded-full! border-2! border-background! bg-border!"
       />
 
       {isTerminal && (
@@ -117,7 +132,7 @@ const EmailNode = ({ data }) => {
           id="outcome"
           type="source"
           position={Position.Bottom}
-          className="bg-primary! border-2! border-white! w-3! h-3!"
+          className="size-2! rounded-full! border-2! border-background! bg-border!"
         />
       )}
     </div>
