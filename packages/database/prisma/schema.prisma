@@ -21,8 +21,14 @@ model User {
   name      String?
   avatar    String?
   timezone  String?
+  // Internal metering. Users buy COMPANIES, never credits — these stay because
+  // the send pipeline still debits `credits` per email.
   credits   Float?   @default(0)
   aiCredits Float?   @default(0) @map("ai_credits")
+  // The billing unit. companiesTotal is granted on payment, companiesUsed is
+  // consumed when a company is added to the workspace.
+  companiesTotal Int @default(0) @map("companies_total")
+  companiesUsed  Int @default(0) @map("companies_used")
   isSetup   Boolean  @default(false) @map("issetup")
   // Product walkthrough (react-joyride tour) — shown while false, flipped true
   // once the user completes, skips, or closes it, so it never shows again.
@@ -40,8 +46,61 @@ model User {
   leadLists          LeadList[]
   leads              Lead[]
   chatMessages       AgentChatMessage[]
+  payments           Payment[]
 
   @@map("users")
+}
+
+// ==========================================
+// Payments (Razorpay)
+// ==========================================
+
+// One row per checkout attempt, created before the user ever sees the Razorpay
+// modal. `razorpayPaymentId` is unique, which is what makes fulfilment
+// idempotent: the client callback and the webhook race, and only one wins.
+model Payment {
+  id     String @id @default(cuid())
+  userId String @map("user")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  razorpayOrderId   String  @unique @map("razorpay_order_id")
+  razorpayPaymentId String? @unique @map("razorpay_payment_id")
+
+  planId           String  @map("plan_id") // "starter" | "topup"
+  companiesGranted Int     @map("companies_granted")
+  amount           Int // paise, GST-inclusive
+  currency         String  @default("INR")
+  // CREATED | PAID | FAILED | REFUNDED
+  status           String  @default("CREATED")
+  method           String? // upi | card | netbanking
+  failureReason    String? @map("failure_reason")
+  notes            Json?
+
+  fulfilledAt DateTime? @map("fulfilled_at")
+  created     DateTime  @default(now())
+  updated     DateTime  @updatedAt
+
+  events PaymentEvent[]
+
+  @@index([userId])
+  @@map("payments")
+}
+
+// Raw webhook log. Razorpay sends `x-razorpay-event-id` and retries on
+// non-2xx, so the unique index turns a redelivery into a no-op at the door,
+// before any business logic runs.
+model PaymentEvent {
+  id        String   @id @default(cuid())
+  paymentId String?  @map("payment")
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  eventId   String @unique @map("event_id")
+  eventType String @map("event_type")
+  payload   Json
+
+  created DateTime @default(now())
+
+  @@map("payment_events")
 }
 
 // ==========================================

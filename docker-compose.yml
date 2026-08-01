@@ -60,7 +60,12 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - API_KEY=${API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DODO_PAYMENTS_API_KEY=${DODO_PAYMENTS_API_KEY}
+      # Razorpay. Test vs live is decided by the key prefix (rzp_test_/rzp_live_).
+      # The key id is returned to the browser by /api/payments/create, so there
+      # is deliberately no NEXT_PUBLIC_ variant to thread through as a build arg.
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
       - JWT_SECRET=${JWT_SECRET}
       # Server-side: used by /api/auth/google to verify Google ID tokens.
       # (NEXT_PUBLIC_GOOGLE_CLIENT_ID is baked into the bundle at build time via
@@ -70,7 +75,8 @@ services:
       - SMTP_PASS=${SMTP_PASS}
       - SUPPORT_NOTIFY_EMAILS=${SUPPORT_NOTIFY_EMAILS}
       - AGENT_URL=http://agents:8050
-      # Public base URL — used as the payment return_url
+      # Public base URL — also where the Razorpay webhook is registered
+      # ($APP_URL/api/webhooks/razorpay)
       - APP_URL=${APP_URL}
       # nginx-proxy picks these up automatically
       - VIRTUAL_HOST=${APP_DOMAIN}

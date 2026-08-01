@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import prisma from "@/lib/prisma";
+import { FREE_TRIAL_COMPANIES } from "@/lib/constants/plans";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const oauthClient = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -56,8 +57,7 @@ export async function POST(request) {
           avatar: payload.picture || null,
           password: null, // Google accounts have no password until set in Settings
           verified: true,
-          credits: 500,
-          aiCredits: 500,
+          companiesTotal: FREE_TRIAL_COMPANIES,
         },
       });
     }
