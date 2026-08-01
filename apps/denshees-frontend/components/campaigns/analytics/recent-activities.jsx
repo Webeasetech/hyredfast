@@ -98,15 +98,13 @@ function DayCard({ campaignId, day }) {
       : format(day, "EEEE");
 
   return (
-    <div className="border border-black bg-white h-full w-full flex flex-col shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+    <div className="border border-border bg-white h-full w-full flex flex-col rounded-lg">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-black bg-stone-50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted">
         <div className="flex items-center gap-2">
-          <CalendarIcon className="h-4 w-4 text-neutral-500" />
-          <span className="font-semibold text-sm text-neutral-800">
-            {label}
-          </span>
-          <span className="text-xs text-neutral-400">
+          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          <span className="font-semibold text-sm text-foreground">{label}</span>
+          <span className="text-xs text-muted-foreground">
             {format(day, "MMM d, yyyy")}
           </span>
         </div>
@@ -116,7 +114,7 @@ function DayCard({ campaignId, day }) {
       {/* Body */}
       <div className="p-4 flex-1 flex flex-col">
         {isLoading ? (
-          <div className="flex items-center justify-center py-5 text-neutral-400">
+          <div className="flex items-center justify-center py-5 text-muted-foreground">
             <ReloadIcon className="h-4 w-4 animate-spin mr-2" />
             <span className="text-xs">Loading…</span>
           </div>
@@ -125,7 +123,7 @@ function DayCard({ campaignId, day }) {
             Could not load activities
           </p>
         ) : activities.length === 0 ? (
-          <p className="text-xs text-neutral-300 text-center py-4 select-none">
+          <p className="text-xs text-muted-foreground text-center py-4 select-none">
             No activity on this day
           </p>
         ) : (
@@ -136,26 +134,26 @@ function DayCard({ campaignId, day }) {
                   {/* Left: Big bold stat numbers */}
                   <div className="flex flex-col justify-center gap-1 min-w-[90px]">
                     <div>
-                      <p className="text-6xl font-black text-neutral-900 leading-none tracking-tighter">
+                      <p className="text-6xl font-black text-foreground leading-none tracking-tighter">
                         {summary.sent}
                       </p>
-                      <p className="text-xs text-neutral-400 mt-0.5 uppercase tracking-wide">
+                      <p className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide">
                         Sent
                       </p>
                     </div>
                     <div>
-                      <p className="text-6xl font-black text-neutral-900 leading-none tracking-tighter">
+                      <p className="text-6xl font-black text-foreground leading-none tracking-tighter">
                         {summary.opened}
                       </p>
-                      <p className="text-xs text-neutral-400 mt-0.5 uppercase tracking-wide">
+                      <p className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide">
                         Opened
                       </p>
                     </div>
                     <div>
-                      <p className="text-6xl font-black text-neutral-900 leading-none tracking-tighter">
+                      <p className="text-6xl font-black text-foreground leading-none tracking-tighter">
                         {summary.replied}
                       </p>
-                      <p className="text-xs text-neutral-400 mt-0.5 uppercase tracking-wide">
+                      <p className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide">
                         Replies
                       </p>
                     </div>
@@ -166,7 +164,7 @@ function DayCard({ campaignId, day }) {
                     {/* Third layer (smallest, furthest back) */}
                     {activities.length > 2 && (
                       <div
-                        className="absolute border border-neutral-300 bg-neutral-50/80 transition-transform duration-300 delay-150 group-hover/stack:scale-95 origin-top"
+                        className="absolute border border-border bg-muted/80 transition-transform duration-300 delay-150 group-hover/stack:scale-95 origin-top rounded-lg"
                         style={{
                           top: 0,
                           bottom: 2,
@@ -179,7 +177,7 @@ function DayCard({ campaignId, day }) {
                     {/* Second layer */}
                     {activities.length > 1 && (
                       <div
-                        className="absolute border border-neutral-500 bg-stone-50 transition-transform duration-300 delay-75 group-hover/stack:scale-[0.97] origin-top"
+                        className="absolute border border-neutral-500 bg-muted transition-transform duration-300 delay-75 group-hover/stack:scale-[0.97] origin-top rounded-lg"
                         style={{
                           top: 0,
                           bottom: 18,
@@ -198,7 +196,7 @@ function DayCard({ campaignId, day }) {
                       );
                       return (
                         <div
-                          className="relative border border-black bg-white p-0 flex flex-col justify-between min-h-[200px] transition-all duration-300 group-hover/stack:shadow-md"
+                          className="relative border border-border bg-white p-0 flex flex-col justify-between min-h-[200px] transition-all duration-300 group-hover/stack:shadow-md rounded-lg"
                           style={{
                             boxShadow: "0px 2px 0px 0px rgba(0,0,0,0.06)",
                           }}
@@ -215,11 +213,11 @@ function DayCard({ campaignId, day }) {
                               ).charAt(0)}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold text-neutral-800 truncate">
+                              <p className="text-sm font-semibold text-foreground truncate">
                                 {activity.recipientName ||
                                   activity.recipientEmail}
                               </p>
-                              <span className="text-xs text-neutral-400 flex items-center gap-1">
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
                                 {format(new Date(activity.timestamp), "h:mm a")}
                               </span>
                             </div>
@@ -235,13 +233,13 @@ function DayCard({ campaignId, day }) {
                           <div className="px-4 pt-3 pb-4 flex-1">
                             {/* Subject */}
                             {activity.subject && (
-                              <p className="text-sm text-neutral-600 leading-snug line-clamp-2 italic">
+                              <p className="text-sm text-foreground leading-snug line-clamp-2 italic">
                                 &ldquo;{activity.subject}&rdquo;
                               </p>
                             )}
                             {/* Body */}
                             {activity.body && (
-                              <p className="text-xs text-neutral-400 leading-snug line-clamp-3 mt-2">
+                              <p className="text-xs text-muted-foreground leading-snug line-clamp-3 mt-2">
                                 {activity.body
                                   .replace(/<[^>]*>/g, "")
                                   .slice(0, 180)}
@@ -257,12 +255,12 @@ function DayCard({ campaignId, day }) {
                 {/* "View all" hint — pinned to bottom */}
                 <div className="mt-auto pt-3">
                   {activities.length > 1 && (
-                    <p className="text-xs text-neutral-400 text-center group-hover/stack:text-neutral-600 transition-colors">
+                    <p className="text-xs text-muted-foreground text-center group-hover/stack:text-foreground transition-colors">
                       +{activities.length - 1} more · Click to view all
                     </p>
                   )}
                   {activities.length === 1 && (
-                    <p className="text-xs text-neutral-400 text-center group-hover/stack:text-neutral-600 transition-colors">
+                    <p className="text-xs text-muted-foreground text-center group-hover/stack:text-foreground transition-colors">
                       Click to expand
                     </p>
                   )}
@@ -283,7 +281,7 @@ function DayCard({ campaignId, day }) {
 
               <div className="relative pl-6 mt-4">
                 {/* Vertical timeline line */}
-                <div className="absolute left-[9px] top-2 bottom-2 w-px bg-neutral-200" />
+                <div className="absolute left-[9px] top-2 bottom-2 w-px bg-muted" />
                 <div className="space-y-2.5">
                   {activities.map((activity, idx) => (
                     <TimelineItem
@@ -315,29 +313,29 @@ function TimelineItem({ activity }) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 border border-neutral-100 bg-white px-3 py-2.5 rounded-sm transition-colors group-hover:bg-stone-50 group-hover:border-neutral-300">
+      <div className="flex-1 border border-border bg-white px-3 py-2.5 rounded-sm transition-colors group-hover:bg-muted group-hover:border-border">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-medium text-neutral-800">
+          <span className="text-sm font-medium text-foreground">
             {activity.type}
           </span>
-          <span className="text-xs text-neutral-400 flex items-center gap-1 shrink-0">
+          <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
             <ClockIcon className="h-3 w-3" />
             {format(new Date(activity.timestamp), "h:mm a")}
           </span>
         </div>
         <div className="flex items-center gap-1.5 mt-1">
-          <UserCheckIcon className="h-3.5 w-3.5 text-neutral-300 shrink-0" />
-          <p className="text-xs text-neutral-500 truncate">
+          <UserCheckIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <p className="text-xs text-muted-foreground truncate">
             {activity.recipientName || activity.recipientEmail}
           </p>
         </div>
         {activity.subject && (
-          <p className="text-xs text-neutral-400 mt-1 truncate italic">
+          <p className="text-xs text-muted-foreground mt-1 truncate italic">
             &ldquo;{activity.subject}&rdquo;
           </p>
         )}
         {activity.body && (
-          <p className="text-xs text-neutral-400 mt-0.5 line-clamp-2">
+          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
             {activity.body.replace(/<[^>]*>/g, "").slice(0, 200)}
           </p>
         )}
@@ -414,10 +412,10 @@ function ActivityCalendar({
   };
 
   return (
-    <div className="border border-black bg-white flex-1 flex flex-col shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-black bg-stone-50">
-        <CalendarIcon className="h-4 w-4 text-neutral-500" />
-        <span className="font-semibold text-sm text-neutral-800">
+    <div className="border border-border bg-white flex-1 flex flex-col rounded-lg">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted">
+        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+        <span className="font-semibold text-sm text-foreground">
           Activity Calendar
         </span>
       </div>
@@ -429,21 +427,22 @@ function ActivityCalendar({
           modifiers={modifiers}
           modifiersStyles={modifiersStyles}
           classNames={{
-            day_selected:
-              "ring-2 ring-neutral-800 ring-offset-1 font-bold text-neutral-900 hover:bg-transparent focus:bg-transparent",
+            // react-day-picker v10 renamed this key from `day_selected`.
+            selected:
+              "ring-2 ring-neutral-800 ring-offset-1 font-bold text-foreground hover:bg-transparent focus:bg-transparent",
           }}
-          className="!p-2"
+          className="p-2!"
         />
       </div>
       {/* Selected day numbers */}
-      <div className="px-4 pb-2 flex items-center justify-center gap-4 text-xs text-neutral-500 border-t border-neutral-100 pt-2">
+      <div className="px-4 pb-2 flex items-center justify-center gap-4 text-xs text-muted-foreground border-t border-border pt-2">
         <span>{summary.sent} sent</span>
         <span>{summary.opened} opened</span>
         <span>{summary.replied} replied</span>
       </div>
       {/* Heat‑map legend */}
-      <div className="px-4 pb-3 flex items-center gap-3 text-xs text-neutral-400 pt-1">
-        <span className="text-neutral-500 font-medium">Activity:</span>
+      <div className="px-4 pb-3 flex items-center gap-3 text-xs text-muted-foreground pt-1">
+        <span className="text-muted-foreground font-medium">Activity:</span>
         <span className="flex items-center gap-1">
           <span
             className="inline-block w-3 h-3 rounded-sm"
@@ -504,14 +503,14 @@ function getActivityStyle(type) {
       };
     default:
       return {
-        icon: <EmailIcon className="h-2 w-2 text-neutral-500" />,
-        dotBg: "bg-neutral-50",
-        dotBorder: "border-neutral-300",
-        headerBg: "bg-stone-50 border-neutral-100",
+        icon: <EmailIcon className="h-2 w-2 text-muted-foreground" />,
+        dotBg: "bg-muted",
+        dotBorder: "border-border",
+        headerBg: "bg-muted border-border",
         arrowIcon: (
-          <ArrowUpRightIcon className="h-3.5 w-3.5 text-neutral-500" />
+          <ArrowUpRightIcon className="h-3.5 w-3.5 text-muted-foreground" />
         ),
-        arrowBg: "bg-neutral-100",
+        arrowBg: "bg-accent",
       };
   }
 }
@@ -521,18 +520,18 @@ function ActivitySkeleton() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2">
-        <div className="border border-neutral-200 bg-white rounded-sm">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 bg-stone-50">
-            <div className="h-4 w-32 bg-neutral-200 animate-pulse rounded" />
-            <div className="h-4 w-16 bg-neutral-200 animate-pulse rounded" />
+        <div className="border border-border bg-white rounded-sm">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted">
+            <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-16 bg-muted animate-pulse rounded" />
           </div>
           <div className="p-3 space-y-3">
             {[...Array(3)].map((_, j) => (
               <div key={j} className="flex items-start gap-3 pl-6">
-                <div className="h-4 w-4 rounded-full bg-neutral-200 animate-pulse" />
-                <div className="flex-1 border border-neutral-100 p-3 rounded-sm">
-                  <div className="h-3.5 w-24 bg-neutral-200 animate-pulse rounded mb-2" />
-                  <div className="h-3 w-36 bg-neutral-200 animate-pulse rounded" />
+                <div className="h-4 w-4 rounded-full bg-muted animate-pulse" />
+                <div className="flex-1 border border-border p-3 rounded-sm">
+                  <div className="h-3.5 w-24 bg-muted animate-pulse rounded mb-2" />
+                  <div className="h-3 w-36 bg-muted animate-pulse rounded" />
                 </div>
               </div>
             ))}
@@ -540,8 +539,8 @@ function ActivitySkeleton() {
         </div>
       </div>
       <div className="space-y-4">
-        <div className="border border-neutral-200 bg-white rounded-sm h-80 animate-pulse" />
-        <div className="border border-neutral-200 bg-white rounded-sm h-44 animate-pulse" />
+        <div className="border border-border bg-white rounded-sm h-80 animate-pulse" />
+        <div className="border border-border bg-white rounded-sm h-44 animate-pulse" />
       </div>
     </div>
   );

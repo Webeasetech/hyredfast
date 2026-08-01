@@ -5,7 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
 
-export function PersonalizationForm({ onSave, onCancel, form, setForm, lastPersonalization = {} }) {
+export function PersonalizationForm({
+  onSave,
+  onCancel,
+  form,
+  setForm,
+  lastPersonalization = {},
+}) {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave(form);
@@ -21,8 +27,10 @@ export function PersonalizationForm({ onSave, onCancel, form, setForm, lastPerso
       className="space-y-4"
     >
       <div className="flex gap-2 z-10 items-center justify-between">
-        <p className="text-sm text-gray-700 font-medium">Add Personalization</p>
-        <div className="h-[1px] flex-grow bg-black/20" />
+        <p className="text-sm text-foreground font-medium">
+          Add Personalization
+        </p>
+        <div className="h-px grow bg-primary/20" />
       </div>
       <div className="space-y-4">
         <div className="flex items-center gap-4">
@@ -35,7 +43,7 @@ export function PersonalizationForm({ onSave, onCancel, form, setForm, lastPerso
             value={form.label}
             onChange={(e) => setForm({ ...form, label: e.target.value })}
             required
-            className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            className="border-border"
           />
         </div>
         <div className="flex items-center gap-4">
@@ -48,7 +56,7 @@ export function PersonalizationForm({ onSave, onCancel, form, setForm, lastPerso
             value={form.value}
             onChange={(e) => setForm({ ...form, value: e.target.value })}
             required
-            className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            className="border-border"
           />
         </div>
         <div className="flex justify-end gap-2 pt-2">

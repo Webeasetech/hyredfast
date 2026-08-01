@@ -1,26 +1,38 @@
+"use client";
+
+import {
+  CircleCheckIcon,
+  InfoIcon,
+  Loader2Icon,
+  OctagonXIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
+import { useTheme } from "next-themes";
 import { Toaster as Sonner } from "sonner";
 
-const Toast = ({ ...props }) => {
+const Toaster = ({ ...props }) => {
+  const { theme = "system" } = useTheme();
+
   return (
     <Sonner
+      theme={theme}
       className="toaster group"
-      toastOptions={{
-        classNames: {
-          toast:
-            "group toast group-[.toaster]:bg-white group-[.toaster]:text-black group-[.toaster]:border-black group-[.toaster]:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-[.toaster]:rounded-none",
-          title: "group-[.toast]:text-black group-[.toast]:font-medium",
-          description: "group-[.toast]:text-gray-500",
-          actionButton:
-            "group-[.toast]:bg-black group-[.toast]:text-white group-[.toast]:rounded-none",
-          cancelButton:
-            "group-[.toast]:bg-white group-[.toast]:text-black group-[.toast]:border-black group-[.toast]:rounded-none",
-          closeButton:
-            "group-[.toast]:bg-gray-100 group-[.toast]:text-black group-[.toast]:rounded-none group-[.toast]:border-black",
-        },
+      icons={{
+        success: <CircleCheckIcon className="size-4" />,
+        info: <InfoIcon className="size-4" />,
+        warning: <TriangleAlertIcon className="size-4" />,
+        error: <OctagonXIcon className="size-4" />,
+        loading: <Loader2Icon className="size-4 animate-spin" />,
+      }}
+      style={{
+        "--normal-bg": "var(--popover)",
+        "--normal-text": "var(--popover-foreground)",
+        "--normal-border": "var(--border)",
+        "--border-radius": "var(--radius)",
       }}
       {...props}
     />
   );
 };
 
-export { Toast };
+export { Toaster };

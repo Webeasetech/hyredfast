@@ -5,7 +5,12 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SaveFloppyIcon, UserIcon, EyeIcon, EyeOffIcon } from "mage-icons-react/bulk";
+import {
+  SaveFloppyIcon,
+  UserIcon,
+  EyeIcon,
+  EyeOffIcon,
+} from "mage-icons-react/bulk";
 import { ReloadIcon } from "mage-icons-react/stroke";
 import { useState } from "react";
 import useSWR from "swr";
@@ -99,7 +104,7 @@ function AccountSettings() {
 
   if (isLoading) {
     return (
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <div className="flex justify-center items-center h-40">
           <ReloadIcon className="h-8 w-8 animate-spin" />
           <p className="ml-2 text-lg">Loading account information...</p>
@@ -110,7 +115,7 @@ function AccountSettings() {
 
   if (error) {
     return (
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <div className="flex flex-col justify-center items-center h-40">
           <p className="text-lg text-red-600">
             Failed to load account information
@@ -125,13 +130,13 @@ function AccountSettings() {
 
   return (
     <div id="account-settings" className="space-y-6">
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <h2 className="text-xl font-bold mb-6">Account Information</h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="flex items-center justify-center mb-8">
             <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-2 border-black">
+              <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-border">
                 {userData?.avatar ? (
                   <img
                     src={userData.avatar || "/placeholder.svg"}
@@ -139,7 +144,7 @@ function AccountSettings() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <UserIcon className="h-12 w-12 text-gray-400" />
+                  <UserIcon className="h-12 w-12 text-muted-foreground" />
                 )}
               </div>
               <Button
@@ -198,7 +203,7 @@ function AccountSettings() {
               <button
                 type="button"
                 onClick={() => setShowApiKey((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 tabIndex={-1}
               >
                 {showApiKey ? (
@@ -208,7 +213,7 @@ function AccountSettings() {
                 )}
               </button>
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-muted-foreground">
               Used to verify email addresses when adding leads. Get your key at{" "}
               <a
                 href="https://app.millionverifier.com"
@@ -244,18 +249,21 @@ function AccountSettings() {
         </form>
       </div>
 
-      <div id="account-details" className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div
+        id="account-details"
+        className="border border-border bg-white p-6 rounded-lg"
+      >
         <h2 className="text-xl font-bold mb-6">Account Details</h2>
 
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-gray-500">Email</p>
+              <p className="text-sm text-muted-foreground">Email</p>
               <p className="font-medium">{userData?.email}</p>
             </div>
 
             <div>
-              <p className="text-sm text-gray-500">Account Created</p>
+              <p className="text-sm text-muted-foreground">Account Created</p>
               <p className="font-medium">
                 {userData?.created
                   ? new Date(userData.created).toLocaleDateString()
@@ -322,11 +330,11 @@ function PasswordSettings() {
   };
 
   return (
-    <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+    <div className="border border-border bg-white p-6 rounded-lg">
       <h2 className="text-xl font-bold mb-2">
         {hasPassword ? "Change password" : "Set a password"}
       </h2>
-      <p className="text-sm text-gray-600 mb-6">
+      <p className="text-sm text-foreground mb-6">
         {hasPassword
           ? "Update the password used for email & password login."
           : "Set a password to enable email & password login in addition to Google sign-in."}
@@ -396,7 +404,11 @@ function PasswordSettings() {
         </div>
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={isMutating} className="flex items-center">
+          <Button
+            type="submit"
+            disabled={isMutating}
+            className="flex items-center"
+          >
             {isMutating ? (
               <>
                 <ReloadIcon className="h-4 w-4 mr-2 animate-spin" />

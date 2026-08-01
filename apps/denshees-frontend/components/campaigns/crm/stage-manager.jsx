@@ -70,18 +70,18 @@ function SortableStageItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-2 p-2 border border-black bg-white"
+      className="flex items-center gap-2 p-2 border border-border bg-white rounded-lg"
     >
       <button
         {...attributes}
         {...listeners}
         className="cursor-grab active:cursor-grabbing touch-none"
       >
-        <DotsSquareIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+        <DotsSquareIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
       </button>
 
       <span
-        className="w-4 h-4 rounded-full border border-black shrink-0"
+        className="w-4 h-4 rounded-full border border-border shrink-0"
         style={{ backgroundColor: stage.color || "#6B7280" }}
       />
 
@@ -90,7 +90,7 @@ function SortableStageItem({
           <Input
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
-            className="h-7 text-sm flex-1 border-black"
+            className="h-7 text-sm flex-1 border-border"
             autoFocus
           />
           <div className="flex gap-1">
@@ -98,7 +98,7 @@ function SortableStageItem({
               <button
                 key={c}
                 className={`w-4 h-4 rounded-full border ${
-                  editColor === c ? "border-black scale-125" : "border-gray-300"
+                  editColor === c ? "border-border scale-125" : "border-border"
                 }`}
                 style={{ backgroundColor: c }}
                 onClick={() => setEditColor(c)}
@@ -138,7 +138,7 @@ function SortableStageItem({
           <button
             onClick={() => toggleWon(stage)}
             className={`p-1 hover:bg-green-50 ${
-              stage.is_won ? "text-green-600" : "text-gray-300"
+              stage.is_won ? "text-green-600" : "text-muted-foreground"
             }`}
             title="Mark as Won stage"
           >
@@ -147,7 +147,7 @@ function SortableStageItem({
           <button
             onClick={() => toggleLost(stage)}
             className={`p-1 hover:bg-red-50 ${
-              stage.is_lost ? "text-red-600" : "text-gray-300"
+              stage.is_lost ? "text-red-600" : "text-muted-foreground"
             }`}
             title="Mark as Lost stage"
           >
@@ -155,13 +155,13 @@ function SortableStageItem({
           </button>
           <button
             onClick={() => startEditing(stage)}
-            className="p-1 hover:bg-gray-100 text-gray-400"
+            className="p-1 hover:bg-accent text-muted-foreground"
           >
             <PenIcon className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => onDelete(stage.id)}
-            className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-600"
+            className="p-1 hover:bg-red-50 text-muted-foreground hover:text-red-600"
           >
             <Trash2Icon className="w-3.5 h-3.5" />
           </button>
@@ -273,7 +273,7 @@ export default function StageManager({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[480px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <DialogContent className="sm:max-w-[480px] border-border">
         <DialogHeader>
           <DialogTitle>Manage Pipeline Stages</DialogTitle>
           <DialogDescription>
@@ -315,15 +315,15 @@ export default function StageManager({
         </DndContext>
 
         {/* Add new stage */}
-        <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
+        <div className="flex items-center gap-2 pt-2 border-t border-border">
           <div className="flex gap-1">
             {PRESET_COLORS.map((c) => (
               <button
                 key={c}
                 className={`w-4 h-4 rounded-full border ${
                   newStageColor === c
-                    ? "border-black scale-125"
-                    : "border-gray-300"
+                    ? "border-border scale-125"
+                    : "border-border"
                 }`}
                 style={{ backgroundColor: c }}
                 onClick={() => setNewStageColor(c)}
@@ -334,7 +334,7 @@ export default function StageManager({
             value={newStageName}
             onChange={(e) => setNewStageName(e.target.value)}
             placeholder="New stage name..."
-            className="h-8 text-sm flex-1 border-black"
+            className="h-8 text-sm flex-1 border-border"
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           />
           <Button size="sm" onClick={handleAdd} className="h-8">

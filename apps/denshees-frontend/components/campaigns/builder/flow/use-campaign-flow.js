@@ -4,7 +4,7 @@ import { NODE_SIZE, layoutSequence, positionOutcomes } from "./layout";
 
 const SEQUENCE_EDGE = {
   type: "smoothstep",
-  style: { stroke: "#000000", strokeWidth: 1.5 },
+  style: { stroke: "hsl(var(--border))", strokeWidth: 1.5 },
   markerEnd: { type: MarkerType.ArrowClosed, color: "#000000" },
 };
 
@@ -58,8 +58,18 @@ export function useCampaignFlow({ pitches, stats, handlers, selectedPitchId }) {
         );
 
         sequenceEdges.push(
-          { ...SEQUENCE_EDGE, id: `${previousId}->${delayId}`, source: previousId, target: delayId },
-          { ...SEQUENCE_EDGE, id: `${delayId}->${emailId}`, source: delayId, target: emailId },
+          {
+            ...SEQUENCE_EDGE,
+            id: `${previousId}->${delayId}`,
+            source: previousId,
+            target: delayId,
+          },
+          {
+            ...SEQUENCE_EDGE,
+            id: `${delayId}->${emailId}`,
+            source: delayId,
+            target: emailId,
+          },
         );
       } else {
         sequenceEdges.push({

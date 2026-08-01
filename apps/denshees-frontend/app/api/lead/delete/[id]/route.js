@@ -2,7 +2,8 @@ export const revalidate = 0;
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request, props) {
+  const params = await props.params;
   const lead = params.id;
 
   try {

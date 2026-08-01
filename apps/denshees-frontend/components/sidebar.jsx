@@ -52,6 +52,30 @@ const supportLinks = [
   },
 ];
 
+/**
+ * A single sidebar row. Rows sit inside a padded track so the active pill is
+ * inset from the sidebar edges rather than bleeding into the border, and it
+ * carries the same radius/weight as a button.
+ */
+function NavItem({ link, active, collapsed }) {
+  return (
+    <Link
+      href={link.href}
+      title={collapsed ? link.label : undefined}
+      className={cn(
+        "flex items-center gap-3 rounded-md py-2 text-sm font-medium whitespace-nowrap transition-colors",
+        collapsed ? "justify-center px-2" : "px-3",
+        active
+          ? "bg-primary text-primary-foreground"
+          : "text-muted-foreground hover:bg-accent hover:text-foreground",
+      )}
+    >
+      <link.icon className="size-5 shrink-0" />
+      {!collapsed && <span className="truncate">{link.label}</span>}
+    </Link>
+  );
+}
+
 export function Sidebar({ onWidthChange }) {
   const pathname = usePathname();
   const { user } = useAuthStore();
@@ -92,35 +116,20 @@ export function Sidebar({ onWidthChange }) {
   // Mobile bottom bar
   if (isMobile) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-black">
-        <nav className="flex items-center justify-between">
-          {sidebarLinks.map((link) => (
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background">
+        <nav className="flex items-center justify-between gap-1 px-2 py-2">
+          {[...sidebarLinks, ...supportLinks.slice(0, 1)].map((link) => (
             <Link
-              key={link.href}
+              key={link.href + link.label}
               href={link.href}
               className={cn(
-                "flex flex-col items-center justify-center py-4 px-3 text-xs transition-colors  min-w-[60px]",
+                "flex min-w-[60px] flex-1 flex-col items-center justify-center gap-1 rounded-md px-3 py-2 text-xs font-medium transition-colors",
                 isActive(link.href)
-                  ? "bg-black text-white"
-                  : "text-gray-600 hover:bg-gray-100",
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
               )}
             >
-              <link.icon className="w-5 h-5 mb-1" />
-              <span>{link.label}</span>
-            </Link>
-          ))}
-          {supportLinks.slice(0, 1).map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "flex flex-col items-center justify-center py-2 px-3 text-xs transition-colors rounded-lg min-w-[60px]",
-                isActive(link.href)
-                  ? "bg-black text-white"
-                  : "text-gray-600 hover:bg-gray-100",
-              )}
-            >
-              <link.icon className="w-5 h-5 mb-1" />
+              <link.icon className="size-5" />
               <span>{link.label}</span>
             </Link>
           ))}
@@ -133,14 +142,14 @@ export function Sidebar({ onWidthChange }) {
   return (
     <div
       className={cn(
-        "absolute left-0 top-0 h-full flex-col border-r border-black bg-white transition-all duration-300 overflow-hidden hidden md:flex",
+        "absolute left-0 top-0 hidden h-full flex-col overflow-hidden border-r border-border bg-background transition-all duration-300 md:flex",
         collapsed ? "w-[70px]" : "w-[240px]",
       )}
     >
-      <div className="flex flex-col flex-1 py-4 overflow-y-auto overflow-x-hidden">
-        <div className="flex items-center justify-between mb-4 px-4">
+      <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden py-4">
+        <div className="mb-4 flex items-center justify-between px-3">
           {!collapsed && (
-            <h2 className="text-sm font-bold truncate">
+            <h2 className="truncate text-sm font-semibold">
               Welcome, {user?.name?.split(" ")[0] || "User"}
             </h2>
           )}
@@ -158,49 +167,26 @@ export function Sidebar({ onWidthChange }) {
           </Button>
         </div>
 
-        <nav>
+        <nav className="flex flex-col gap-1 px-2">
           {sidebarLinks.map((link) => (
-            <Link
+            <NavItem
               key={link.href}
-              href={link.href}
-              className={cn(
-                "flex items-center py-3 px-4 text-sm group transition-colors whitespace-nowrap",
-                isActive(link.href)
-                  ? "bg-black text-white"
-                  : "hover:bg-gray-100",
-              )}
-            >
-              <link.icon
-                className={cn("w-5 h-5 shrink-0", collapsed ? "mr-0" : "mr-3")}
-              />
-              {!collapsed && <span>{link.label}</span>}
-            </Link>
+              link={link}
+              active={isActive(link.href)}
+              collapsed={collapsed}
+            />
           ))}
         </nav>
 
-        <div className="mt-auto pt-4 border-t border-gray-200">
-          <div>
-            {supportLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "flex items-center py-3 px-4 text-sm group transition-colors whitespace-nowrap",
-                  isActive(link.href)
-                    ? "bg-black text-white"
-                    : "hover:bg-gray-100",
-                )}
-              >
-                <link.icon
-                  className={cn(
-                    "w-5 h-5 shrink-0",
-                    collapsed ? "mr-0" : "mr-3",
-                  )}
-                />
-                {!collapsed && <span>{link.label}</span>}
-              </Link>
-            ))}
-          </div>
+        <div className="mt-auto flex flex-col gap-1 border-t border-border px-2 pt-4">
+          {supportLinks.map((link) => (
+            <NavItem
+              key={link.label}
+              link={link}
+              active={isActive(link.href)}
+              collapsed={collapsed}
+            />
+          ))}
         </div>
       </div>
     </div>

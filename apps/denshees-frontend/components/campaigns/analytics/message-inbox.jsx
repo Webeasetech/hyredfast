@@ -49,18 +49,18 @@ function CollapsibleThread({ text }) {
 
   if (!quoted) {
     return (
-      <div className="text-sm leading-relaxed whitespace-pre-wrap text-gray-800">
+      <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
         {body}
       </div>
     );
   }
 
   return (
-    <div className="text-sm leading-relaxed text-gray-800">
+    <div className="text-sm leading-relaxed text-foreground">
       <div className="whitespace-pre-wrap">{body}</div>
       <button
         onClick={() => setExpanded((p) => !p)}
-        className="my-2 inline-flex items-center gap-1 px-2 py-0.5 text-xs text-gray-500 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors"
+        className="my-2 inline-flex items-center gap-1 px-2 py-0.5 text-xs text-muted-foreground bg-accent border border-border rounded hover:bg-muted transition-colors"
       >
         <DotsHorizontalSquareIcon className="w-3.5 h-3.5" />
       </button>
@@ -73,7 +73,7 @@ function CollapsibleThread({ text }) {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="whitespace-pre-wrap text-gray-500 border-l-2 border-gray-200 pl-3 mt-1">
+            <div className="whitespace-pre-wrap text-muted-foreground border-l-2 border-border pl-3 mt-1">
               {quoted}
             </div>
           </motion.div>
@@ -145,7 +145,7 @@ const MessageInbox = ({ campaignId }) => {
 
   if (error) {
     return (
-      <div className="border border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] h-[300px] flex items-center justify-center">
+      <div className="border border-border bg-white p-4 h-[300px] flex items-center justify-center rounded-lg">
         <p className="text-red-600 text-sm">Error loading messages</p>
       </div>
     );
@@ -153,8 +153,8 @@ const MessageInbox = ({ campaignId }) => {
 
   if (isLoading) {
     return (
-      <div className="border border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] h-[400px] flex items-center justify-center">
-        <ReloadIcon className="h-5 w-5 animate-spin text-gray-400" />
+      <div className="border border-border bg-white h-[400px] flex items-center justify-center rounded-lg">
+        <ReloadIcon className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -171,38 +171,38 @@ const MessageInbox = ({ campaignId }) => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-40"
+              className="fixed inset-0 bg-primary/20 backdrop-blur-[2px] z-40"
               onClick={handleBack}
             />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
               <motion.div
                 key="expanded"
                 layoutId={`message-card-${selectedId}`}
-                className="bg-white border border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] w-full max-w-2xl max-h-[80vh] flex flex-col pointer-events-auto"
+                className="bg-white border border-border w-full max-w-2xl max-h-[80vh] flex flex-col pointer-events-auto rounded-lg"
                 onClick={(e) => e.stopPropagation()}
                 transition={{ type: "spring", stiffness: 350, damping: 30 }}
               >
                 {/* Expanded header */}
-                <div className="flex items-center justify-between border-b border-black px-4 py-3 bg-gray-50">
+                <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-muted">
                   <button
                     onClick={handleBack}
-                    className="flex items-center gap-2 text-sm font-medium hover:bg-gray-200 px-2 py-1 rounded transition-colors"
+                    className="flex items-center gap-2 text-sm font-medium hover:bg-muted px-2 py-1 rounded transition-colors"
                   >
                     <ArrowLeftIcon className="w-4 h-4" />
                     Back to inbox
                   </button>
                   <button
                     onClick={handleBack}
-                    className="hover:bg-gray-200 p-1 rounded transition-colors"
+                    className="hover:bg-muted p-1 rounded transition-colors"
                   >
                     <CancelIcon className="w-4 h-4" />
                   </button>
                 </div>
 
                 {/* Sender info */}
-                <div className="px-4 py-3 border-b border-gray-200">
+                <div className="px-4 py-3 border-b border-border">
                   <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-full bg-black text-white flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">
+                    <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">
                       {(
                         selectedMessage.expand?.campaign_email?.name?.[0] || "?"
                       ).toUpperCase()}
@@ -213,13 +213,13 @@ const MessageInbox = ({ campaignId }) => {
                           {selectedMessage.expand?.campaign_email?.name ||
                             "Unknown Contact"}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-muted-foreground">
                           {DateTime.fromJSDate(
                             new Date(selectedMessage.created),
                           ).toRelative()}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {selectedMessage.expand?.campaign_email?.email ||
                           "No email"}
                       </p>
@@ -235,8 +235,8 @@ const MessageInbox = ({ campaignId }) => {
                 </div>
 
                 {/* Reply area */}
-                <div className="border-t border-black bg-gray-50 p-4">
-                  <div className="border border-gray-300 rounded bg-white focus-within:border-black focus-within:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all">
+                <div className="border-t border-border bg-muted p-4">
+                  <div className="border border-border rounded bg-white focus-within:border-border focus-within: transition-all">
                     <textarea
                       ref={textareaRef}
                       value={replyText}
@@ -244,10 +244,10 @@ const MessageInbox = ({ campaignId }) => {
                       onKeyDown={handleKeyDown}
                       placeholder={`Reply to ${selectedMessage.expand?.campaign_email?.name || "contact"}...`}
                       rows={3}
-                      className="w-full resize-none text-sm p-3 outline-none bg-transparent placeholder:text-gray-400"
+                      className="w-full resize-none text-sm p-3 outline-hidden bg-transparent placeholder:text-muted-foreground"
                     />
                     <div className="flex items-center justify-between px-3 pb-2">
-                      <p className="text-[11px] text-gray-400">
+                      <p className="text-[11px] text-muted-foreground">
                         {typeof navigator !== "undefined" &&
                         navigator?.platform?.includes("Mac")
                           ? "⌘"
@@ -258,10 +258,10 @@ const MessageInbox = ({ campaignId }) => {
                         onClick={handleReply}
                         disabled={!replyText.trim() || sending}
                         className={cn(
-                          "inline-flex items-center gap-2 px-4 py-1.5 text-sm font-medium border border-black transition-all",
+                          "inline-flex items-center gap-2 px-4 py-1.5 text-sm font-medium border border-border transition-all",
                           replyText.trim() && !sending
-                            ? "bg-black text-white shadow-[3px_3px_0px_0px_rgba(128,128,128,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(128,128,128,1)]"
-                            : "bg-gray-100 text-gray-400 cursor-not-allowed",
+                            ? "bg-primary text-primary-foreground  hover:translate-x-px hover:translate-y-px "
+                            : "bg-accent text-muted-foreground cursor-not-allowed",
                         )}
                       >
                         {sending ? (
@@ -281,19 +281,19 @@ const MessageInbox = ({ campaignId }) => {
       </AnimatePresence>
 
       {/* Inbox list */}
-      <div className="border border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] h-[400px] overflow-hidden flex flex-col">
+      <div className="border border-border bg-white h-[400px] overflow-hidden flex flex-col rounded-lg">
         {/* Inbox header */}
-        <div className="flex items-center justify-between border-b border-black bg-gray-50 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-border bg-muted px-4 py-3">
           <div className="flex items-center gap-2">
-            <EmailIcon className="w-4 h-4 text-gray-600" />
+            <EmailIcon className="w-4 h-4 text-foreground" />
             <h3 className="font-semibold text-sm">Inbox</h3>
             {messages.length > 0 && (
-              <span className="text-[11px] bg-black text-white px-1.5 py-0.5 font-mono font-bold">
+              <span className="text-[11px] bg-primary text-primary-foreground px-1.5 py-0.5 font-mono font-bold">
                 {messages.length}
               </span>
             )}
           </div>
-          <span className="text-[11px] text-gray-400 uppercase tracking-wider font-medium">
+          <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">
             Recent Replies
           </span>
         </div>
@@ -301,7 +301,7 @@ const MessageInbox = ({ campaignId }) => {
         {/* Message list */}
         <ScrollArea className="flex-1">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
+            <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
               <EmailOpenedIcon className="w-8 h-8 mb-2" />
               <p className="text-sm">No replies yet</p>
               <p className="text-xs mt-1">Replies will appear here</p>
@@ -314,14 +314,14 @@ const MessageInbox = ({ campaignId }) => {
                   layoutId={`message-card-${message.id}`}
                   onClick={() => handleSelect(message)}
                   className={cn(
-                    "flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-gray-100 group",
-                    "hover:bg-gray-50 hover:shadow-[inset_3px_0_0_0_black]",
+                    "flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-border group",
+                    "hover:bg-muted hover:shadow-[inset_3px_0_0_0_black]",
                     selectedId === message.id && "opacity-0",
                   )}
                   transition={{ type: "spring", stiffness: 350, damping: 30 }}
                 >
                   {/* Avatar */}
-                  <div className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                  <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
                     {(
                       message.expand?.campaign_email?.name?.[0] || "?"
                     ).toUpperCase()}
@@ -334,13 +334,13 @@ const MessageInbox = ({ campaignId }) => {
                         {message.expand?.campaign_email?.name ||
                           "Unknown Contact"}
                       </span>
-                      <span className="text-[11px] text-gray-400 whitespace-nowrap ml-auto shrink-0">
+                      <span className="text-[11px] text-muted-foreground whitespace-nowrap ml-auto shrink-0">
                         {DateTime.fromJSDate(
                           new Date(message.created),
                         ).toRelative()}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 truncate mt-0.5">
+                    <p className="text-sm text-foreground truncate mt-0.5">
                       {message.text?.slice(0, 60)}
                       {message.text?.length > 60 ? "..." : ""}
                     </p>
@@ -357,7 +357,7 @@ const MessageInbox = ({ campaignId }) => {
                         "transition-colors",
                         starredIds.has(message.id)
                           ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300 hover:text-gray-500",
+                          : "text-muted-foreground hover:text-muted-foreground",
                       )}
                     />
                   </button>

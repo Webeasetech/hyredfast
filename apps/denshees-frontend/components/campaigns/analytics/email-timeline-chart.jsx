@@ -49,10 +49,7 @@ function calculateFutureEmails(contacts, campaign) {
   const creds = campaign?.campaignEmailCredentials || [];
   const totalDailyCapacity =
     creds.length > 0
-      ? creds.reduce(
-          (sum, c) => sum + (c.emailCredential?.dailyLimit || 20),
-          0,
-        )
+      ? creds.reduce((sum, c) => sum + (c.emailCredential?.dailyLimit || 20), 0)
       : null;
 
   (contacts || []).forEach((contact) => {
@@ -108,7 +105,11 @@ function calculateFutureEmails(contacts, campaign) {
         futureCounts[nextStr] = (futureCounts[nextStr] || 0) + overflow;
         if (!sortedDates.includes(nextStr)) {
           const insertAt = sortedDates.findIndex((d) => d > nextStr);
-          sortedDates.splice(insertAt === -1 ? sortedDates.length : insertAt, 0, nextStr);
+          sortedDates.splice(
+            insertAt === -1 ? sortedDates.length : insertAt,
+            0,
+            nextStr,
+          );
         }
       }
     }
@@ -123,7 +124,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   const replies = payload.find((p) => p.dataKey === "replies")?.value || 0;
   if (emails === 0 && replies === 0) return null;
   return (
-    <div className="bg-white border border-black text-[10px] font-mono px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+    <div className="bg-white border border-border text-[10px] font-mono px-2 py-1 rounded-lg">
       <div className="font-bold mb-0.5">{label}</div>
       {emails > 0 && <div>{emails} emails</div>}
       {replies > 0 && <div className="text-green-600">{replies} replies</div>}
@@ -173,7 +174,7 @@ const EmailTimelineChart = ({ contacts, campaign, dailyStatsRaw }) => {
   }, [contacts, campaign, dailyStatsRaw]);
 
   return (
-    <div className="border border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] h-full">
+    <div className="border border-border bg-white h-full rounded-lg">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}

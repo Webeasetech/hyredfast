@@ -27,7 +27,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="border-b border-black bg-white">
+    <header className="border-b border-border bg-white">
       <div className="flex h-12 md:h-16 items-center justify-between px-3 md:px-6">
         <Link href="/" className="hidden md:flex items-center">
           <Image
@@ -44,8 +44,8 @@ export function Navbar() {
 
           <div className="relative">
             <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center space-x-2 focus:outline-none">
-                <div className="w-8 h-8 border border-black flex items-center justify-center bg-gray-100">
+              <DropdownMenuTrigger className="flex items-center space-x-2 focus:outline-hidden">
+                <div className="w-8 h-8 border border-border flex items-center justify-center bg-accent rounded-lg">
                   {user?.avatar ? (
                     <Image
                       src={user.avatar || "/placeholder.svg"}
@@ -62,9 +62,9 @@ export function Navbar() {
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <div className="p-2 border-b border-gray-200">
+                <div className="p-2 border-b border-border">
                   <p className="font-medium">{user?.name || "User"}</p>
-                  <p className="text-sm text-gray-600 truncate">
+                  <p className="text-sm text-foreground truncate">
                     {user?.email || ""}
                   </p>
                 </div>

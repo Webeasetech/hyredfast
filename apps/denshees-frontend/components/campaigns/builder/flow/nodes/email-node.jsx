@@ -28,14 +28,16 @@ const EmailNode = ({ data }) => {
   return (
     <div
       onClick={() => onOpen(pitch)}
-      className={`relative h-full px-4 py-3 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] cursor-pointer transition-all hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] ${
-        isSelected ? "bg-black text-white" : "bg-white text-black"
+      className={`relative h-full px-4 py-3 border-2 border-border  cursor-pointer transition-all hover:translate-x-px hover:translate-y-px  ${
+        isSelected
+          ? "bg-primary text-primary-foreground"
+          : "bg-white text-black"
       }`}
     >
       <Handle
         type="target"
         position={Position.Left}
-        className="!bg-black !border-2 !border-white !w-3 !h-3"
+        className="bg-primary! border-2! border-white! w-3! h-3!"
       />
 
       {isDeletable && (
@@ -46,7 +48,7 @@ const EmailNode = ({ data }) => {
             event.stopPropagation();
             onDelete(pitch);
           }}
-          className="absolute -top-2.5 -right-2.5 w-5 h-5 flex items-center justify-center bg-white text-black border-2 border-black text-xs font-bold leading-none hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors"
+          className="absolute -top-2.5 -right-2.5 w-5 h-5 flex items-center justify-center bg-white text-black border-2 border-border text-xs font-bold leading-none hover:bg-red-600 hover:text-white hover:border-red-600 transition-colors rounded-lg"
         >
           ×
         </button>
@@ -64,7 +66,7 @@ const EmailNode = ({ data }) => {
 
       <div
         className={`mt-2 pt-2 border-t space-y-1 ${
-          isSelected ? "border-white/25" : "border-black/15"
+          isSelected ? "border-white/25" : "border-border/15"
         }`}
       >
         <div className="flex items-center justify-between text-xs">
@@ -76,7 +78,7 @@ const EmailNode = ({ data }) => {
             {contactCount}
             <span
               className={`ml-1 text-[10px] ${
-                isSelected ? "text-white/60" : "text-gray-500"
+                isSelected ? "text-white/60" : "text-muted-foreground"
               }`}
             >
               ({contactPercentage}%)
@@ -107,7 +109,7 @@ const EmailNode = ({ data }) => {
         id="next"
         type="source"
         position={Position.Right}
-        className="!bg-black !border-2 !border-white !w-3 !h-3"
+        className="bg-primary! border-2! border-white! w-3! h-3!"
       />
 
       {isTerminal && (
@@ -115,7 +117,7 @@ const EmailNode = ({ data }) => {
           id="outcome"
           type="source"
           position={Position.Bottom}
-          className="!bg-black !border-2 !border-white !w-3 !h-3"
+          className="bg-primary! border-2! border-white! w-3! h-3!"
         />
       )}
     </div>

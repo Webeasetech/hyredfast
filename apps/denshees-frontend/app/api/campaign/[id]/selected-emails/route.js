@@ -3,7 +3,8 @@ import prisma from "@/lib/prisma";
 
 export const revalidate = 0;
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   const { id } = params;
 
   try {

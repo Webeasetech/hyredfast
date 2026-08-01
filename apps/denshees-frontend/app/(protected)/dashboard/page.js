@@ -37,7 +37,7 @@ export default function Dashboard() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-gray-600 mt-1">
+        <p className="text-foreground mt-1">
           Welcome back, {user?.name || "User"}
         </p>
       </div>
@@ -76,17 +76,17 @@ export default function Dashboard() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div className="border border-border bg-white p-6 rounded-lg">
           <h2 className="text-md font-bold mb-4">Recent Campaigns</h2>
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between border-b border-gray-200 pb-4"
+                  className="flex items-center justify-between border-b border-border pb-4"
                 >
-                  <div className="h-6 w-32 bg-gray-200 animate-pulse rounded"></div>
-                  <div className="h-6 w-16 bg-gray-200 animate-pulse rounded"></div>
+                  <div className="h-6 w-32 bg-muted animate-pulse rounded"></div>
+                  <div className="h-6 w-16 bg-muted animate-pulse rounded"></div>
                 </div>
               ))}
             </div>
@@ -95,41 +95,41 @@ export default function Dashboard() {
               {recentCampaigns.map((campaign) => (
                 <div
                   key={campaign.id}
-                  className="flex items-center justify-between border-b border-gray-200 pb-4"
+                  className="flex items-center justify-between border-b border-border pb-4"
                 >
                   <div>
                     <h3 className="font-medium">{campaign.title}</h3>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-foreground">
                       {campaign.emailsSent} emails sent
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="font-medium">{campaign.openRate}%</p>
-                    <p className="text-sm text-gray-600">Open rate</p>
+                    <p className="text-sm text-foreground">Open rate</p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">
+            <p className="text-muted-foreground">
               No campaigns yet. Create your first campaign!
             </p>
           )}
         </div>
 
-        <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div className="border border-border bg-white p-6 rounded-lg">
           <h2 className="text-md font-bold mb-4">Recent Activity</h2>
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
-                  className="flex items-start space-x-3 border-b border-gray-200 pb-4"
+                  className="flex items-start space-x-3 border-b border-border pb-4"
                 >
-                  <div className="w-8 h-8 bg-gray-200 animate-pulse rounded"></div>
+                  <div className="w-8 h-8 bg-muted animate-pulse rounded"></div>
                   <div className="flex-1">
-                    <div className="h-5 w-32 bg-gray-200 animate-pulse rounded mb-2"></div>
-                    <div className="h-4 w-24 bg-gray-200 animate-pulse rounded"></div>
+                    <div className="h-5 w-32 bg-muted animate-pulse rounded mb-2"></div>
+                    <div className="h-4 w-24 bg-muted animate-pulse rounded"></div>
                   </div>
                 </div>
               ))}
@@ -141,7 +141,7 @@ export default function Dashboard() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No recent activity.</p>
+            <p className="text-muted-foreground">No recent activity.</p>
           )}
         </div>
       </div>
@@ -169,20 +169,20 @@ function ActivityItem({ activity }) {
   };
 
   return (
-    <div className="flex items-start space-x-3 border-b border-gray-200 pb-4">
-      <div className="w-8 h-8 bg-gray-100 border border-black flex items-center justify-center">
+    <div className="flex items-start space-x-3 border-b border-border pb-4">
+      <div className="w-8 h-8 bg-accent border border-border flex items-center justify-center rounded-lg">
         {getActivityIcon(activity.type)}
       </div>
       <div className="flex-1">
         <div className="flex items-center justify-between">
           <p className="font-medium">{activity.type}</p>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {formatTimestamp(activity.timestamp)}
           </span>
         </div>
 
         {activity.recipientName || activity.recipientEmail ? (
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-foreground">
             {activity.recipientName && activity.recipientEmail
               ? `${activity.recipientName} (${activity.recipientEmail})`
               : activity.recipientName || activity.recipientEmail}
@@ -190,7 +190,7 @@ function ActivityItem({ activity }) {
         ) : null}
 
         {activity.campaignTitle && (
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Campaign: {activity.campaignTitle}
           </p>
         )}
@@ -201,14 +201,14 @@ function ActivityItem({ activity }) {
 
 function StatCard({ title, value, icon: Icon, href }) {
   return (
-    <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+    <div className="border border-border bg-white p-6 rounded-lg">
       <div className="flex items-center justify-between">
-        <div className="w-10 h-10 bg-gray-100 border border-black flex items-center justify-center">
+        <div className="w-10 h-10 bg-accent border border-border flex items-center justify-center rounded-lg">
           <Icon className="w-5 h-5" />
         </div>
       </div>
       <div className="mt-4">
-        <h3 className="text-sm font-medium text-gray-600">{title}</h3>
+        <h3 className="text-sm font-medium text-foreground">{title}</h3>
         <p className="text-2xl font-bold mt-1">
           {typeof value === "number" ? value.toLocaleString() : value}
         </p>

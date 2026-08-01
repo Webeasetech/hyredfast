@@ -53,7 +53,7 @@ const UpdateTemplate = ({ message, stage, campaign, subject }) => {
       <AnimatePresence>
         {loading && (
           <motion.div
-            className="absolute top-0 bottom-0 right-0 left-0 z-10 bg-white/90 flex flex-col items-center justify-center border border-black"
+            className="absolute top-0 bottom-0 right-0 left-0 z-10 bg-white/90 flex flex-col items-center justify-center border border-border rounded-lg"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -67,13 +67,13 @@ const UpdateTemplate = ({ message, stage, campaign, subject }) => {
               transition={{ duration: 0.3 }}
               className="flex flex-col items-center"
             >
-              <div className="border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white">
+              <div className="border-2 border-border p-6 bg-white rounded-lg">
                 <p className="text-lg font-medium mb-2">Enhancing your email</p>
                 <div className="flex justify-center">
                   <div className="animate-pulse flex space-x-1">
-                    <div className="h-2 w-2 bg-black rounded-full"></div>
-                    <div className="h-2 w-2 bg-black rounded-full"></div>
-                    <div className="h-2 w-2 bg-black rounded-full"></div>
+                    <div className="h-2 w-2 bg-primary rounded-full"></div>
+                    <div className="h-2 w-2 bg-primary rounded-full"></div>
+                    <div className="h-2 w-2 bg-primary rounded-full"></div>
                   </div>
                 </div>
               </div>
@@ -96,7 +96,7 @@ const UpdateTemplate = ({ message, stage, campaign, subject }) => {
           value={subjectValue}
           onChange={(event) => updateSubjectValue(event.target.value)}
           placeholder="Subject"
-          className="w-full border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+          className="w-full border-border"
           onBlur={handleSaveTemplate}
         />
       </div>
@@ -105,7 +105,7 @@ const UpdateTemplate = ({ message, stage, campaign, subject }) => {
         <label htmlFor="email-body" className="block text-sm font-medium mb-1">
           Email Body
         </label>
-        <div className="border border-black h-[400px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+        <div className="border border-border h-[400px]">
           <TemplateEditor
             value={text}
             onSave={(value) => {
@@ -119,24 +119,24 @@ const UpdateTemplate = ({ message, stage, campaign, subject }) => {
         <AIButton text={text} updateText={updateText} setLoading={setLoading} />
       </div>
 
-      <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2 border-t border-gray-200 pt-4">
-        <div className="flex items-start gap-2 text-xs text-gray-700">
-          <InformationCircleIcon className="w-4 h-4 flex-shrink-0 mt-0.5" />
+      <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2 border-t border-border pt-4">
+        <div className="flex items-start gap-2 text-xs text-foreground">
+          <InformationCircleIcon className="w-4 h-4 shrink-0 mt-0.5" />
           <div>
             <p>
               Available variables:{" "}
-              <code className="bg-gray-100 px-1 py-0.5 border border-gray-300">
+              <code className="bg-accent px-1 py-0.5 border border-border rounded-lg">
                 {"{{name}}"}
               </code>{" "}
               and{" "}
-              <code className="bg-gray-100 px-1 py-0.5 border border-gray-300">
+              <code className="bg-accent px-1 py-0.5 border border-border rounded-lg">
                 {"{{email}}"}
               </code>
             </p>
             <p>We are working on adding more variables soon!</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-700">
+        <div className="flex items-center gap-2 text-xs text-foreground">
           <SaveFloppyIcon className="w-4 h-4" />
           <span>Templates are autosaved</span>
         </div>

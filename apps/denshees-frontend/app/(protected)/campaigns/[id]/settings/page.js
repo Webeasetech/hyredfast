@@ -20,7 +20,7 @@ export default function CampaignSettingsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[300px]">
-        <div className="border border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div className="border border-border p-4">
           <p className="text-lg font-medium">Loading campaign settings...</p>
         </div>
       </div>
@@ -29,7 +29,7 @@ export default function CampaignSettingsPage() {
 
   if (error) {
     return (
-      <div className="border border-red-300 bg-red-50 p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-red-300 bg-red-50 p-4">
         <p className="text-red-800">Failed to load campaign settings</p>
       </div>
     );
@@ -39,7 +39,7 @@ export default function CampaignSettingsPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold mb-2">Campaign Settings</h1>
-        <p className="text-gray-600">
+        <p className="text-foreground">
           Configure your campaign settings and preferences.
         </p>
       </div>

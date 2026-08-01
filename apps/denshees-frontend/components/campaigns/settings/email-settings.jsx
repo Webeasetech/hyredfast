@@ -127,7 +127,7 @@ const EmailSettings = ({ campaignId }) => {
 
   if (emailsLoading || selectedEmailsLoading) {
     return (
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <div className="flex justify-center items-center h-40">
           <p className="text-lg">Loading email accounts...</p>
         </div>
@@ -139,22 +139,22 @@ const EmailSettings = ({ campaignId }) => {
   const isSaveDisabled = selectedEmails.length === 0 || loading;
 
   return (
-    <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+    <div className="border border-border bg-white p-6 rounded-lg">
       <h2 className="text-xl font-bold mb-6">Email Accounts</h2>
 
       <div className="mb-6">
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-foreground mb-4">
           Select the email accounts you want to use for this campaign. Emails
           will be sent from these accounts in rotation.
         </p>
 
         {emails.length === 0 ? (
-          <div className="border border-dashed border-gray-300 rounded-none p-6 text-center">
-            <EmailIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
+          <div className="border border-dashed border-border rounded-lg p-6 text-center">
+            <EmailIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-2 text-sm font-medium text-foreground">
               No email accounts
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Add an email account to use in your campaigns
             </p>
             <div className="mt-6">
@@ -171,8 +171,8 @@ const EmailSettings = ({ campaignId }) => {
                 key={email.id}
                 className={`border p-4 ${
                   selectedEmails.includes(email.id)
-                    ? "border-black bg-gray-50 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                    : "border-gray-200"
+                    ? "border-border bg-muted "
+                    : "border-border"
                 } cursor-pointer transition-all`}
                 onClick={() => handleEmailToggle(email.id)}
               >
@@ -183,11 +183,11 @@ const EmailSettings = ({ campaignId }) => {
                       type="checkbox"
                       checked={selectedEmails.includes(email.id)}
                       onChange={() => {}}
-                      className="h-4 w-4 border-gray-300 rounded"
+ className="h-4 w-4 border-border rounded"
                     /> */}
                     <div>
                       <p className="font-medium">{email.username}</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         Daily limit: {email.dailyLimit} emails
                       </p>
                     </div>

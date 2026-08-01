@@ -102,7 +102,7 @@ const CampaignSettingsForm = ({ campaign, campaignData }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <h2 className="text-xl font-bold mb-6">Campaign Details</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -115,7 +115,7 @@ const CampaignSettingsForm = ({ campaign, campaignData }) => {
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              className="border-border"
             />
           </div>
 
@@ -128,7 +128,7 @@ const CampaignSettingsForm = ({ campaign, campaignData }) => {
               id="desc"
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
-              className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              className="border-border"
             />
           </div>
         </div>
@@ -147,10 +147,10 @@ const CampaignSettingsForm = ({ campaign, campaignData }) => {
                   value={time}
                   onValueChange={(value) => setTime(value)}
                 >
-                  <SelectTrigger className="w-full border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  <SelectTrigger className="w-full border-border">
                     <SelectValue placeholder="When should the emails be sent?" />
                   </SelectTrigger>
-                  <SelectContent className="border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                  <SelectContent className="border-border">
                     <SelectGroup>
                       <SelectLabel>Select time of the day...</SelectLabel>
                       <SelectItem value="MORNING">6 AM - 12 PM</SelectItem>
@@ -164,9 +164,9 @@ const CampaignSettingsForm = ({ campaign, campaignData }) => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <InformationCircleIcon className="w-4 h-4 ml-2 text-gray-500 cursor-help" />
+                      <InformationCircleIcon className="w-4 h-4 ml-2 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
-                    <TooltipContent className="bg-white border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <TooltipContent className="bg-white border border-border rounded-lg">
                       <p className="text-sm">
                         This is according to your local timezone!
                       </p>
@@ -190,12 +190,12 @@ const CampaignSettingsForm = ({ campaign, campaignData }) => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <p className="text-xs text-gray-500 cursor-help">
+                      <p className="text-xs text-muted-foreground cursor-help">
                         Warning: This can hurt the deliverability of your email
                         account
                       </p>
                     </TooltipTrigger>
-                    <TooltipContent className="bg-white border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <TooltipContent className="bg-white border border-border rounded-lg">
                       <p className="text-sm">
                         Will ignore verification status and send emails to all
                         contacts.
@@ -211,7 +211,7 @@ const CampaignSettingsForm = ({ campaign, campaignData }) => {
           </div>
 
           {/* Email Tracking Option */}
-          <div className="flex items-start space-x-2 pt-2 border-t border-gray-200">
+          <div className="flex items-start space-x-2 pt-2 border-t border-border">
             <div>
               <Checkbox
                 id="email-tracking"
@@ -227,11 +227,11 @@ const CampaignSettingsForm = ({ campaign, campaignData }) => {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <p className="text-xs text-gray-500 cursor-help">
+                    <p className="text-xs text-muted-foreground cursor-help">
                       Track when recipients open your emails
                     </p>
                   </TooltipTrigger>
-                  <TooltipContent className="bg-white border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  <TooltipContent className="bg-white border border-border rounded-lg">
                     <p className="text-sm">
                       Adds a tracking pixel to your emails to monitor when they
                       are opened.
@@ -247,12 +247,12 @@ const CampaignSettingsForm = ({ campaign, campaignData }) => {
         </div>
 
         {/* Campaign Schedule Section */}
-        <h3 className="text-lg font-semibold mb-4 mt-8 pt-6 border-t border-gray-200">
+        <h3 className="text-lg font-semibold mb-4 mt-8 pt-6 border-t border-border">
           Campaign Schedule
         </h3>
 
         <div className="mb-6">
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-foreground mb-4">
             Select the days of the week when this campaign should be active.
             Emails will only be sent on selected days.
           </p>
@@ -262,8 +262,8 @@ const CampaignSettingsForm = ({ campaign, campaignData }) => {
                 key={day.id}
                 className={`border p-2 md:p-3 transition-all text-center flex-1 min-w-[100px] max-w-[140px] cursor-pointer ${
                   activeDays.includes(day.id)
-                    ? "border-black bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                    : "border-gray-200 hover:border-gray-300 bg-white text-black"
+                    ? "border-border bg-primary text-primary-foreground "
+                    : "border-border hover:border-border bg-white text-black"
                 }`}
                 onClick={() => {
                   const checked = !activeDays.includes(day.id);

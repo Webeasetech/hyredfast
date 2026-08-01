@@ -1,3 +1,24 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# The three settings below are intentionally duplicated in the root package.json
+# under the "pnpm" key. pnpm prints a warning that the package.json copies are
+# ignored, but removing them caused the patch to silently drop out of the
+# lockfile on regeneration, so both are kept until we move off pnpm 9.
+
+# TypeScript 7 is the latest release, but no stable typescript-eslint supports it
+# yet (8.65 still caps at <6.1.0), and loading it crashes ESLint with "Cannot read
+# properties of undefined (reading 'Cjs')". 6.0.3 is the newest TypeScript the
+# lint toolchain accepts; the typescript-eslint floor is what permits 6.x at all
+# (eslint-config-next would otherwise resolve 8.50, which caps at <6.0.0).
+overrides:
+  typescript: 6.0.3
+  typescript-eslint: ^8.65.0
+
+# mage-icons-react is abandoned (last published Nov 2023) and emits kebab-case
+# SVG attributes (`stroke-width`) instead of React's camelCase, which React 19
+# warns about on every icon render. The patch rewrites those prop keys across
+# the package's dist files. Remove this once the icons move to lucide-react.
+patchedDependencies:
+  mage-icons-react@0.7.0-beta: patches/mage-icons-react@0.7.0-beta.patch

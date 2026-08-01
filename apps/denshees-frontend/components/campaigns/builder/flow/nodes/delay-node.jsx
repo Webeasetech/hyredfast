@@ -27,11 +27,11 @@ const DelayNode = ({ data }) => {
   };
 
   return (
-    <div className="h-full px-3 py-2 bg-white border-2 border-dashed border-gray-500 flex items-center justify-center gap-2 text-gray-700">
+    <div className="h-full px-3 py-2 bg-white border-2 border-dashed border-gray-500 flex items-center justify-center gap-2 text-foreground rounded-lg">
       <Handle
         type="target"
         position={Position.Left}
-        className="!bg-gray-500 !border-2 !border-white !w-2.5 !h-2.5"
+        className="bg-gray-500! border-2! border-white! w-2.5! h-2.5!"
       />
 
       <ClockIcon className="w-4 h-4 shrink-0" />
@@ -51,7 +51,7 @@ const DelayNode = ({ data }) => {
               setEditing(false);
             }
           }}
-          className="w-12 px-1 text-sm font-bold text-center text-black border-2 border-black outline-none"
+          className="w-12 px-1 text-sm font-bold text-center text-black border-2 border-border outline-hidden"
         />
       ) : (
         <button
@@ -67,7 +67,7 @@ const DelayNode = ({ data }) => {
       <Handle
         type="source"
         position={Position.Right}
-        className="!bg-gray-500 !border-2 !border-white !w-2.5 !h-2.5"
+        className="bg-gray-500! border-2! border-white! w-2.5! h-2.5!"
       />
     </div>
   );

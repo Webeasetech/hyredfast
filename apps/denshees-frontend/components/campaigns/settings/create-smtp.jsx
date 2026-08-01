@@ -21,7 +21,7 @@ import Link from "next/link";
 
 const EmailLogo = ({ src, alt = "Email Logo" }) => {
   return (
-    <div className="flex items-center justify-center w-14 h-14 rounded-full overflow-hidden bg-gray-100">
+    <div className="flex items-center justify-center w-14 h-14 rounded-full overflow-hidden bg-accent">
       <Image src={src || "/placeholder.svg"} alt={alt} width={40} height={40} />
     </div>
   );
@@ -73,7 +73,7 @@ const ProviderSelection = ({ onSelect }) => {
     {
       name: "Custom",
       logo: (
-        <div className="flex items-center justify-center w-14 h-14 rounded-full overflow-hidden bg-gray-100">
+        <div className="flex items-center justify-center w-14 h-14 rounded-full overflow-hidden bg-accent">
           <EmailIcon />
         </div>
       ),
@@ -107,7 +107,7 @@ const LoadingSpinner = () => (
   <div role="status">
     <svg
       aria-hidden="true"
-      className="inline w-5 h-5 text-gray-200 animate-spin dark:text-gray-600 fill-gray-600 dark:fill-gray-300"
+      className="inline w-5 h-5 text-muted animate-spin dark:text-foreground fill-gray-600 dark:fill-gray-300"
       viewBox="0 0 100 101"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -140,10 +140,10 @@ const EmailCredentialForm = ({
     <form onSubmit={onSubmit}>
       <div className="flex items-center justify-start gap-4 pb-4">
         <ChevronLeftIcon
-          className="w-8 h-8 p-1 rounded-full cursor-pointer hover:bg-neutral-200"
+          className="w-8 h-8 p-1 rounded-full cursor-pointer hover:bg-muted"
           onClick={() => setSelectedProvider(null)}
         />
-        <p className="text-sm ">
+        <p className="text-sm">
           Setting up <u>{provider.name}</u> account
         </p>
       </div>
@@ -207,7 +207,7 @@ const EmailCredentialForm = ({
               placeholder="imap.google.com"
             />
           </div>
-          <div className=" flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <input type="checkbox" name="secure" defaultChecked={secure} />
             <Label>Secure Connection (SSL/TLS)</Label>
           </div>

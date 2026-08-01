@@ -42,7 +42,9 @@ export function positionOutcomes(outcomeNodes, terminalNode) {
   if (!terminalNode) return outcomeNodes;
 
   const centerX =
-    terminalNode.position.x + terminalNode.width / 2 - NODE_SIZE.outcome.width / 2;
+    terminalNode.position.x +
+    terminalNode.width / 2 -
+    NODE_SIZE.outcome.width / 2;
   const baseY = terminalNode.position.y + terminalNode.height + OUTCOME_GAP_Y;
   const offset = (outcomeNodes.length - 1) / 2;
 

@@ -79,7 +79,8 @@ const Builder = ({ campaign }) => {
 
       if (contact.status === "REPLIED") {
         const repliedStage = contact.replied_at_stage ?? stage;
-        repliesPerStage[repliedStage] = (repliesPerStage[repliedStage] ?? 0) + 1;
+        repliesPerStage[repliedStage] =
+          (repliesPerStage[repliedStage] ?? 0) + 1;
       }
     });
 
@@ -99,7 +100,10 @@ const Builder = ({ campaign }) => {
       contactsPerStage,
       repliesPerStage,
       outcomes: {
-        replied: { count: replied, percentage: percent(replied, totalContacts) },
+        replied: {
+          count: replied,
+          percentage: percent(replied, totalContacts),
+        },
         opened: { count: opened, percentage: percent(opened, totalContacts) },
         "no-reply": {
           count: noReply,
@@ -192,7 +196,7 @@ const Builder = ({ campaign }) => {
   if (pitchesLoading || contactsLoading) {
     return (
       <div className="flex items-center justify-center h-[500px]">
-        <div className="border-2 border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div className="border-2 border-border p-4">
           <p className="text-lg font-medium">Loading flow...</p>
         </div>
       </div>
@@ -200,8 +204,8 @@ const Builder = ({ campaign }) => {
   }
 
   return (
-    <div className="w-full flex-grow">
-      <div className="relative h-[560px] border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-[#fafafa]">
+    <div className="w-full grow">
+      <div className="relative h-[560px] border-2 border-border bg-[#fafafa]">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -221,14 +225,14 @@ const Builder = ({ campaign }) => {
           <AutoFit structureKey={structureKey} />
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
           <Controls showInteractive={false} />
-          <MiniMap pannable zoomable className="!border-2 !border-black" />
+          <MiniMap pannable zoomable className="border-2! border-border!" />
 
           <Panel
             position="top-left"
-            className="bg-white p-3 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+            className="bg-white p-3 border-2 border-border rounded-lg"
           >
             <h3 className="text-sm font-bold">Email Campaign Flow</h3>
-            <p className="mt-1 text-xs text-gray-600">
+            <p className="mt-1 text-xs text-foreground">
               Click an email to edit it, or a delay to change its wait.
             </p>
           </Panel>
@@ -251,7 +255,7 @@ const Builder = ({ campaign }) => {
                 </h3>
                 <button
                   onClick={() => setSelectedPitch(null)}
-                  className="px-3 py-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all"
+                  className="px-3 py-1 border-2 border-border hover:translate-x-px hover:translate-y-px transition-all"
                 >
                   Back to flow
                 </button>
@@ -275,8 +279,8 @@ const Builder = ({ campaign }) => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
             >
-              <div className="flex items-center gap-3 bg-white px-4 py-3 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+              <div className="flex items-center gap-3 bg-white px-4 py-3 border-2 border-border rounded-lg">
+                <div className="w-4 h-4 border-2 border-border border-t-transparent rounded-full animate-spin" />
                 <span className="text-sm font-medium">Updating flow...</span>
               </div>
             </motion.div>

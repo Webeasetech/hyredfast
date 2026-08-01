@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
+import { Chip } from "@/components/ui/chip";
 
-// Status color mapping with pastel colors
+// Status colors are reserved — they signal state and are never reused as a
+// generic accent. The shape/sizing comes from Chip so a chip change lands here.
 const statusColors = {
   PENDING: "bg-yellow-50 text-yellow-800 border-yellow-300",
   FAILED: "bg-red-50 text-red-800 border-red-300",
@@ -13,7 +15,6 @@ const statusColors = {
   BOUNCED: "bg-orange-50 text-orange-800 border-orange-300",
 };
 
-// Map status codes to human-readable text
 const statusLabels = {
   PENDING: "Pending",
   FAILED: "Failed",
@@ -26,28 +27,17 @@ const statusLabels = {
   BOUNCED: "Bounced",
 };
 
-const StatusChip = ({ status, size = "md", className }) => {
-  const sizeClasses = {
-    sm: "text-xs px-2 py-0.5",
-    md: "text-sm px-2.5 py-1",
-    lg: "text-base px-3 py-1.5",
-  };
-
-  // Get the human-readable label or use the original status if not mapped
-  const label = statusLabels[status] || status;
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center justify-center font-medium border shadow-[2px_2px_0px_0px_rgba(0,0,0,0.5)]",
-        statusColors[status] || "bg-gray-50 text-gray-800 border-gray-300",
-        sizeClasses[size],
-        className,
-      )}
-    >
-      {label}
-    </span>
-  );
-};
+const StatusChip = ({ status, size = "md", icon, className }) => (
+  <Chip
+    size={size}
+    icon={icon}
+    className={cn(
+      statusColors[status] || "bg-gray-50 text-gray-800 border-gray-300",
+      className,
+    )}
+  >
+    {statusLabels[status] || status}
+  </Chip>
+);
 
 export default StatusChip;

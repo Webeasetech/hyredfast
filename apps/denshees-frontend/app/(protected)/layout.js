@@ -38,7 +38,7 @@ export default function ProtectedLayout({ children }) {
         <div className="flex-1 relative overflow-hidden">
           <Sidebar onWidthChange={setSidebarWidth} />
           <main
-            className="absolute top-0 right-0 h-full overflow-y-auto bg-gray-50 p-4 md:p-6 pb-20 md:pb-6 transition-all duration-300"
+            className="absolute top-0 right-0 h-full overflow-y-auto bg-muted p-4 md:p-6 pb-20 md:pb-6 transition-all duration-300"
             style={{
               width:
                 sidebarWidth === 0 ? "100%" : `calc(100% - ${sidebarWidth}px)`,

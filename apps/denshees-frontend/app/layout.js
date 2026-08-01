@@ -1,6 +1,6 @@
 import { DM_Sans } from "next/font/google";
 import "./globals.css";
-import { Toast } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/sonner";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -19,7 +19,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${dmSans.variable} antialiased font-sans`}>
         {children}
-        <Toast />
+        <Toaster />
       </body>
     </html>
   );

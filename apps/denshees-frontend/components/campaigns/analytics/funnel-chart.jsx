@@ -66,7 +66,7 @@ const FunnelChart = ({
       ctx.fillText(
         `${stage.label}: ${stage.value}`,
         canvas.width / 2,
-        y + stageHeight / 2 - 5
+        y + stageHeight / 2 - 5,
       );
     });
   }, [
@@ -78,7 +78,7 @@ const FunnelChart = ({
   ]);
 
   return (
-    <div className="w-full h-[300px] border border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] p-4">
+    <div className="w-full h-[300px] border border-border bg-white p-4 rounded-lg">
       <canvas ref={canvasRef} className="w-full h-full" />
     </div>
   );

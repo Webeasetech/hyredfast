@@ -126,7 +126,7 @@ function EmailSettings() {
 
   if (isLoading) {
     return (
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <div className="flex justify-center items-center h-40">
           <ReloadIcon className="h-8 w-8 animate-spin" />
           <p className="ml-2 text-lg">Loading email accounts...</p>
@@ -137,7 +137,7 @@ function EmailSettings() {
 
   if (error) {
     return (
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <div className="flex flex-col justify-center items-center h-40">
           <p className="text-lg text-red-600">Failed to load email accounts</p>
           <Button onClick={() => refreshEmails()} className="mt-4">
@@ -152,7 +152,7 @@ function EmailSettings() {
 
   return (
     <div id="email-settings">
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold">Connected Email Accounts</h2>
           <Button onClick={() => setIsDialogOpen(true)}>
@@ -162,12 +162,12 @@ function EmailSettings() {
         </div>
 
         {emails.length === 0 ? (
-          <div className="border border-dashed border-gray-300 rounded-none p-6 text-center">
-            <EmailIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
+          <div className="border border-dashed border-border rounded-lg p-6 text-center">
+            <EmailIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-2 text-sm font-medium text-foreground">
               No email accounts
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Add an email account to use in your campaigns
             </p>
             <div className="mt-6">
@@ -182,12 +182,14 @@ function EmailSettings() {
             {emails.map((email) => (
               <div
                 key={email.id}
-                className="border border-gray-200 p-4 rounded-none bg-gray-50"
+                className="border border-border p-4 rounded-lg bg-muted"
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <p className="font-medium">{email.username}</p>
-                    <p className="text-sm text-gray-500">Host: {email.host}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Host: {email.host}
+                    </p>
                   </div>
 
                   <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -268,7 +270,9 @@ function EmailSettings() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isBlocked ? "Can't remove this account" : "Remove email account?"}
+              {isBlocked
+                ? "Can't remove this account"
+                : "Remove email account?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {isBlocked

@@ -18,7 +18,7 @@ export function SettingsNav() {
   ];
 
   return (
-    <div className="border border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+    <div className="border border-border bg-white p-4 rounded-lg">
       <nav className="space-y-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -29,7 +29,7 @@ export function SettingsNav() {
               href={item.href}
               className={cn(
                 "block p-2 transition-colors",
-                isActive ? "bg-gray-100 font-medium" : "hover:bg-gray-50"
+                isActive ? "bg-accent font-medium" : "hover:bg-muted",
               )}
             >
               {item.name}

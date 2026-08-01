@@ -46,7 +46,7 @@ const AnalyticsDashboard = ({ campaignId, campaign }) => {
   if (contactsLoading || dailyAnalysisLoading || todayAnalysisLoading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
-        <div className="border border-black p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+        <div className="border border-border p-4">
           <p className="text-lg font-medium">Loading analytics data...</p>
         </div>
       </div>
@@ -83,7 +83,7 @@ const AnalyticsDashboard = ({ campaignId, campaign }) => {
           value={
             <>
               {activeContacts}
-              <span className="text-gray-400"> / {totalContacts}</span>
+              <span className="text-muted-foreground"> / {totalContacts}</span>
             </>
           }
           icon={<EmailIcon className="w-6 h-6" />}
@@ -119,11 +119,11 @@ const AnalyticsDashboard = ({ campaignId, campaign }) => {
             dailyStatsRaw={dailyStatsRaw}
           />
         </div>
-        <div className="border border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center justify-center">
+        <div className="border border-border bg-white p-4 flex flex-col items-center justify-center rounded-lg">
           <p className="text-sm font-medium mb-2">Campaign Progress</p>
-          <div className="w-full h-6 border border-black bg-white relative">
+          <div className="w-full h-6 border border-border bg-white relative rounded-lg">
             <div
-              className="absolute top-0 left-0 bottom-0 bg-gray-200 transition-all duration-1000"
+              className="absolute top-0 left-0 bottom-0 bg-muted transition-all duration-1000"
               style={{ width: `${Math.min(completionPercentage, 100)}%` }}
             ></div>
             <p className="text-xs absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-medium">
@@ -135,7 +135,7 @@ const AnalyticsDashboard = ({ campaignId, campaign }) => {
 
       {/* Charts and Inbox */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="border border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <div className="border border-border bg-white p-4 rounded-lg">
           <h3 className="text-lg font-medium mb-4">Daily Activity</h3>
 
           {totalContacts > 0 ? (
@@ -145,7 +145,7 @@ const AnalyticsDashboard = ({ campaignId, campaign }) => {
               todayData={todayAnalysisData}
             />
           ) : (
-            <p className="text-center py-12 text-gray-500">
+            <p className="text-center py-12 text-muted-foreground">
               Add leads to this campaign to see daily progress.
             </p>
           )}

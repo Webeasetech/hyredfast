@@ -2,11 +2,7 @@
 
 import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
-import {
-  MessageSquareIcon,
-  EyeIcon,
-  CancelIcon,
-} from "mage-icons-react/bulk";
+import { MessageSquareIcon, EyeIcon, CancelIcon } from "mage-icons-react/bulk";
 
 const VARIANTS = {
   replied: {
@@ -23,7 +19,7 @@ const VARIANTS = {
   },
   noReply: {
     icon: CancelIcon,
-    accent: "text-gray-600",
+    accent: "text-foreground",
     border: "border-gray-600",
     bar: "bg-gray-600",
   },
@@ -36,12 +32,12 @@ const OutcomeNode = ({ data }) => {
 
   return (
     <div
-      className={`h-full px-3 py-2 bg-white border-2 ${variant.border} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between`}
+      className={`h-full px-3 py-2 bg-white border-2 ${variant.border}  flex flex-col justify-between`}
     >
       <Handle
         type="target"
         position={Position.Top}
-        className="!bg-black !border-2 !border-white !w-3 !h-3"
+        className="bg-primary! border-2! border-white! w-3! h-3!"
       />
 
       <div className="flex items-center gap-2">
@@ -52,10 +48,10 @@ const OutcomeNode = ({ data }) => {
       <div className="text-2xl font-bold leading-none">{count}</div>
 
       <div>
-        <div className="flex items-center justify-between text-[10px] text-gray-500">
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
           <span>{percentage}%</span>
         </div>
-        <div className="mt-1 h-1 w-full bg-gray-200">
+        <div className="mt-1 h-1 w-full bg-muted">
           <div
             className={`h-full ${variant.bar}`}
             style={{ width: `${Math.min(percentage, 100)}%` }}

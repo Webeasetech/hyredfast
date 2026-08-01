@@ -20,7 +20,7 @@ function ChatMessage({ message }) {
   if (message.role === "tool") {
     return (
       <div className="flex justify-start">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-black text-white text-[11px] rounded-full">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary text-primary-foreground text-[11px] rounded-full">
           <svg
             className="w-3 h-3"
             viewBox="0 0 24 24"
@@ -50,8 +50,8 @@ function ChatMessage({ message }) {
       <div
         className={`max-w-[85%] px-3 py-2 text-xs ${
           isUser
-            ? "bg-black text-white whitespace-pre-wrap"
-            : "bg-gray-100 text-gray-800 border border-gray-200 prose prose-xs prose-gray max-w-none [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_pre]:my-1 [&_pre]:bg-gray-200 [&_pre]:p-2 [&_pre]:overflow-x-auto [&_code]:text-[11px] [&_code]:bg-gray-200 [&_code]:px-1 [&_code]:py-0.5 [&_h1]:text-sm [&_h2]:text-xs [&_h3]:text-xs [&_h1]:font-bold [&_h2]:font-bold [&_h3]:font-semibold [&_h1]:my-1.5 [&_h2]:my-1 [&_h3]:my-1 [&_a]:text-blue-600 [&_a]:underline [&_table]:text-xs [&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-1 [&_blockquote]:border-l-2 [&_blockquote]:border-gray-300 [&_blockquote]:pl-2 [&_blockquote]:my-1 [&_blockquote]:text-gray-500 [&_hr]:my-2"
+            ? "bg-primary text-primary-foreground whitespace-pre-wrap"
+            : "bg-accent text-foreground border border-border prose prose-xs prose-gray max-w-none [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_pre]:my-1 [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:overflow-x-auto [&_code]:text-[11px] [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_h1]:text-sm [&_h2]:text-xs [&_h3]:text-xs [&_h1]:font-bold [&_h2]:font-bold [&_h3]:font-semibold [&_h1]:my-1.5 [&_h2]:my-1 [&_h3]:my-1 [&_a]:text-blue-600 [&_a]:underline [&_table]:text-xs [&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-1 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-2 [&_blockquote]:my-1 [&_blockquote]:text-muted-foreground [&_hr]:my-2"
         }`}
       >
         {isUser ? (
@@ -69,7 +69,7 @@ function ChatMessage({ message }) {
 function ToolIndicator({ name }) {
   return (
     <div className="flex justify-start">
-      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-black text-white text-[11px] rounded-full">
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary text-primary-foreground text-[11px] rounded-full">
         <ReloadIcon className="w-3 h-3 animate-spin" />
         {name}
       </div>
@@ -80,11 +80,11 @@ function ToolIndicator({ name }) {
 function TypingIndicator() {
   return (
     <div className="flex justify-start">
-      <div className="bg-gray-100 border border-gray-200 px-3 py-2">
+      <div className="bg-accent border border-border px-3 py-2 rounded-lg">
         <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse" />
-          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse [animation-delay:150ms]" />
-          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse [animation-delay:300ms]" />
+          <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse" />
+          <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse [animation-delay:150ms]" />
+          <div className="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-pulse [animation-delay:300ms]" />
         </div>
       </div>
     </div>
@@ -327,8 +327,8 @@ export default function AgentChat() {
             }}
             className={`fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-3 border transition-colors duration-50 ${
               buttonContentVisible
-                ? "bg-black text-white border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-800"
-                : "bg-white text-transparent border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                ? "bg-primary text-primary-foreground border-border  hover:bg-primary/90"
+                : "bg-white text-transparent border-border "
             }`}
           >
             <div
@@ -352,14 +352,14 @@ export default function AgentChat() {
       {/* Chat panel */}
       {isOpen && (
         <Flipped flipId="agent-chat" onComplete={() => setContentVisible(true)}>
-          <div className="fixed bottom-20 right-2 left-2 md:bottom-6 md:right-6 md:left-auto z-50 w-auto md:w-[400px] max-h-[560px] bg-white border border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col overflow-hidden">
+          <div className="fixed bottom-20 right-2 left-2 md:bottom-6 md:right-6 md:left-auto z-50 w-auto md:w-[400px] max-h-[560px] bg-white border border-border flex flex-col overflow-hidden rounded-lg">
             <div
               className={`flex flex-col flex-1 overflow-hidden transition-opacity duration-75 ${
                 contentVisible ? "opacity-100" : "opacity-0"
               }`}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 bg-black text-white shrink-0">
+              <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground shrink-0">
                 <div className="flex items-center gap-2">
                   <MessageDotsRoundIcon className="w-4 h-4" />
                   <span className="text-sm font-semibold">AI Assistant</span>
@@ -370,14 +370,14 @@ export default function AgentChat() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowThreads((v) => !v)}
-                    className="text-xs text-gray-400 hover:text-white transition-colors"
+                    className="text-xs text-muted-foreground hover:text-white transition-colors"
                     title="Chat history"
                   >
                     {showThreads ? "Back" : "History"}
                   </button>
                   <button
                     onClick={startNewThread}
-                    className="text-xs text-gray-400 hover:text-white transition-colors"
+                    className="text-xs text-muted-foreground hover:text-white transition-colors"
                     title="New chat"
                   >
                     + New
@@ -389,7 +389,7 @@ export default function AgentChat() {
                       setIsOpen(false);
                       setShowThreads(false);
                     }}
-                    className="hover:bg-gray-800 p-1 transition-colors"
+                    className="hover:bg-primary/90 p-1 transition-colors"
                   >
                     <CancelIcon className="w-4 h-4" />
                   </button>
@@ -400,7 +400,7 @@ export default function AgentChat() {
               {showThreads ? (
                 <div className="flex-1 overflow-y-auto p-3 space-y-1">
                   {threads.length === 0 ? (
-                    <p className="text-xs text-gray-400 text-center py-6">
+                    <p className="text-xs text-muted-foreground text-center py-6">
                       No previous conversations
                     </p>
                   ) : (
@@ -410,13 +410,13 @@ export default function AgentChat() {
                         onClick={() => switchThread(t.threadId)}
                         className={`w-full text-left px-3 py-2 text-xs border transition-colors ${
                           t.threadId === threadId
-                            ? "bg-black text-white border-black"
-                            : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
+                            ? "bg-primary text-primary-foreground border-border"
+                            : "bg-muted text-foreground border-border hover:bg-accent"
                         }`}
                       >
                         <div className="truncate font-medium">{t.preview}</div>
                         <div
-                          className={`text-[10px] mt-0.5 ${t.threadId === threadId ? "text-gray-300" : "text-gray-400"}`}
+                          className={`text-[10px] mt-0.5 ${t.threadId === threadId ? "text-muted-foreground" : "text-muted-foreground"}`}
                         >
                           {new Date(t.lastMessage).toLocaleDateString(
                             undefined,
@@ -438,8 +438,8 @@ export default function AgentChat() {
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
                     {messages.length === 0 && !isLoading && historyLoaded && (
                       <div className="text-center py-6">
-                        <MessageSquareIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                        <p className="text-sm text-gray-500">
+                        <MessageSquareIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">
                           I can help you manage campaigns, leads, and pitches.
                         </p>
                         <div className="mt-3 space-y-2">
@@ -451,7 +451,7 @@ export default function AgentChat() {
                             <button
                               key={suggestion}
                               onClick={() => setInput(suggestion)}
-                              className="w-full text-left text-xs bg-gray-50 border border-gray-200 px-3 py-2 hover:bg-gray-100 transition-colors text-gray-600"
+                              className="w-full text-left text-xs bg-muted border border-border px-3 py-2 hover:bg-accent transition-colors text-foreground rounded-lg"
                             >
                               &ldquo;{suggestion}&rdquo;
                             </button>
@@ -483,7 +483,7 @@ export default function AgentChat() {
                   </div>
 
                   {/* Input */}
-                  <div className="border-t border-gray-200 p-3 shrink-0">
+                  <div className="border-t border-border p-3 shrink-0">
                     <form
                       onSubmit={handleSend}
                       className="flex items-end gap-2"

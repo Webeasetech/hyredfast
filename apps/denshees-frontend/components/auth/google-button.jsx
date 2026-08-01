@@ -64,7 +64,7 @@ export default function GoogleButton() {
 // request is in flight (GoogleLogin renders its own button otherwise).
 function LoadingPlaceholder() {
   return (
-    <div className="h-10 w-[320px] flex items-center justify-center border border-gray-300 bg-white text-sm text-gray-500">
+    <div className="h-10 w-[320px] flex items-center justify-center border border-border bg-white text-sm text-muted-foreground rounded-lg">
       Signing in...
     </div>
   );

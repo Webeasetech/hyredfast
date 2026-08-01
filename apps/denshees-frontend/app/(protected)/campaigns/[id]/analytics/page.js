@@ -11,13 +11,13 @@ export default function CampaignAnalyticsPage() {
 
   const { data: campaignData, isLoading: campaignLoading } = useSWR(
     campaignId ? `/api/campaign/${campaignId}` : null,
-    fetcher
+    fetcher,
   );
 
   if (campaignLoading) {
     return (
       <div className="flex items-center justify-center h-[400px]">
-        <div className="border border-black p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+        <div className="border border-border p-4">
           <p className="text-lg font-medium">Loading campaign analytics...</p>
         </div>
       </div>

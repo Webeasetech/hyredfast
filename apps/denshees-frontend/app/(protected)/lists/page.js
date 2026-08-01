@@ -79,7 +79,7 @@ export default function ListsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Lead Lists</h1>
-          <p className="text-gray-600 mt-1">Manage your lead lists</p>
+          <p className="text-foreground mt-1">Manage your lead lists</p>
         </div>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
           <DialogTrigger asChild>
@@ -130,8 +130,8 @@ export default function ListsPage() {
         </Dialog>
       </div>
 
-      <div className="border border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-        <div className="p-4 border-b border-gray-200">
+      <div className="border border-border bg-white rounded-lg">
+        <div className="p-4 border-b border-border">
           <Input
             placeholder="Search lists..."
             value={searchQuery}
@@ -142,13 +142,13 @@ export default function ListsPage() {
 
         {isLoading ? (
           <div className="p-8 text-center">
-            <div className="inline-block border border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <div className="inline-block border border-border p-4">
               <p className="text-lg font-medium">Loading lists...</p>
             </div>
           </div>
         ) : error ? (
           <div className="p-8 text-center">
-            <div className="inline-block border border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-red-50">
+            <div className="inline-block border border-border p-4 bg-red-50">
               <p className="text-lg font-medium text-red-600">
                 Error loading lists
               </p>
@@ -157,7 +157,7 @@ export default function ListsPage() {
         ) : filteredLists.length === 0 ? (
           <div className="p-8 text-center">
             <p className="text-lg">No lists found</p>
-            <p className="text-gray-500 mt-1">
+            <p className="text-muted-foreground mt-1">
               {searchQuery.trim() !== ""
                 ? "Try a different search term"
                 : "Create your first list to get started"}
@@ -189,29 +189,29 @@ function ListRow({ list }) {
   );
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 hover:bg-gray-50">
+    <div className="flex items-center justify-between px-6 py-4 hover:bg-muted">
       <Link href={`/lists/${list.id}`} className="flex-1 min-w-0">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <ChecklistNoteIcon className="w-[18px] h-[18px] shrink-0 text-gray-500" />
+            <ChecklistNoteIcon className="w-[18px] h-[18px] shrink-0 text-muted-foreground" />
             <h3 className="font-medium text-sm hover:underline truncate">
               {list.name}
             </h3>
           </div>
           <div className="flex items-center gap-4 ml-[30px]">
             {list.description && (
-              <p className="text-xs text-gray-500 truncate max-w-[300px]">
+              <p className="text-xs text-muted-foreground truncate max-w-[300px]">
                 {list.description}
               </p>
             )}
             {list.domain && (
-              <span className="flex items-center gap-1 text-xs text-gray-400">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <GlobeIcon className="w-3 h-3" />
                 {list.domain}
               </span>
             )}
             {list.company && (
-              <span className="flex items-center gap-1 text-xs text-gray-400">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <BuildingBIcon className="w-3 h-3" />
                 {list.company}
               </span>
@@ -220,7 +220,7 @@ function ListRow({ list }) {
         </div>
       </Link>
       <div className="flex items-center gap-4">
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-muted-foreground">
           {DateTime.fromISO(list.updated).toRelative()}
         </span>
         <Button
@@ -232,7 +232,7 @@ function ListRow({ list }) {
             }
           }}
           disabled={isDeleting}
-          className="text-gray-400 hover:text-red-600"
+          className="text-muted-foreground hover:text-red-600"
         >
           {isDeleting ? (
             <ReloadIcon className="w-4 h-4 animate-spin" />

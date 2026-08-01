@@ -10,6 +10,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Chip } from "@/components/ui/chip";
+
+// Low balance is a warning state, so it gets its own colours rather than the
+// chip's default surface.
+const LOW = "border-red-300 bg-red-50 text-red-700";
 
 export function CreditsDisplay({ user }) {
   const totalCredits = user?.credits || 0;
@@ -23,36 +28,32 @@ export function CreditsDisplay({ user }) {
       <div className="flex items-center gap-1.5">
         <Tooltip>
           <TooltipTrigger asChild>
-            <div
-              className={`flex items-center gap-1 px-2 py-1 border text-xs font-mono font-medium ${
-                isLowCredits
-                  ? "border-red-400 bg-red-50 text-red-700"
-                  : "border-black bg-white text-black"
-              }`}
+            <Chip
+              size="sm"
+              icon={<CoinAIcon />}
+              className={isLowCredits ? LOW : undefined}
             >
-              <CoinAIcon className="h-3 w-3" />
-              {totalCredits.toLocaleString()}
-            </div>
+              <span className="tabular-nums">
+                {totalCredits.toLocaleString()}
+              </span>
+            </Chip>
           </TooltipTrigger>
-          <TooltipContent className="border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+          <TooltipContent>
             <p>Email Credits</p>
           </TooltipContent>
         </Tooltip>
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <div
-              className={`flex items-center gap-1 px-2 py-1 border text-xs font-mono font-medium ${
-                isLowAI
-                  ? "border-red-400 bg-red-50 text-red-700"
-                  : "border-black bg-white text-black"
-              }`}
+            <Chip
+              size="sm"
+              icon={<StarsCIcon />}
+              className={isLowAI ? LOW : undefined}
             >
-              <StarsCIcon className="h-3 w-3" />
-              {aiCredits.toLocaleString()}
-            </div>
+              <span className="tabular-nums">{aiCredits.toLocaleString()}</span>
+            </Chip>
           </TooltipTrigger>
-          <TooltipContent className="border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+          <TooltipContent>
             <p>AI Credits</p>
           </TooltipContent>
         </Tooltip>
@@ -62,7 +63,7 @@ export function CreditsDisplay({ user }) {
             <TooltipTrigger asChild>
               <ExclamationTriangleIcon className="h-3.5 w-3.5 text-red-500" />
             </TooltipTrigger>
-            <TooltipContent className="border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] max-w-64">
+            <TooltipContent className="max-w-64">
               <p className="text-xs">
                 Credits running low.
                 {isLowCredits && ` Email: ${totalCredits}`}

@@ -51,9 +51,9 @@ const DangerZone = ({ campaignId }) => {
   };
 
   return (
-    <div className="border border-red-300 bg-red-50 p-6 shadow-[4px_4px_0px_0px_rgba(255,0,0,0.3)]">
+    <div className="border border-red-300 bg-red-50 p-6">
       <div className="flex items-start space-x-3">
-        <ExclamationTriangleIcon className="h-6 w-6 text-red-600 flex-shrink-0 mt-1" />
+        <ExclamationTriangleIcon className="h-6 w-6 text-red-600 shrink-0 mt-1" />
         <div className="flex-1">
           <h2 className="text-xl font-bold text-red-700 mb-2">Danger Zone</h2>
           <p className="text-red-600 mb-6">
@@ -72,7 +72,7 @@ const DangerZone = ({ campaignId }) => {
               <Button
                 variant="destructive"
                 onClick={handleDeleteClick}
-                className="bg-white text-red-600 border-red-600 hover:bg-red-50"
+                className="bg-white text-red-600 border-red-600 hover:bg-red-50 rounded-lg"
               >
                 <TrashIcon className="mr-2 h-4 w-4" />
                 Delete Campaign
@@ -88,7 +88,7 @@ const DangerZone = ({ campaignId }) => {
                 type="text"
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
-                className="w-full p-2 border border-red-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full p-2 border border-red-300 focus:outline-hidden focus:ring-2 focus:ring-red-500"
                 placeholder="Type 'delete' to confirm"
               />
               <div className="flex justify-end space-x-3">
