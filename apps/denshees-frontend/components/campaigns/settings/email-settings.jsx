@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { PanelSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { EmailIcon, Trash2Icon } from "mage-icons-react/bulk";
@@ -8,6 +9,8 @@ import { PlusIcon } from "mage-icons-react/stroke";
 import useSWR from "swr";
 import fetcher from "@/lib/fetcher";
 import useSWRMutation from "swr/mutation";
+import { SaveStatus } from "@/components/save-status";
+import { useAutosave } from "@/hooks/use-autosave";
 import { patch } from "@/lib/apis";
 import {
   Dialog,
@@ -20,7 +23,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 const EmailSettings = ({ campaignId }) => {
   const [selectedEmails, setSelectedEmails] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Fetch available email accounts
@@ -87,25 +89,21 @@ const EmailSettings = ({ campaignId }) => {
       },
     );
 
-  const handleEmailToggle = (emailId) => {
-    setSelectedEmails((prev) => {
-      if (prev.includes(emailId)) {
-        return prev.filter((id) => id !== emailId);
-      } else {
-        return [...prev, emailId];
-      }
-    });
-  };
+  const { status, save } = useAutosave(
+    useCallback(
+      (emails) => updateCampaignEmails({ emails }),
+      [updateCampaignEmails],
+    ),
+  );
 
-  const handleSaveEmailSettings = async () => {
-    setLoading(true);
-    try {
-      await updateCampaignEmails({
-        emails: selectedEmails,
-      });
-    } finally {
-      setLoading(false);
-    }
+  // Selecting a mailbox persists immediately — the next state is computed here
+  // because setState hasn't flushed by the time we need the payload.
+  const handleEmailToggle = (emailId) => {
+    const next = selectedEmails.includes(emailId)
+      ? selectedEmails.filter((id) => id !== emailId)
+      : [...selectedEmails, emailId];
+    setSelectedEmails(next);
+    save(next);
   };
 
   const handleDeleteEmail = async (emailId, e) => {
@@ -126,92 +124,73 @@ const EmailSettings = ({ campaignId }) => {
   };
 
   if (emailsLoading || selectedEmailsLoading) {
-    return (
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-        <div className="flex justify-center items-center h-40">
-          <p className="text-lg">Loading email accounts...</p>
-        </div>
-      </div>
-    );
+    return <PanelSkeleton lines={3} />;
   }
 
   const emails = emailAccounts || [];
-  const isSaveDisabled = selectedEmails.length === 0 || loading;
 
   return (
-    <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-      <h2 className="text-xl font-bold mb-6">Email Accounts</h2>
-
-      <div className="mb-6">
-        <p className="text-sm text-gray-600 mb-4">
-          Select the email accounts you want to use for this campaign. Emails
-          will be sent from these accounts in rotation.
-        </p>
-
-        {emails.length === 0 ? (
-          <div className="border border-dashed border-gray-300 rounded-none p-6 text-center">
-            <EmailIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
-              No email accounts
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Add an email account to use in your campaigns
-            </p>
-            <div className="mt-6">
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <PlusIcon className="mr-2 h-4 w-4" />
-                Setup Email
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {emails.map((email) => (
-              <div
-                key={email.id}
-                className={`border p-4 ${
-                  selectedEmails.includes(email.id)
-                    ? "border-black bg-gray-50 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                    : "border-gray-200"
-                } cursor-pointer transition-all`}
-                onClick={() => handleEmailToggle(email.id)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Checkbox checked={selectedEmails.includes(email.id)} />
-                    {/* <input
-                      type="checkbox"
-                      checked={selectedEmails.includes(email.id)}
-                      onChange={() => {}}
-                      className="h-4 w-4 border-gray-300 rounded"
-                    /> */}
-                    <div>
-                      <p className="font-medium">{email.username}</p>
-                      <p className="text-sm text-gray-500">
-                        Daily limit: {email.dailyLimit} emails
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            <div className="flex justify-between mt-6">
-              <Button onClick={() => setIsDialogOpen(true)} variant="outline">
-                <PlusIcon className="mr-2 h-4 w-4" />
-                Setup Email
-              </Button>
-
-              <Button
-                onClick={handleSaveEmailSettings}
-                disabled={isSaveDisabled}
-              >
-                {isMutating ? "Saving..." : "Save Email Settings"}
-              </Button>
-            </div>
-          </div>
-        )}
+    <div className="border border-border bg-white p-6 rounded-lg">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          {/* Matches the Campaign Details card heading — this was
+              text-xl/bold while that one is text-base/semibold. */}
+          <h2 className="text-base font-semibold">Email Accounts</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Select the email accounts you want to use for this campaign. Emails
+            will be sent from these accounts in rotation.
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <SaveStatus status={status} />
+          <Button onClick={() => setIsDialogOpen(true)} size="sm">
+            <PlusIcon className="mr-2 h-4 w-4" />
+            Setup Email
+          </Button>
+        </div>
       </div>
+
+      {emails.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border p-6 text-center">
+          <EmailIcon className="mx-auto size-8 text-muted-foreground" />
+          <h3 className="mt-2 text-sm font-medium text-foreground">
+            No email accounts
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Add an email account to use in your campaigns
+          </p>
+        </div>
+      ) : (
+        // Rows were `border p-4` with no radius and a 16px gap, so they read
+        // as loose sharp-cornered boxes beside the rounded cards.
+        <div className="space-y-2">
+          {emails.map((email) => (
+            <div
+              key={email.id}
+              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
+                selectedEmails.includes(email.id)
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:bg-accent"
+              }`}
+              onClick={() => handleEmailToggle(email.id)}
+            >
+              <Checkbox
+                checked={selectedEmails.includes(email.id)}
+                // The row owns the click; the box is a visual indicator so
+                // it must not swallow the event and toggle twice.
+                tabIndex={-1}
+                className="pointer-events-none"
+              />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{email.username}</p>
+                <p className="text-xs text-muted-foreground">
+                  Daily limit: {email.dailyLimit} emails
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Setup Email Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

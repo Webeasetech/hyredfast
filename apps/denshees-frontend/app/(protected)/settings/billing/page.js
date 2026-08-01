@@ -7,27 +7,21 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { CreditCardIcon, ZapIcon, EmailIcon } from "mage-icons-react/bulk";
 import { ReloadIcon } from "mage-icons-react/stroke";
-import { SettingsNav } from "@/components/settings/settings-nav";
-import { CreditsDisplay } from "@/components/credits-display";
 import useAuthStore from "@/store/auth.store";
 import useSWRMutation from "swr/mutation";
 import { post } from "@/lib/apis";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 
 export default function BillingSettingsPage() {
   return (
-    <div className="container mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+    <div className="space-y-4">
+      <PageHeader
+        title="Billing & credits"
+        description="Track your balance and top up email or AI credits"
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-1">
-          <SettingsNav />
-        </div>
-
-        <div className="md:col-span-3">
-          <BillingSettings />
-        </div>
-      </div>
+      <BillingSettings />
     </div>
   );
 }
@@ -90,19 +84,13 @@ function BillingSettings() {
 
   return (
     <div id="billing-settings" className="space-y-6">
-      {/* Current Credits Display */}
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-        <h2 className="text-xl font-bold mb-6">Current Credits</h2>
-        <CreditsDisplay user={user} />
-      </div>
-
       {/* Credit Pricing Calculator */}
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <h2 className="text-xl font-bold mb-6">Purchase Credits</h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Email Credits */}
-          <div className="border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <div>
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
               <EmailIcon className="h-5 w-5" />
               Email Credits
@@ -123,7 +111,7 @@ function BillingSettings() {
                   step={10}
                   className="w-full"
                 />
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-sm text-foreground">
                   <span>10 credits</span>
                   <span>1000 credits</span>
                 </div>
@@ -166,7 +154,7 @@ function BillingSettings() {
           </div>
 
           {/* AI Credits */}
-          <div className="border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <div>
             <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
               <ZapIcon className="h-5 w-5" />
               AI Credits
@@ -187,7 +175,7 @@ function BillingSettings() {
                   step={5}
                   className="w-full"
                 />
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-sm text-foreground">
                   <span>5 credits</span>
                   <span>500 credits</span>
                 </div>
@@ -230,7 +218,7 @@ function BillingSettings() {
       </div>
 
       {/* Credit Usage Information */}
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <h2 className="text-xl font-bold mb-6">How Credits Work</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -239,7 +227,7 @@ function BillingSettings() {
               <EmailIcon className="h-4 w-4" />
               Email Credits
             </h3>
-            <ul className="text-sm text-gray-600 space-y-1">
+            <ul className="text-sm text-foreground space-y-1">
               <li>• 1 credit = 1 email sent</li>
               <li>• Used for campaign emails</li>
               <li>• No expiration date</li>
@@ -252,7 +240,7 @@ function BillingSettings() {
               <ZapIcon className="h-4 w-4" />
               AI Credits
             </h3>
-            <ul className="text-sm text-gray-600 space-y-1">
+            <ul className="text-sm text-foreground space-y-1">
               <li>• 1 credit = 1 AI personalization</li>
               <li>• Used for AI-powered content</li>
               <li>• No expiration date</li>

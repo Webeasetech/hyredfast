@@ -18,7 +18,12 @@ import { post } from "@/lib/apis";
 import { mutate } from "swr";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Trash2Icon, CheckCircleIcon, ExclamationCircleIcon, ExclamationTriangleIcon } from "mage-icons-react/bulk";
+import {
+  Trash2Icon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
+  ExclamationTriangleIcon,
+} from "mage-icons-react/bulk";
 import { AnimatePresence, motion } from "framer-motion";
 import { PersonalizationForm } from "./personalization-form";
 import fetcher from "@/lib/fetcher";
@@ -54,13 +59,50 @@ const leadSchema = z.object({
 });
 
 const VERIFY_RESULT_CONFIG = {
-  ok:          { label: "Valid",       badgeClass: "bg-green-100 text-green-800 border-green-300",   Icon: CheckCircleIcon,        btnClass: "border-green-600 text-green-700 bg-green-50 hover:bg-green-100" },
-  catch_all:   { label: "Catch-all",   badgeClass: "bg-yellow-100 text-yellow-800 border-yellow-300", Icon: ExclamationTriangleIcon, btnClass: "border-yellow-500 text-yellow-700 bg-yellow-50 hover:bg-yellow-100" },
-  unknown:     { label: "Unknown",     badgeClass: "bg-gray-100 text-gray-700 border-gray-300",       Icon: ExclamationTriangleIcon, btnClass: "border-gray-400 text-gray-600 bg-gray-50 hover:bg-gray-100" },
-  invalid:     { label: "Invalid",     badgeClass: "bg-red-100 text-red-800 border-red-300",          Icon: ExclamationCircleIcon,   btnClass: "border-red-600 text-red-700 bg-red-50 hover:bg-red-100" },
-  disposable:  { label: "Disposable",  badgeClass: "bg-orange-100 text-orange-800 border-orange-300", Icon: ExclamationCircleIcon,   btnClass: "border-orange-500 text-orange-700 bg-orange-50 hover:bg-orange-100" },
-  unverified:  { label: "Unverified",  badgeClass: "bg-gray-100 text-gray-700 border-gray-300",       Icon: ExclamationTriangleIcon, btnClass: "border-gray-400 text-gray-600 bg-gray-50 hover:bg-gray-100" },
-  error:       { label: "Error",       badgeClass: "bg-red-100 text-red-800 border-red-300",          Icon: ExclamationCircleIcon,   btnClass: "border-red-600 text-red-700 bg-red-50 hover:bg-red-100" },
+  ok: {
+    label: "Valid",
+    badgeClass: "bg-green-100 text-green-800 border-green-300",
+    Icon: CheckCircleIcon,
+    btnClass: "border-green-600 text-green-700 bg-green-50 hover:bg-green-100",
+  },
+  catch_all: {
+    label: "Catch-all",
+    badgeClass: "bg-yellow-100 text-yellow-800 border-yellow-300",
+    Icon: ExclamationTriangleIcon,
+    btnClass:
+      "border-yellow-500 text-yellow-700 bg-yellow-50 hover:bg-yellow-100",
+  },
+  unknown: {
+    label: "Unknown",
+    badgeClass: "bg-accent text-foreground border-border",
+    Icon: ExclamationTriangleIcon,
+    btnClass: "border-gray-400 text-foreground bg-muted hover:bg-accent",
+  },
+  invalid: {
+    label: "Invalid",
+    badgeClass: "bg-red-100 text-red-800 border-red-300",
+    Icon: ExclamationCircleIcon,
+    btnClass: "border-red-600 text-red-700 bg-red-50 hover:bg-red-100",
+  },
+  disposable: {
+    label: "Disposable",
+    badgeClass: "bg-orange-100 text-orange-800 border-orange-300",
+    Icon: ExclamationCircleIcon,
+    btnClass:
+      "border-orange-500 text-orange-700 bg-orange-50 hover:bg-orange-100",
+  },
+  unverified: {
+    label: "Unverified",
+    badgeClass: "bg-accent text-foreground border-border",
+    Icon: ExclamationTriangleIcon,
+    btnClass: "border-gray-400 text-foreground bg-muted hover:bg-accent",
+  },
+  error: {
+    label: "Error",
+    badgeClass: "bg-red-100 text-red-800 border-red-300",
+    Icon: ExclamationCircleIcon,
+    btnClass: "border-red-600 text-red-700 bg-red-50 hover:bg-red-100",
+  },
 };
 
 const AddLeadDialog = ({ open = false, setOpen, campaign, onSuccess }) => {
@@ -216,7 +258,10 @@ const AddLeadDialog = ({ open = false, setOpen, campaign, onSuccess }) => {
   };
 
   const handleSuggestionClick = (variable) => {
-    setPersonalizeForm({ label: variable, value: lastPersonalization[variable] || "" });
+    setPersonalizeForm({
+      label: variable,
+      value: lastPersonalization[variable] || "",
+    });
     setShowPersonalization(true);
   };
 
@@ -248,7 +293,7 @@ const AddLeadDialog = ({ open = false, setOpen, campaign, onSuccess }) => {
                     value={leadData.name}
                     onChange={handleInputChange}
                     required
-                    className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                    className="border-border"
                   />
                 </div>
 
@@ -263,45 +308,53 @@ const AddLeadDialog = ({ open = false, setOpen, campaign, onSuccess }) => {
                       value={leadData.email}
                       onChange={handleInputChange}
                       required
-                      className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                      className="border-border"
                     />
-                    {hasVerifierKey && (() => {
-                      const resultKey = verifyStatus && verifyStatus !== "loading" ? verifyStatus.result : null;
-                      const config = resultKey ? VERIFY_RESULT_CONFIG[resultKey] : null;
-                      const ResultIcon = config?.Icon;
-                      return (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={config ? undefined : handleVerifyEmail}
-                          disabled={!leadData.email || verifyStatus === "loading"}
-                          className={`shrink-0 w-24 h-10 justify-center border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-1.5 transition-colors ${config ? config.btnClass + " border pointer-events-none" : ""}`}
-                        >
-                          {verifyStatus === "loading" ? (
-                            <span className="animate-pulse">...</span>
-                          ) : ResultIcon ? (
-                            <>
-                              <ResultIcon className="h-4 w-4" />
-                              <span>{config.label}</span>
-                            </>
-                          ) : (
-                            "Verify"
-                          )}
-                        </Button>
-                      );
-                    })()}
+                    {hasVerifierKey &&
+                      (() => {
+                        const resultKey =
+                          verifyStatus && verifyStatus !== "loading"
+                            ? verifyStatus.result
+                            : null;
+                        const config = resultKey
+                          ? VERIFY_RESULT_CONFIG[resultKey]
+                          : null;
+                        const ResultIcon = config?.Icon;
+                        return (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={config ? undefined : handleVerifyEmail}
+                            disabled={
+                              !leadData.email || verifyStatus === "loading"
+                            }
+                            className={`shrink-0 w-24 h-10 justify-center border-border  flex items-center gap-1.5 transition-colors ${config ? config.btnClass + " border pointer-events-none" : ""}`}
+                          >
+                            {verifyStatus === "loading" ? (
+                              <span className="animate-pulse">...</span>
+                            ) : ResultIcon ? (
+                              <>
+                                <ResultIcon className="h-4 w-4" />
+                                <span>{config.label}</span>
+                              </>
+                            ) : (
+                              "Verify"
+                            )}
+                          </Button>
+                        );
+                      })()}
                   </div>
                 </div>
 
                 {formError && (
-                  <div className="text-red-700 text-sm border border-black p-2">
+                  <div className="text-red-700 text-sm border border-border p-2">
                     {formError}
                   </div>
                 )}
 
                 {/* Personalization Section */}
                 {Object.entries(personalization).length > 0 && (
-                  <div className="mt-4 p-4 border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="mt-4 p-4 border border-border">
                     <h4 className="text-sm font-medium mb-2">
                       Personalizations:
                     </h4>
@@ -333,7 +386,7 @@ const AddLeadDialog = ({ open = false, setOpen, campaign, onSuccess }) => {
                 {/* Suggested Personalization Variables */}
                 {unusedVariables.length > 0 && (
                   <div className="mt-2">
-                    <p className="text-xs text-gray-500 mb-2">
+                    <p className="text-xs text-muted-foreground mb-2">
                       Variables used in pitches:
                     </p>
                     <div className="flex flex-wrap gap-2">
@@ -342,7 +395,7 @@ const AddLeadDialog = ({ open = false, setOpen, campaign, onSuccess }) => {
                           key={variable}
                           type="button"
                           onClick={() => handleSuggestionClick(variable)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-black rounded-md bg-gray-50 hover:bg-black hover:text-white transition-colors shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md bg-muted hover:bg-primary hover:text-white transition-colors"
                         >
                           <span>{`{{${variable}}}`}</span>
                           <span className="text-[10px] opacity-60">+</span>

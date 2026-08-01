@@ -8,12 +8,10 @@ import {
   PauseIcon,
   PlayIcon,
 } from "mage-icons-react/bulk";
-import { ArrowLeftIcon } from "mage-icons-react/stroke";
 import { toast } from "sonner";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { Button } from "@/components/ui/button";
-import StatusChip from "@/components/ui/status-chip";
 import useCampaignStore from "@/store/campaign.store";
 import fetcher from "@/lib/fetcher";
 import { patch } from "@/lib/apis";
@@ -111,10 +109,26 @@ export default function CampaignLayout({ children }) {
 
   // Define tabs
   const tabs = [
-    { name: "Leads", href: `/campaigns/${campaignId}`, tourId: "tour-tab-leads" },
-    { name: "CRM", href: `/campaigns/${campaignId}/crm`, tourId: "tour-tab-crm" },
-    { name: "Builder", href: `/campaigns/${campaignId}/builder`, tourId: "tour-tab-builder" },
-    { name: "Analytics", href: `/campaigns/${campaignId}/analytics`, tourId: "tour-tab-analytics" },
+    {
+      name: "Leads",
+      href: `/campaigns/${campaignId}`,
+      tourId: "tour-tab-leads",
+    },
+    {
+      name: "CRM",
+      href: `/campaigns/${campaignId}/crm`,
+      tourId: "tour-tab-crm",
+    },
+    {
+      name: "Builder",
+      href: `/campaigns/${campaignId}/builder`,
+      tourId: "tour-tab-builder",
+    },
+    {
+      name: "Analytics",
+      href: `/campaigns/${campaignId}/analytics`,
+      tourId: "tour-tab-analytics",
+    },
     { name: "Settings", href: `/campaigns/${campaignId}/settings` },
   ];
 
@@ -130,26 +144,12 @@ export default function CampaignLayout({ children }) {
   return (
     <div className="space-y-6">
       <div className="header">
-        {/* Back button and campaign title */}
-        <div className="flex items-center gap-2 min-w-0">
-          <Link href="/campaigns" className="shrink-0">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <ArrowLeftIcon className="w-[18px] h-[18px]" />
-            </Button>
-          </Link>
-          <h1 className="text-xl md:text-2xl font-bold truncate min-w-0">
-            {isLoading
-              ? "Loading..."
-              : currentCampaign?.title || "Campaign Details"}
-          </h1>
-          {!isLoading && currentCampaign && (
-            <StatusChip status={currentCampaign.status} className="shrink-0" />
-          )}
-        </div>
+        {/* No title row here — the breadcrumb names the campaign, and the
+            start/pause control beside the tabs already conveys its status. */}
 
         {/* Error message */}
         {error && (
-          <div className="border border-red-300 bg-red-50 p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <div className="rounded-lg border border-red-300 bg-red-50 p-4">
             <p className="text-red-800">Failed to load campaign details</p>
           </div>
         )}
@@ -158,7 +158,7 @@ export default function CampaignLayout({ children }) {
         <div>
           <div className="flex flex-col-reverse md:flex-row md:items-center md:justify-between gap-2">
             {/* Tabs — scrollable on mobile */}
-            <div className="flex border-b border-black overflow-x-auto scrollbar-none">
+            <div className="flex border-b border-border overflow-x-auto scrollbar-none">
               {tabs.map((tab) => (
                 <Link
                   key={tab.name}
@@ -166,8 +166,8 @@ export default function CampaignLayout({ children }) {
                   href={tab.href}
                   className={`inline-flex items-center px-3 md:px-4 py-2 border-b-2 text-sm font-medium whitespace-nowrap ${
                     isTabActive(tab.href)
-                      ? "border-black text-black"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                   }`}
                 >
                   {tab.name}
@@ -193,7 +193,7 @@ export default function CampaignLayout({ children }) {
                           </Button>
                         </div>
                       </TooltipTrigger>
-                      <TooltipContent className="bg-white border border-black p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                      <TooltipContent>
                         <div className="flex items-center">
                           <ExclamationCircleIcon className="w-3.5 h-3.5 mr-2 text-amber-500" />
                           <p>Configure email accounts in Settings first</p>
@@ -236,7 +236,7 @@ export default function CampaignLayout({ children }) {
           currentCampaign &&
           !hasEmails &&
           currentCampaign.status !== "RUNNING" && (
-            <div className="mt-4 border border-amber-300 bg-amber-50 p-3 rounded-none flex items-center">
+            <div className="mt-4 border border-amber-300 bg-amber-50 p-3 rounded-lg flex items-center">
               <ExclamationCircleIcon className="w-4 h-4 mr-2 text-amber-500" />
               <p className="text-sm text-amber-800">
                 This campaign has no email accounts configured. Go to{" "}

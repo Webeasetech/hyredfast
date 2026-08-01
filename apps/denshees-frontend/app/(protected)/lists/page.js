@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ListRowsSkeleton } from "@/components/skeletons";
 import Link from "next/link";
 import { DateTime } from "luxon";
 import {
@@ -26,6 +27,7 @@ import {
 import fetcher from "@/lib/fetcher";
 import { post, remove } from "@/lib/apis";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 
 export default function ListsPage() {
   const { data, error, isLoading } = useSWR("/api/lead-lists", fetcher);
@@ -75,80 +77,72 @@ export default function ListsPage() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Lead Lists</h1>
-          <p className="text-gray-600 mt-1">Manage your lead lists</p>
-        </div>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusIcon className="w-4 h-4 mr-2" />
-              New List
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Lead List</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g. SaaS Companies Q1"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  placeholder="Optional description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                />
-              </div>
-              <Button type="submit" disabled={isCreating} className="w-full">
-                {isCreating ? (
-                  <>
-                    <ReloadIcon className="w-4 h-4 mr-2 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  "Create List"
-                )}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+    <div className="space-y-4">
+      <PageHeader title="Lead Lists" description="Manage your lead lists" />
 
-      <div className="border border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-        <div className="p-4 border-b border-gray-200">
+      <div className="border border-border bg-white rounded-lg">
+        <div className="flex items-center gap-3 p-4 border-b border-border">
           <Input
             placeholder="Search lists..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-md"
           />
+
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="ml-auto shrink-0">
+                <PlusIcon className="w-4 h-4 mr-2" />
+                New List
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Lead List</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    placeholder="e.g. SaaS Companies Q1"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Input
+                    id="description"
+                    placeholder="Optional description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                  />
+                </div>
+                <Button type="submit" disabled={isCreating} className="w-full">
+                  {isCreating ? (
+                    <>
+                      <ReloadIcon className="w-4 h-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create List"
+                  )}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {isLoading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block border border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <p className="text-lg font-medium">Loading lists...</p>
-            </div>
-          </div>
+          <ListRowsSkeleton />
         ) : error ? (
           <div className="p-8 text-center">
-            <div className="inline-block border border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-red-50">
+            <div className="rounded-lg inline-block border border-border p-4 bg-red-50">
               <p className="text-lg font-medium text-red-600">
                 Error loading lists
               </p>
@@ -157,7 +151,7 @@ export default function ListsPage() {
         ) : filteredLists.length === 0 ? (
           <div className="p-8 text-center">
             <p className="text-lg">No lists found</p>
-            <p className="text-gray-500 mt-1">
+            <p className="text-muted-foreground mt-1">
               {searchQuery.trim() !== ""
                 ? "Try a different search term"
                 : "Create your first list to get started"}
@@ -189,29 +183,29 @@ function ListRow({ list }) {
   );
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 hover:bg-gray-50">
+    <div className="flex items-center justify-between px-6 py-4 hover:bg-muted">
       <Link href={`/lists/${list.id}`} className="flex-1 min-w-0">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <ChecklistNoteIcon className="w-[18px] h-[18px] shrink-0 text-gray-500" />
+            <ChecklistNoteIcon className="w-[18px] h-[18px] shrink-0 text-muted-foreground" />
             <h3 className="font-medium text-sm hover:underline truncate">
               {list.name}
             </h3>
           </div>
           <div className="flex items-center gap-4 ml-[30px]">
             {list.description && (
-              <p className="text-xs text-gray-500 truncate max-w-[300px]">
+              <p className="text-xs text-muted-foreground truncate max-w-[300px]">
                 {list.description}
               </p>
             )}
             {list.domain && (
-              <span className="flex items-center gap-1 text-xs text-gray-400">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <GlobeIcon className="w-3 h-3" />
                 {list.domain}
               </span>
             )}
             {list.company && (
-              <span className="flex items-center gap-1 text-xs text-gray-400">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <BuildingBIcon className="w-3 h-3" />
                 {list.company}
               </span>
@@ -220,7 +214,7 @@ function ListRow({ list }) {
         </div>
       </Link>
       <div className="flex items-center gap-4">
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-muted-foreground">
           {DateTime.fromISO(list.updated).toRelative()}
         </span>
         <Button
@@ -232,7 +226,7 @@ function ListRow({ list }) {
             }
           }}
           disabled={isDeleting}
-          className="text-gray-400 hover:text-red-600"
+          className="text-muted-foreground hover:text-red-600"
         >
           {isDeleting ? (
             <ReloadIcon className="w-4 h-4 animate-spin" />

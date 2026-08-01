@@ -273,7 +273,7 @@ export default function ListDetailPage() {
             );
           }
           return (
-            <span className="text-sm text-gray-600">{item.email || "—"}</span>
+            <span className="text-sm text-foreground">{item.email || "—"}</span>
           );
         },
       },
@@ -294,7 +294,9 @@ export default function ListDetailPage() {
             );
           }
           return (
-            <span className="text-sm text-gray-600">{item.company || "—"}</span>
+            <span className="text-sm text-foreground">
+              {item.company || "—"}
+            </span>
           );
         },
       },
@@ -315,7 +317,9 @@ export default function ListDetailPage() {
             );
           }
           return (
-            <span className="text-sm text-gray-600">{item.website || "—"}</span>
+            <span className="text-sm text-foreground">
+              {item.website || "—"}
+            </span>
           );
         },
       },
@@ -328,14 +332,14 @@ export default function ListDetailPage() {
             ? Object.entries(item.personalization)
             : [];
           if (entries.length === 0) {
-            return <span className="text-sm text-gray-400">—</span>;
+            return <span className="text-sm text-muted-foreground">—</span>;
           }
           return (
             <div className="flex flex-wrap gap-1">
               {entries.map(([key, value]) => (
                 <span
                   key={key}
-                  className="text-[11px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200"
+                  className="text-[11px] bg-accent text-foreground px-1.5 py-0.5 rounded border border-border"
                 >
                   <span className="font-medium">{key}:</span> {value}
                 </span>
@@ -392,7 +396,7 @@ export default function ListDetailPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-gray-400 hover:text-red-600"
+                className="h-8 w-8 text-muted-foreground hover:text-red-600"
                 onClick={() => {
                   if (confirm("Delete this lead?")) {
                     remove(`/api/lead-lists/${id}/items/${item.id}`, {
@@ -437,7 +441,7 @@ export default function ListDetailPage() {
   if (hasError) {
     return (
       <div className="p-8 text-center">
-        <div className="inline-block border border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-red-50">
+        <div className="rounded-lg inline-block border border-border p-4 bg-red-50">
           <p className="text-lg font-medium text-red-600">Error loading list</p>
         </div>
       </div>
@@ -527,18 +531,20 @@ export default function ListDetailPage() {
                   </Button>
                 </div>
                 {list?.description && (
-                  <p className="text-gray-600 mt-1">{list.description}</p>
+                  <p className="text-foreground mt-1">{list.description}</p>
                 )}
                 <div className="flex items-center gap-4 mt-1">
                   {list?.domain && (
-                    <span className="text-xs text-gray-400">{list.domain}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {list.domain}
+                    </span>
                   )}
                   {list?.company && (
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-muted-foreground">
                       {list.company}
                     </span>
                   )}
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-muted-foreground">
                     {items.length} lead{items.length !== 1 ? "s" : ""}
                   </span>
                 </div>
@@ -604,7 +610,7 @@ export default function ListDetailPage() {
                             })
                           }
                           required
-                          className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                          className="border-border"
                         />
                       </div>
 
@@ -623,7 +629,7 @@ export default function ListDetailPage() {
                             })
                           }
                           required
-                          className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                          className="border-border"
                         />
                       </div>
 
@@ -641,7 +647,7 @@ export default function ListDetailPage() {
                                 company: e.target.value,
                               })
                             }
-                            className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                            className="border-border"
                           />
                         </div>
                         <div className="space-y-2">
@@ -657,20 +663,20 @@ export default function ListDetailPage() {
                                 website: e.target.value,
                               })
                             }
-                            className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                            className="border-border"
                           />
                         </div>
                       </div>
 
                       {formError && (
-                        <div className="text-red-700 text-sm border border-black p-2">
+                        <div className="text-red-700 text-sm border border-border p-2">
                           {formError}
                         </div>
                       )}
 
                       {/* Personalization Section */}
                       {Object.entries(personalization).length > 0 && (
-                        <div className="mt-4 p-4 border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                        <div className="mt-4 p-4 border border-border">
                           <h4 className="text-sm font-medium mb-2">
                             Personalizations:
                           </h4>
@@ -762,11 +768,11 @@ export default function ListDetailPage() {
       </div>
 
       {/* Items table */}
-      <div className="border border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white rounded-lg">
         {items.length === 0 ? (
           <div className="p-8 text-center">
             <p className="text-lg">No leads yet</p>
-            <p className="text-gray-500 mt-1">
+            <p className="text-muted-foreground mt-1">
               Add leads manually or use the Lead Finder
             </p>
           </div>

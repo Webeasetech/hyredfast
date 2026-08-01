@@ -42,7 +42,7 @@ const SEARCH_STEPS = [
 // ── Shared status icon ─────────────────────────────────────
 function StepStatus({ status }) {
   if (!status) {
-    return <div className="w-4 h-4 rounded-full border-2 border-gray-300" />;
+    return <div className="w-4 h-4 rounded-full border-2 border-border" />;
   }
   switch (status) {
     case "EXECUTING":
@@ -61,7 +61,7 @@ function StepStatus({ status }) {
         <div className="w-4 h-4 rounded-full border-2 border-blue-300 border-dashed animate-pulse" />
       );
     default:
-      return <div className="w-4 h-4 rounded-full border-2 border-gray-300" />;
+      return <div className="w-4 h-4 rounded-full border-2 border-border" />;
   }
 }
 
@@ -89,7 +89,7 @@ function PipelineProgress({ steps, runs, tag }) {
               {index < steps.length - 1 && (
                 <div
                   className={`w-0.5 h-6 mt-1 ${
-                    isCompleted ? "bg-green-300" : "bg-gray-200"
+                    isCompleted ? "bg-green-300" : "bg-muted"
                   }`}
                 />
               )}
@@ -103,7 +103,7 @@ function PipelineProgress({ steps, runs, tag }) {
                       ? "text-green-600"
                       : isFailed
                         ? "text-red-600"
-                        : "text-gray-500"
+                        : "text-muted-foreground"
                 }`}
               >
                 <div className="flex items-center gap-1.5">
@@ -111,7 +111,9 @@ function PipelineProgress({ steps, runs, tag }) {
                   {step.label}
                 </div>
               </div>
-              <p className="text-xs text-gray-400 mt-0.5">{step.description}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {step.description}
+              </p>
               {isFailed && (
                 <p className="text-xs text-red-500 mt-0.5">Step failed</p>
               )}
@@ -136,39 +138,43 @@ function EmployeePicker({
   const noneSelected = selected.length === 0;
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <div className="border border-border rounded-lg overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 hover:bg-gray-100 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2 bg-muted hover:bg-accent transition-colors"
       >
-        <span className="text-xs font-semibold text-gray-700">
+        <span className="text-xs font-semibold text-foreground">
           {employees.length} employees found — {selected.length} selected
         </span>
         {expanded ? (
-          <ChevronUpIcon className="w-3.5 h-3.5 text-gray-500" />
+          <ChevronUpIcon className="w-3.5 h-3.5 text-muted-foreground" />
         ) : (
-          <ChevronDownIcon className="w-3.5 h-3.5 text-gray-500" />
+          <ChevronDownIcon className="w-3.5 h-3.5 text-muted-foreground" />
         )}
       </button>
 
       {expanded && (
         <>
           {/* Select all / none */}
-          <div className="flex gap-2 px-3 py-1.5 border-b border-gray-100">
+          <div className="flex gap-2 px-3 py-1.5 border-b border-border">
             <button
               onClick={onSelectAll}
               className={`text-xs font-medium ${
-                allSelected ? "text-gray-400" : "text-blue-600 hover:underline"
+                allSelected
+                  ? "text-muted-foreground"
+                  : "text-blue-600 hover:underline"
               }`}
               disabled={allSelected}
             >
               Select all
             </button>
-            <span className="text-gray-300">|</span>
+            <span className="text-muted-foreground">|</span>
             <button
               onClick={onSelectNone}
               className={`text-xs font-medium ${
-                noneSelected ? "text-gray-400" : "text-blue-600 hover:underline"
+                noneSelected
+                  ? "text-muted-foreground"
+                  : "text-blue-600 hover:underline"
               }`}
               disabled={noneSelected}
             >
@@ -187,7 +193,7 @@ function EmployeePicker({
               return (
                 <label
                   key={emp.prospectId}
-                  className="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                  className="flex items-center gap-2.5 px-3 py-2 hover:bg-muted cursor-pointer"
                 >
                   <Checkbox
                     checked={isChecked}
@@ -195,17 +201,17 @@ function EmployeePicker({
                     className="h-3.5 w-3.5"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-gray-800 truncate">
+                    <p className="text-xs font-medium text-foreground truncate">
                       {name}
                     </p>
                     {emp.jobTitle && (
-                      <p className="text-[11px] text-gray-400 truncate">
+                      <p className="text-[11px] text-muted-foreground truncate">
                         {emp.jobTitle}
                       </p>
                     )}
                   </div>
                   {emp.department && (
-                    <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded shrink-0">
+                    <span className="text-[10px] bg-accent text-muted-foreground px-1.5 py-0.5 rounded shrink-0">
                       {emp.department}
                     </span>
                   )}
@@ -243,13 +249,13 @@ function EnrichedResults({ employees, contacts }) {
             Enrichment Complete
           </span>
         </div>
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-foreground">
           <strong>{withEmail.length}</strong> of {merged.length} have verified
           emails
         </p>
       </div>
 
-      <div className="max-h-[200px] overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+      <div className="max-h-[200px] overflow-y-auto border border-border rounded-lg divide-y divide-gray-100">
         {merged.map((lead) => {
           const name =
             lead.fullName ||
@@ -263,13 +269,13 @@ function EnrichedResults({ employees, contacts }) {
           return (
             <div key={lead.prospectId} className="px-3 py-2">
               <div className="flex items-center gap-2">
-                <UserIcon className="w-3 h-3 text-gray-400 shrink-0" />
-                <span className="text-xs font-medium text-gray-800 truncate">
+                <UserIcon className="w-3 h-3 text-muted-foreground shrink-0" />
+                <span className="text-xs font-medium text-foreground truncate">
                   {name}
                 </span>
               </div>
               {lead.jobTitle && (
-                <p className="text-[11px] text-gray-400 ml-5">
+                <p className="text-[11px] text-muted-foreground ml-5">
                   {lead.jobTitle}
                 </p>
               )}
@@ -282,7 +288,7 @@ function EnrichedResults({ employees, contacts }) {
                   ))}
                 </div>
               ) : (
-                <p className="text-[11px] text-gray-400 ml-5 mt-0.5">
+                <p className="text-[11px] text-muted-foreground ml-5 mt-0.5">
                   No email found
                 </p>
               )}
@@ -551,7 +557,7 @@ export default function LeadFinderChat({ listId } = {}) {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-black text-white px-4 py-3 rounded-full shadow-lg hover:bg-gray-800 transition-colors"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-primary text-primary-foreground px-4 py-3 rounded-full shadow-lg hover:bg-primary/90 transition-colors"
         >
           <SearchIcon className="w-4 h-4" />
           <span className="text-sm font-medium">Find Leads</span>
@@ -566,9 +572,9 @@ export default function LeadFinderChat({ listId } = {}) {
 
       {/* Chat panel */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-[400px] max-h-[560px] bg-white border border-black rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col overflow-hidden">
+        <div className="fixed bottom-6 right-6 z-50 w-[400px] max-h-[560px] bg-white border border-border rounded-lg flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-black text-white shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-primary text-primary-foreground shrink-0">
             <div className="flex items-center gap-2">
               <SearchIcon className="w-4 h-4" />
               <span className="text-sm font-semibold">Lead Finder</span>
@@ -578,7 +584,7 @@ export default function LeadFinderChat({ listId } = {}) {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="hover:bg-gray-800 rounded p-1 transition-colors"
+              className="hover:bg-primary/90 rounded p-1 transition-colors"
             >
               <CancelIcon className="w-4 h-4" />
             </button>
@@ -589,8 +595,8 @@ export default function LeadFinderChat({ listId } = {}) {
             {/* IDLE: welcome */}
             {phase === PHASE.IDLE && !error && (
               <div className="text-center py-6">
-                <BuildingBIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-500">
+                <BuildingBIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">
                   Enter a company domain to find leads with verified emails.
                 </p>
               </div>
@@ -599,10 +605,10 @@ export default function LeadFinderChat({ listId } = {}) {
             {/* SEARCHING: realtime progress */}
             {phase === PHASE.SEARCHING && (
               <div className="space-y-3">
-                <div className="bg-gray-50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500">
+                <div className="bg-muted rounded-lg px-3 py-2">
+                  <p className="text-xs text-muted-foreground">
                     Searching leads for{" "}
-                    <span className="font-semibold text-gray-700">
+                    <span className="font-semibold text-foreground">
                       {domain}
                     </span>
                   </p>
@@ -619,12 +625,12 @@ export default function LeadFinderChat({ listId } = {}) {
             {phase === PHASE.PICKING && (
               <div className="space-y-3">
                 {company && (
-                  <div className="bg-gray-50 rounded-lg px-3 py-2">
-                    <p className="text-sm font-medium text-gray-800">
+                  <div className="bg-muted rounded-lg px-3 py-2">
+                    <p className="text-sm font-medium text-foreground">
                       {company.name || domain}
                     </p>
                     {company.industry && (
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         {company.industry}
                       </p>
                     )}
@@ -633,7 +639,7 @@ export default function LeadFinderChat({ listId } = {}) {
 
                 {employees.length > 0 ? (
                   <>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       Select the employees you want to enrich with verified
                       emails:
                     </p>
@@ -657,8 +663,8 @@ export default function LeadFinderChat({ listId } = {}) {
                   </>
                 ) : (
                   <div className="text-center py-4">
-                    <UsersIcon className="w-6 h-6 text-gray-300 mx-auto mb-1" />
-                    <p className="text-xs text-gray-500">
+                    <UsersIcon className="w-6 h-6 text-muted-foreground mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground">
                       No employees found for this domain.
                     </p>
                   </div>
@@ -670,8 +676,8 @@ export default function LeadFinderChat({ listId } = {}) {
             {phase === PHASE.ENRICHING && (
               <div className="space-y-3">
                 {company && (
-                  <div className="bg-gray-50 rounded-lg px-3 py-2">
-                    <p className="text-sm font-medium text-gray-800">
+                  <div className="bg-muted rounded-lg px-3 py-2">
+                    <p className="text-sm font-medium text-foreground">
                       {company.name || domain}
                     </p>
                   </div>
@@ -695,12 +701,12 @@ export default function LeadFinderChat({ listId } = {}) {
             {phase === PHASE.DONE && (
               <div className="space-y-3">
                 {company && (
-                  <div className="bg-gray-50 rounded-lg px-3 py-2">
-                    <p className="text-sm font-medium text-gray-800">
+                  <div className="bg-muted rounded-lg px-3 py-2">
+                    <p className="text-sm font-medium text-foreground">
                       {company.name || domain}
                     </p>
                     {company.industry && (
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         {company.industry}
                       </p>
                     )}
@@ -757,7 +763,7 @@ export default function LeadFinderChat({ listId } = {}) {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-200 p-3 shrink-0">
+          <div className="border-t border-border p-3 shrink-0">
             {phase === PHASE.IDLE || phase === PHASE.SEARCHING ? (
               <form onSubmit={handleSearch} className="flex gap-2">
                 <Input

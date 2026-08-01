@@ -69,7 +69,7 @@ const EditableCell = ({ value, onChange }) => {
             setEditing(false);
           }
         }}
-        className="h-7 px-1.5 py-0 text-sm border-black shadow-none focus-visible:ring-1 focus-visible:ring-black rounded-none"
+        className="h-7 px-1.5 py-0 text-sm border-border shadow-none focus-visible:ring-1 focus-visible:ring-ring rounded-lg"
       />
     );
   }
@@ -80,10 +80,10 @@ const EditableCell = ({ value, onChange }) => {
         setEditing(true);
         setDraft(value);
       }}
-      className="cursor-text min-h-[28px] flex items-center px-1.5 text-sm hover:bg-gray-50 rounded-none select-none truncate"
+      className="cursor-text min-h-[28px] flex items-center px-1.5 text-sm hover:bg-muted rounded-lg select-none truncate"
       title={value || "Click to edit"}
     >
-      {value || <span className="text-gray-400 italic">Empty</span>}
+      {value || <span className="text-muted-foreground italic">Empty</span>}
     </div>
   );
 };
@@ -241,28 +241,28 @@ const ImportLeadsDialog = ({ open = false, setOpen, campaign }) => {
         <div className="space-y-4 overflow-y-auto flex-1 min-h-0 pr-1">
           {/* CSV Upload — hidden once data is loaded */}
           {data.length === 0 && (
-            <div className="border-2 border-dashed border-black rounded-none p-6 text-center">
+            <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
               <Input
                 type="file"
                 accept=".csv"
                 onChange={handleFileUpload}
-                className="mx-auto mb-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                className="mx-auto mb-2 border-border"
               />
-              <p className="text-sm text-gray-700">
+              <p className="text-sm text-foreground">
                 Upload a CSV file with name and email columns
               </p>
             </div>
           )}
 
           {error && (
-            <div className="border border-black bg-white p-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div className="border border-border bg-white p-3 rounded-lg">
               <p className="text-red-700">{error}</p>
             </div>
           )}
 
           {/* Empty state */}
           {data.length === 0 && (
-            <div className="text-left text-sm flex gap-2 items-center justify-between p-4 border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div className="text-left text-sm flex gap-2 items-center justify-between p-4 border border-border">
               <div className="flex items-center gap-2">
                 <UserIcon className="w-3.5 h-3.5" />
                 Preview of imported contacts will be shown here
@@ -295,7 +295,7 @@ const ImportLeadsDialog = ({ open = false, setOpen, campaign }) => {
                         if (e.key === "Enter") handleAddColumn();
                       }}
                       placeholder="Column name"
-                      className="h-8 w-28 text-xs border-black rounded-none shadow-none"
+                      className="h-8 w-28 text-xs border-border rounded-lg shadow-none"
                     />
                     <Button
                       variant="outline"
@@ -326,11 +326,11 @@ const ImportLeadsDialog = ({ open = false, setOpen, campaign }) => {
                 </div>
               </div>
 
-              <div className="border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
+              <div className="border border-border overflow-hidden">
                 <div className="max-h-[300px] overflow-y-auto">
                   <Table>
-                    <TableHeader className="sticky top-0 bg-black z-10">
-                      <TableRow className="hover:bg-black border-black">
+                    <TableHeader className="sticky top-0 bg-primary z-10">
+                      <TableRow className="hover:bg-primary border-border">
                         <TableHead className="text-white font-semibold text-xs w-10 text-center">
                           #
                         </TableHead>
@@ -342,16 +342,16 @@ const ImportLeadsDialog = ({ open = false, setOpen, campaign }) => {
                             {col.charAt(0).toUpperCase() + col.slice(1)}
                           </TableHead>
                         ))}
-                        <TableHead className="text-white font-semibold text-xs w-10 sticky right-0 bg-black" />
+                        <TableHead className="text-white font-semibold text-xs w-10 sticky right-0 bg-primary" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {data.map((row, rowIndex) => (
                         <TableRow
                           key={rowIndex}
-                          className="border-black/20 hover:bg-gray-50 group/row"
+                          className="border-border/20 hover:bg-muted group/row rounded-lg"
                         >
-                          <TableCell className="text-center text-xs text-gray-400 font-mono p-1">
+                          <TableCell className="text-center text-xs text-muted-foreground font-mono p-1">
                             {rowIndex + 1}
                           </TableCell>
                           {columns.map((col) => (
@@ -364,11 +364,11 @@ const ImportLeadsDialog = ({ open = false, setOpen, campaign }) => {
                               />
                             </TableCell>
                           ))}
-                          <TableCell className="p-1 sticky right-0 bg-white group-hover/row:bg-gray-50">
+                          <TableCell className="p-1 sticky right-0 bg-white group-hover/row:bg-muted">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                              className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50"
                               onClick={() => handleDeleteRow(rowIndex)}
                             >
                               <Trash2Icon className="w-3.5 h-3.5" />
@@ -385,8 +385,8 @@ const ImportLeadsDialog = ({ open = false, setOpen, campaign }) => {
 
           {/* Info and Warnings — hidden when data is loaded */}
           {data.length === 0 && (
-            <div className="border border-black bg-white p-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-start gap-2">
-              <InformationCircleIcon className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <div className="border border-border bg-white p-3 flex items-start gap-2 rounded-lg">
+              <InformationCircleIcon className="w-4 h-4 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium">CSV Format Requirements</p>
                 <ul className="text-sm list-disc pl-5 mt-1">
@@ -414,7 +414,7 @@ const ImportLeadsDialog = ({ open = false, setOpen, campaign }) => {
           )}
         </div>
 
-        <DialogFooter className="border-t border-black pt-4">
+        <DialogFooter className="border-t border-border pt-4">
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>

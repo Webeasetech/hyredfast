@@ -7,6 +7,10 @@ dependencies = [
     "langgraph>=0.4",
     "langchain>=0.3",
     "langchain-openai>=0.3",
+    # Imported directly by src/research.py (Responses API + web_search);
+    # already a transitive dep of langchain-openai, pinned here so the direct
+    # import never breaks if langchain reshuffles its internals.
+    "openai>=1.75",
     "langchain-community>=0.3",
     "python-dotenv>=1.0",
     "pydantic>=2.0",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PanelSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,22 +28,25 @@ import useSWRMutation from "swr/mutation";
 import { patch, remove } from "@/lib/apis";
 import { toast } from "sonner";
 import CreateSMTP from "@/components/campaigns/settings/create-smtp";
-import { SettingsNav } from "@/components/settings/settings-nav";
+import { PageHeader } from "@/components/page-header";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function SettingsPage() {
   return (
-    <div className="container mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+    <div className="space-y-4">
+      <PageHeader
+        title="Email settings"
+        description="Connect and manage the inboxes you send from"
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-1">
-          <SettingsNav />
-        </div>
-
-        <div className="md:col-span-3">
-          <EmailSettings />
-        </div>
-      </div>
+      <EmailSettings />
     </div>
   );
 }
@@ -125,19 +129,12 @@ function EmailSettings() {
   const isBlocked = (deleteTarget?.activeCampaignCount || 0) > 0;
 
   if (isLoading) {
-    return (
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-        <div className="flex justify-center items-center h-40">
-          <ReloadIcon className="h-8 w-8 animate-spin" />
-          <p className="ml-2 text-lg">Loading email accounts...</p>
-        </div>
-      </div>
-    );
+    return <PanelSkeleton lines={3} />;
   }
 
   if (error) {
     return (
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <div className="flex flex-col justify-center items-center h-40">
           <p className="text-lg text-red-600">Failed to load email accounts</p>
           <Button onClick={() => refreshEmails()} className="mt-4">
@@ -152,8 +149,8 @@ function EmailSettings() {
 
   return (
     <div id="email-settings">
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-        <div className="flex justify-between items-center mb-6">
+      <div className="rounded-lg border border-border bg-white">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-4">
           <h2 className="text-xl font-bold">Connected Email Accounts</h2>
           <Button onClick={() => setIsDialogOpen(true)}>
             <PlusIcon className="mr-2 h-4 w-4" />
@@ -162,12 +159,12 @@ function EmailSettings() {
         </div>
 
         {emails.length === 0 ? (
-          <div className="border border-dashed border-gray-300 rounded-none p-6 text-center">
-            <EmailIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
+          <div className="p-6 text-center">
+            <EmailIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h3 className="mt-2 text-sm font-medium text-foreground">
               No email accounts
             </h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Add an email account to use in your campaigns
             </p>
             <div className="mt-6">
@@ -178,31 +175,31 @@ function EmailSettings() {
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            {emails.map((email) => (
-              <div
-                key={email.id}
-                className="border border-gray-200 p-4 rounded-none bg-gray-50"
-              >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium">{email.username}</p>
-                    <p className="text-sm text-gray-500">Host: {email.host}</p>
-                  </div>
-
-                  <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="pl-6">Email</TableHead>
+                <TableHead>Host</TableHead>
+                <TableHead>Daily Limit</TableHead>
+                <TableHead className="pr-6 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {emails.map((email) => (
+                <TableRow key={email.id}>
+                  <TableCell className="pl-6 font-medium">
+                    {email.username}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {email.host}
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-2">
-                      <label
-                        htmlFor={`daily-limit-${email.id}`}
-                        className="text-sm whitespace-nowrap"
-                      >
-                        Daily Limit:
-                      </label>
                       <Input
                         id={`daily-limit-${email.id}`}
                         type="number"
                         min="1"
-                        className="w-24"
+                        className="w-20"
                         value={
                           editingLimits[email.id] !== undefined
                             ? editingLimits[email.id]
@@ -212,26 +209,21 @@ function EmailSettings() {
                           handleDailyLimitChange(email.id, e.target.value)
                         }
                       />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSaveDailyLimit(email)}
+                        disabled={savingIds.includes(email.id)}
+                      >
+                        {savingIds.includes(email.id) ? (
+                          <ReloadIcon className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <SaveFloppyIcon className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
-
-                    <Button
-                      size="sm"
-                      onClick={() => handleSaveDailyLimit(email)}
-                      disabled={savingIds.includes(email.id)}
-                    >
-                      {savingIds.includes(email.id) ? (
-                        <>
-                          <ReloadIcon className="h-4 w-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <SaveFloppyIcon className="h-4 w-4 mr-2" />
-                          Save
-                        </>
-                      )}
-                    </Button>
-
+                  </TableCell>
+                  <TableCell className="pr-6 text-right">
                     <Button
                       size="sm"
                       variant="outline"
@@ -240,11 +232,11 @@ function EmailSettings() {
                     >
                       <TrashIcon className="h-4 w-4" />
                     </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
 
@@ -268,7 +260,9 @@ function EmailSettings() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isBlocked ? "Can't remove this account" : "Remove email account?"}
+              {isBlocked
+                ? "Can't remove this account"
+                : "Remove email account?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {isBlocked

@@ -99,9 +99,9 @@ export default function OnboardingPage() {
               key={i}
               className={`h-2 rounded-full transition-all duration-300 ${
                 i === currentStep
-                  ? "w-8 bg-black"
+                  ? "w-8 bg-primary"
                   : i < currentStep
-                    ? "w-2 bg-black"
+                    ? "w-2 bg-primary"
                     : "w-2 bg-gray-300"
               }`}
             />
@@ -130,7 +130,7 @@ export default function OnboardingPage() {
               }}
               transition={{ duration: 0.3, ease: "easeOut" }}
             >
-              <div className="bg-black text-white p-4 border border-black shadow-[4px_4px_0px_0px_rgba(128,128,128,1)]">
+              <div className="bg-primary text-primary-foreground p-4 border border-border">
                 <Icon className="w-8 h-8" />
               </div>
             </motion.div>
@@ -148,7 +148,7 @@ export default function OnboardingPage() {
             </motion.h1>
 
             <motion.p
-              className="text-gray-600 text-lg mb-12 leading-relaxed"
+              className="text-foreground text-lg mb-12 leading-relaxed"
               variants={{
                 hidden: { y: 30, opacity: 0 },
                 visible: { y: 0, opacity: 1 },
@@ -195,7 +195,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Step count */}
-        <p className="text-sm text-gray-400 mt-8">
+        <p className="text-sm text-muted-foreground mt-8">
           {currentStep + 1} of {steps.length}
         </p>
       </div>

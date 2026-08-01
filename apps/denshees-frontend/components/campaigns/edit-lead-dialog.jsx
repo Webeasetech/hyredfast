@@ -179,7 +179,7 @@ const EditLeadDialog = ({ open = false, setOpen, lead = null, campaign }) => {
                     value={leadData.name}
                     onChange={handleInputChange}
                     required
-                    className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                    className="border-border"
                   />
                 </div>
 
@@ -193,19 +193,19 @@ const EditLeadDialog = ({ open = false, setOpen, lead = null, campaign }) => {
                     value={leadData.email}
                     onChange={handleInputChange}
                     required
-                    className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                    className="border-border"
                   />
                 </div>
 
                 {formError && (
-                  <div className="text-red-700 text-sm border border-black p-2">
+                  <div className="text-red-700 text-sm border border-border p-2">
                     {formError}
                   </div>
                 )}
 
                 {/* Personalization Section */}
                 {Object.entries(personalization).length > 0 && (
-                  <div className="mt-4 p-4 border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="mt-4 p-4 border border-border">
                     <h4 className="text-sm font-medium mb-2">
                       Personalizations:
                     </h4>

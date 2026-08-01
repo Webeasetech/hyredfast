@@ -16,7 +16,7 @@ export async function POST(request) {
     if (!creditType || !quantity || !userInfo) {
       return NextResponse.json(
         { error: "Missing required fields: creditType, quantity, userInfo" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -30,7 +30,7 @@ export async function POST(request) {
     if (!productId) {
       return NextResponse.json(
         { error: 'Invalid credit type. Must be "email" or "ai"' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -83,19 +83,19 @@ export async function POST(request) {
           error: "Payment service error",
           details: error.response.data?.message || error.message,
         },
-        { status: error.response.status || 500 }
+        { status: error.response.status || 500 },
       );
     } else if (error.request) {
       // Network error
       return NextResponse.json(
         { error: "Network error - unable to reach payment service" },
-        { status: 503 }
+        { status: 503 },
       );
     } else {
       // Other errors
       return NextResponse.json(
         { error: "Internal server error", details: error.message },
-        { status: 500 }
+        { status: 500 },
       );
     }
   }
@@ -105,6 +105,6 @@ export async function POST(request) {
 export async function GET() {
   return NextResponse.json(
     { error: "Method not allowed. Use POST to create payments." },
-    { status: 405 }
+    { status: 405 },
   );
 }

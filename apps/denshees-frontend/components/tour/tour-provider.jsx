@@ -118,13 +118,24 @@ const TITLE_STEP = stepIndexOf("#title");
 const DESC_STEP = stepIndexOf("#desc");
 const CREATE_STEP = stepIndexOf("#tour-create-campaign-submit");
 
+// Joyride styles are plain JS objects rather than classes, so the design tokens
+// are read off :root at module scope and reused below — keeping the tour in step
+// with the rest of the system instead of re-hardcoding hex.
+const token = (name, fallback) => {
+  if (typeof window === "undefined") return fallback;
+  const v = getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+  return v ? `hsl(${v})` : fallback;
+};
+
 // Color tokens + behavior flags — passed as `options` prop in v3
 const joyrideOptions = {
   arrowColor: "#ffffff",
   backgroundColor: "#ffffff",
   overlayColor: "rgba(0, 0, 0, 0.55)",
-  primaryColor: "#000000",
-  textColor: "#111827",
+  primaryColor: token("--primary", "#0a66c2"),
+  textColor: token("--foreground", "#111827"),
   zIndex: 10000,
   // No back button
   buttons: ["close", "primary"],
@@ -136,9 +147,9 @@ const joyrideOptions = {
 // CSS overrides — passed as `styles` prop in v3
 const joyrideStyles = {
   tooltip: {
-    borderRadius: 0,
-    border: "2px solid #000000",
-    boxShadow: "4px 4px 0px 0px rgba(0,0,0,1)",
+    borderRadius: 12,
+    border: `1px solid ${token("--border", "#e5e7eb")}`,
+    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
     padding: "20px",
   },
   tooltipTitle: {
@@ -152,30 +163,29 @@ const joyrideStyles = {
     padding: "0",
   },
   buttonPrimary: {
-    backgroundColor: "#000000",
-    borderRadius: 0,
-    color: "#ffffff",
+    backgroundColor: token("--primary", "#0a66c2"),
+    borderRadius: 6,
+    color: token("--primary-foreground", "#ffffff"),
     fontSize: "13px",
     fontWeight: "600",
     padding: "8px 16px",
   },
   buttonBack: {
     backgroundColor: "transparent",
-    border: "1px solid #000000",
-    borderRadius: 0,
-    color: "#000000",
+    border: `1px solid ${token("--border", "#e5e7eb")}`,
+    borderRadius: 6,
+    color: token("--foreground", "#111827"),
     fontSize: "13px",
     fontWeight: "600",
     padding: "8px 16px",
     marginRight: "8px",
   },
   buttonSkip: {
-    color: "#6b7280",
+    color: token("--muted-foreground", "#6b7280"),
     fontSize: "13px",
   },
   spotlight: {
-    borderRadius: 0,
-    border: "2px solid #000000",
+    borderRadius: 8,
   },
   buttonClose: {
     color: "#111827",
@@ -288,7 +298,9 @@ export function TourProvider({ children }) {
           // desc — must not be empty
           const desc = document.getElementById("desc")?.value?.trim();
           if (!desc) {
-            toast.error("Please enter a campaign description before continuing.");
+            toast.error(
+              "Please enter a campaign description before continuing.",
+            );
             controls.open();
             return;
           }

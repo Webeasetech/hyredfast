@@ -77,10 +77,10 @@ const AIButton = ({ text, updateText, setLoading }) => {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
       <Select value={selected} onValueChange={setSelected}>
-        <SelectTrigger className="w-full sm:w-[280px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+        <SelectTrigger className="w-full sm:w-[280px] border-border">
           <SelectValue placeholder="Select enhancement type" />
         </SelectTrigger>
-        <SelectContent className="border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <SelectContent className="border-border">
           <SelectGroup>
             {enhancementTypes.map((type) => (
               <SelectItem
@@ -101,7 +101,7 @@ const AIButton = ({ text, updateText, setLoading }) => {
       <Button
         onClick={enhanceText}
         disabled={selected.length === 0}
-        className="flex items-center gap-2 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
+        className="flex items-center gap-2 border-2 border-border hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
       >
         <StarsCIcon className="w-4 h-4" />
         Enhance with AI

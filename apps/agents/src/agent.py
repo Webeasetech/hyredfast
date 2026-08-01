@@ -14,6 +14,7 @@ from langgraph.prebuilt import ToolNode
 from langsmith import traceable
 
 import src.config  # noqa: F401  — loads .env
+from src.research import research_company
 from src.state import AgentState
 from src.tools import (
     add_lead_to_list,
@@ -58,6 +59,8 @@ You can:
 • Check the inbox for unreplied messages
 • View connected email accounts
 • Get overall dashboard stats
+• Research a company on the live web by name + domain (summary, size, funding, \
+recent news, talking points with sources) — useful before personalising outreach
 
 Rules:
 • Always confirm destructive actions (delete, remove) before executing.
@@ -99,6 +102,8 @@ tools = [
     get_inbox,
     # Email credentials
     list_email_credentials,
+    # Web research
+    research_company,
 ]
 
 
