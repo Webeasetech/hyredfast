@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+import { ownsCampaign, notFound } from "@/lib/authz";
 
 const PAGE_SIZE = 20;
 
 export async function GET(request, props) {
   const params = await props.params;
   const campaign = params.campaign_id;
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsCampaign(auth.userId, campaign))) return notFound("Campaign");
+
   const cursor = request.nextUrl.searchParams.get("cursor");
 
   try {

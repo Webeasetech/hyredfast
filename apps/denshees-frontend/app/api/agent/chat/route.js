@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
+import { tryAuth } from "@/lib/auth";
 
 const AGENT_URL = process.env.AGENT_URL || "http://localhost:8000";
 
 export async function POST(request) {
   try {
     const { message, thread_id } = await request.json();
-    const authToken = request.headers.get("authorization");
 
-    if (!authToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // Verify before forwarding, not just check for presence. The agent's tools
+    // call back into this API with this exact token, so an unverified one would
+    // have propagated through the whole tool surface.
+    const { response: authResponse } = tryAuth(request);
+    if (authResponse) return authResponse;
+
+    const authToken = request.headers.get("authorization");
 
     if (!message?.trim()) {
       return NextResponse.json(

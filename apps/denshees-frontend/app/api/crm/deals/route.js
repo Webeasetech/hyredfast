@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+import { ownsCampaign, ownsContact, ownsCrmStage, notFound } from "@/lib/authz";
 
 export async function GET(request) {
   const searchParams = new URL(request.url).searchParams;
   const campaign = searchParams.get("campaign");
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsCampaign(auth.userId, campaign))) return notFound("Campaign");
   const stage = searchParams.get("stage");
 
   if (!campaign) {
@@ -41,7 +46,19 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+
   const body = await request.json();
+
+  if (!(await ownsCampaign(auth.userId, body.campaign)))
+    return notFound("Campaign");
+  // The lead and stage must belong to the caller too, or a deal could be built
+  // that points at another user's records.
+  if (body.lead && !(await ownsContact(auth.userId, body.lead)))
+    return notFound("Lead");
+  if (body.stage && !(await ownsCrmStage(auth.userId, body.stage)))
+    return notFound("Stage");
 
   try {
     const record = await prisma.crmDeal.create({

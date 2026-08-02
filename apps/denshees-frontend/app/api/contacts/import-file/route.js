@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import Papa from "papaparse";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+import { ownsCampaign, notFound } from "@/lib/authz";
 
 export async function POST(request) {
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+
   try {
     const formData = await request.formData();
     const file = formData.get("file");
     const campaign = formData.get("campaign");
+
+    if (!(await ownsCampaign(auth.userId, campaign)))
+      return notFound("Campaign");
 
     if (!file) {
       return NextResponse.json(

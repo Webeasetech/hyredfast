@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+import { ownsCampaign, notFound } from "@/lib/authz";
 
 const DEFAULT_STAGES = [
   {
@@ -30,6 +32,9 @@ const DEFAULT_STAGES = [
 ];
 
 export async function POST(request) {
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+
   const { campaign } = await request.json();
 
   if (!campaign) {
@@ -38,6 +43,8 @@ export async function POST(request) {
       { status: 400 },
     );
   }
+
+  if (!(await ownsCampaign(auth.userId, campaign))) return notFound("Campaign");
 
   try {
     const existing = await prisma.crmStage.findMany({

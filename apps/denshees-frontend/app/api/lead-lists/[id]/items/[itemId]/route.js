@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+import { ownsLeadListItem, notFound } from "@/lib/authz";
 
 export async function PATCH(request, props) {
   const params = await props.params;
   const { itemId } = params;
+
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsLeadListItem(auth.userId, itemId))) return notFound("Item");
+
   const { name, email, website, company, personalization } =
     await request.json();
 
@@ -26,6 +33,10 @@ export async function PATCH(request, props) {
 export async function DELETE(request, props) {
   const params = await props.params;
   const { itemId } = params;
+
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsLeadListItem(auth.userId, itemId))) return notFound("Item");
 
   try {
     await prisma.leadListItem.delete({ where: { id: itemId } });

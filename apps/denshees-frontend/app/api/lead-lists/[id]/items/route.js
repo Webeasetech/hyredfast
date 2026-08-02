@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+import { ownsLeadList, notFound } from "@/lib/authz";
 
 export async function GET(request, props) {
   const params = await props.params;
   const { id } = params;
+
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsLeadList(auth.userId, id))) return notFound("List");
 
   try {
     const records = await prisma.leadListItem.findMany({
@@ -24,6 +30,10 @@ export async function GET(request, props) {
 export async function POST(request, props) {
   const params = await props.params;
   const { id } = params;
+
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsLeadList(auth.userId, id))) return notFound("List");
   const { name, email, website, company, personalization } =
     await request.json();
 

@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+import { ownsLeadList, notFound } from "@/lib/authz";
 
 export async function GET(request, props) {
   const params = await props.params;
   const { id } = params;
+
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsLeadList(auth.userId, id))) return notFound("List");
 
   try {
     const record = await prisma.leadList.findUnique({ where: { id } });
@@ -20,6 +26,10 @@ export async function GET(request, props) {
 export async function PATCH(request, props) {
   const params = await props.params;
   const { id } = params;
+
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsLeadList(auth.userId, id))) return notFound("List");
   const { name, description } = await request.json();
 
   try {
@@ -41,6 +51,10 @@ export async function PATCH(request, props) {
 export async function DELETE(request, props) {
   const params = await props.params;
   const { id } = params;
+
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsLeadList(auth.userId, id))) return notFound("List");
 
   try {
     await prisma.leadList.delete({ where: { id } });
