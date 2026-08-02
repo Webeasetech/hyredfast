@@ -72,7 +72,10 @@ export async function DELETE(request) {
       }),
     ]);
 
-    return NextResponse.json({ message: "Follow-up removed", stage: pitch.stage });
+    return NextResponse.json({
+      message: "Follow-up removed",
+      stage: pitch.stage,
+    });
   } catch (error) {
     console.error(`[API] Error deleting pitch ${pitchId}:`, error);
     return NextResponse.json(

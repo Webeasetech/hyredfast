@@ -68,7 +68,7 @@ const EmailProgressBar = ({
   }, [sentPercentage, openedPercentage, repliedPercentage, animate]);
 
   return (
-    <div className="relative w-full p-4 border border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden h-full flex items-center">
+    <div className="relative w-full p-4 border border-border bg-white overflow-hidden h-full flex items-center rounded-lg">
       {/* Background grid pattern for e-ink feel */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48Y2lyY2xlIHN0cm9rZT0iI2VlZWVlZSIgc3Ryb2tlLXdpZHRoPSIxIiBjeD0iMTAiIGN5PSIxMCIgcj0iOSIvPjwvZz48L3N2Zz4=')] opacity-10"></div>
 
@@ -81,7 +81,7 @@ const EmailProgressBar = ({
               style={{ width: animate ? "0%" : `${sentPercentage}%` }}
             />
           </TooltipTrigger>
-          <TooltipContent className="bg-white border border-black">
+          <TooltipContent>
             <p className="text-sm font-mono">Emails sent: {sentEmails}</p>
           </TooltipContent>
         </Tooltip>
@@ -96,7 +96,7 @@ const EmailProgressBar = ({
               style={{ width: animate ? "0%" : `${openedPercentage}%` }}
             />
           </TooltipTrigger>
-          <TooltipContent className="bg-white border border-black">
+          <TooltipContent>
             <p className="text-sm font-mono">Emails opened: {openedEmails}</p>
           </TooltipContent>
         </Tooltip>
@@ -111,7 +111,7 @@ const EmailProgressBar = ({
               style={{ width: animate ? "0%" : `${repliedPercentage}%` }}
             />
           </TooltipTrigger>
-          <TooltipContent className="bg-white border border-black">
+          <TooltipContent>
             <p className="text-sm font-mono">Emails replied: {repliedEmails}</p>
           </TooltipContent>
         </Tooltip>

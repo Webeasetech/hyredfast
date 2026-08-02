@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   flexRender,
   getCoreRowModel,
@@ -51,7 +52,7 @@ export function DataTable({
 
   return (
     <div className="space-y-4">
-      <div className=" min-h-[400px]">
+      <div className="min-h-[400px]">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -66,7 +67,7 @@ export function DataTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -77,15 +78,17 @@ export function DataTable({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-[300px] text-center"
-                >
-                  <div className="flex items-center justify-center h-full">
-                    <div className="border border-black p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                      <p className="text-lg font-medium">Loading...</p>
+                <TableCell colSpan={columns.length} className="p-0">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-4 border-b border-border px-4 py-3 last:border-0"
+                    >
+                      <Skeleton className="h-3.5 w-40" />
+                      <Skeleton className="h-3.5 w-56" />
+                      <Skeleton className="ml-auto h-5 w-20 rounded-full" />
                     </div>
-                  </div>
+                  ))}
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
@@ -98,7 +101,7 @@ export function DataTable({
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -112,7 +115,7 @@ export function DataTable({
                 >
                   <div className="flex flex-col items-center justify-center h-full">
                     <p className="text-lg font-medium">No results found</p>
-                    <p className="text-gray-500 mt-1">
+                    <p className="text-muted-foreground mt-1">
                       Try adjusting your search or filters
                     </p>
                   </div>

@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircleIcon, BuildingAIcon } from "mage-icons-react/bulk";
 import { ReloadIcon } from "mage-icons-react/stroke";
-import { SettingsNav } from "@/components/settings/settings-nav";
 import useAuthStore from "@/store/auth.store";
 import { get, post } from "@/lib/apis";
 import { PLANS, formatInr } from "@/lib/constants/plans";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 
 const CHECKOUT_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
 
@@ -35,18 +35,13 @@ function loadCheckoutScript() {
 
 export default function BillingSettingsPage() {
   return (
-    <div className="container mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+    <div className="space-y-4">
+      <PageHeader
+        title="Billing"
+        description="Buy companies and track what you have left"
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-1">
-          <SettingsNav />
-        </div>
-
-        <div className="md:col-span-3">
-          <BillingSettings />
-        </div>
-      </div>
+      <BillingSettings />
     </div>
   );
 }
@@ -84,7 +79,6 @@ function BillingSettings() {
         name: "Denshees",
         description: `${order.companies} companies`,
         prefill: order.prefill,
-        theme: { color: "#000000" },
         handler: async (response) => {
           try {
             await post("/api/payments/verify", { arg: response });
@@ -120,7 +114,7 @@ function BillingSettings() {
 
   return (
     <div id="billing-settings" className="space-y-6">
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <div className="flex items-baseline justify-between">
           <h2 className="text-xl font-bold">Companies</h2>
           {testMode && (
@@ -131,21 +125,21 @@ function BillingSettings() {
         </div>
         <div className="mt-6 flex items-end gap-8">
           <div>
-            <div className="text-4xl font-bold font-mono">{remaining}</div>
-            <div className="text-sm text-gray-600">Remaining</div>
+            <div className="text-4xl font-bold tabular-nums">{remaining}</div>
+            <div className="text-sm text-muted-foreground">Remaining</div>
           </div>
           <div>
-            <div className="text-2xl font-mono">{used}</div>
-            <div className="text-sm text-gray-600">Used</div>
+            <div className="text-2xl tabular-nums">{used}</div>
+            <div className="text-sm text-muted-foreground">Used</div>
           </div>
           <div>
-            <div className="text-2xl font-mono">{total}</div>
-            <div className="text-sm text-gray-600">Purchased</div>
+            <div className="text-2xl tabular-nums">{total}</div>
+            <div className="text-sm text-muted-foreground">Purchased</div>
           </div>
         </div>
       </div>
 
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <h2 className="text-xl font-bold mb-6">Buy companies</h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -161,12 +155,14 @@ function BillingSettings() {
         </div>
       </div>
 
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="border border-border bg-white p-6 rounded-lg">
         <h2 className="text-xl font-bold mb-4">What a company includes</h2>
-        <ul className="text-sm text-gray-600 space-y-1">
+        <ul className="text-sm text-muted-foreground space-y-1">
           <li>• Company research and a should-you-apply verdict</li>
           <li>• A tailored résumé and cover letter for the role</li>
-          <li>• Up to 10 contacts, with outreach sequences written per contact</li>
+          <li>
+            • Up to 10 contacts, with outreach sequences written per contact
+          </li>
           <li>• One-time purchase, no subscription, no expiry</li>
         </ul>
       </div>
@@ -176,18 +172,18 @@ function BillingSettings() {
 
 function PlanCard({ plan, isPending, isDisabled, onBuy }) {
   return (
-    <div className="border-2 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col">
+    <div className="border border-border rounded-lg p-6 flex flex-col">
       <h3 className="text-lg font-bold flex items-center gap-2">
         <BuildingAIcon className="h-5 w-5" />
         {plan.label}
       </h3>
-      <p className="text-sm text-gray-600 mt-1">{plan.description}</p>
+      <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>
 
       <div className="mt-6 flex items-baseline gap-2">
-        <span className="text-3xl font-bold font-mono">
+        <span className="text-3xl font-bold tabular-nums">
           {formatInr(plan.amount)}
         </span>
-        <span className="text-sm text-gray-600">one-time</span>
+        <span className="text-sm text-muted-foreground">one-time</span>
       </div>
 
       <div className="mt-2 flex items-center gap-1.5 text-sm">

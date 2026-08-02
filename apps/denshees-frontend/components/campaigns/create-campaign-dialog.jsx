@@ -77,7 +77,7 @@ export default function CreateCampaignDialog({ children }) {
     <Dialog open={open} onOpenChange={handleOpenChange} modal={!isTourActive}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent
-        className="sm:max-w-md border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+        className="sm:max-w-md border-2 border-border"
         onInteractOutside={blockWhileTouring}
         onFocusOutside={blockWhileTouring}
         onEscapeKeyDown={blockWhileTouring}
@@ -99,7 +99,7 @@ export default function CreateCampaignDialog({ children }) {
               placeholder="Campaign title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="border-black"
+              className="border-border"
             />
           </div>
 
@@ -112,7 +112,7 @@ export default function CreateCampaignDialog({ children }) {
               placeholder="Campaign description"
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
-              className="border-black min-h-[100px]"
+              className="border-border min-h-[100px]"
             />
           </div>
 
@@ -125,9 +125,9 @@ export default function CreateCampaignDialog({ children }) {
             {loading ? "Creating..." : "Create"}
           </Button>
 
-          <p className="text-xs text-gray-500">
-            Starts with a ready-made sequence — 4 emails, 1 day apart, sent between
-            6 AM–12 PM. Adjust anytime in Builder and Settings.
+          <p className="text-xs text-muted-foreground">
+            Starts with a ready-made sequence — 4 emails, 1 day apart, sent
+            between 6 AM–12 PM. Adjust anytime in Builder and Settings.
           </p>
         </div>
       </DialogContent>

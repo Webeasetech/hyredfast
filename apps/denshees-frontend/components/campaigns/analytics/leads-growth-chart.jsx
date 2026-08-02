@@ -154,7 +154,7 @@ const LeadsGrowthChart = ({ growthData }) => {
         <Bar data={chartData} options={options} />
       ) : (
         <div className="flex items-center justify-center h-full">
-          <p className="text-gray-500">No leads data available</p>
+          <p className="text-muted-foreground">No leads data available</p>
         </div>
       )}
     </div>

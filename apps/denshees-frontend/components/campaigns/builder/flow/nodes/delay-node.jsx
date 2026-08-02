@@ -27,14 +27,14 @@ const DelayNode = ({ data }) => {
   };
 
   return (
-    <div className="h-full px-3 py-2 bg-white border-2 border-dashed border-gray-500 flex items-center justify-center gap-2 text-gray-700">
+    <div className="flex h-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-foreground">
       <Handle
         type="target"
         position={Position.Left}
-        className="!bg-gray-500 !border-2 !border-white !w-2.5 !h-2.5"
+        className="size-2! rounded-full! border-2! border-background! bg-border!"
       />
 
-      <ClockIcon className="w-4 h-4 shrink-0" />
+      <ClockIcon className="size-3.5 shrink-0 text-muted-foreground" />
 
       {editing ? (
         <input
@@ -51,15 +51,16 @@ const DelayNode = ({ data }) => {
               setEditing(false);
             }
           }}
-          className="w-12 px-1 text-sm font-bold text-center text-black border-2 border-black outline-none"
+          className="w-10 rounded border border-input px-1 text-center text-sm font-medium text-foreground outline-hidden"
         />
       ) : (
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="text-sm font-medium hover:text-black transition-colors"
+          className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          Wait <span className="font-bold text-black">{delayDays}</span>
+          Wait{" "}
+          <span className="font-semibold text-foreground">{delayDays}</span>
           {delayDays === 1 ? " day" : " days"}
         </button>
       )}
@@ -67,7 +68,7 @@ const DelayNode = ({ data }) => {
       <Handle
         type="source"
         position={Position.Right}
-        className="!bg-gray-500 !border-2 !border-white !w-2.5 !h-2.5"
+        className="size-2! rounded-full! border-2! border-background! bg-border!"
       />
     </div>
   );

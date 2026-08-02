@@ -101,7 +101,7 @@ const PieChart = ({
         <Pie data={chartData} options={options} />
       ) : (
         <div className="flex items-center justify-center h-full">
-          <p className="text-gray-500">No data available</p>
+          <p className="text-muted-foreground">No data available</p>
         </div>
       )}
     </div>

@@ -31,7 +31,8 @@ export async function POST(request) {
       prisma.pitchEmail.create({
         data: {
           title: `Follow Up ${nextStage}`,
-          message: "Hey {{name}}, I am just following up on my previous emails.",
+          message:
+            "Hey {{name}}, I am just following up on my previous emails.",
           subject: "Following Up {{name}}!",
           campaignId: campaign,
           stage: nextStage,
@@ -46,7 +47,10 @@ export async function POST(request) {
 
     return NextResponse.json(pitch);
   } catch (error) {
-    console.error(`[API] Error creating pitch for campaign ${campaign}:`, error);
+    console.error(
+      `[API] Error creating pitch for campaign ${campaign}:`,
+      error,
+    );
     return NextResponse.json(
       { message: "Something went wrong" },
       { status: 500 },

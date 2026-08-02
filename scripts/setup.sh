@@ -18,7 +18,7 @@ copy_env() {
   else
     echo "[$name] No .env.example found, skipping."
   fi
-}Campaign
+}
 
 echo "--- Setting up environment files ---"
 copy_env "$ROOT_DIR/apps/denshees-frontend" "frontend"

@@ -76,13 +76,13 @@ export default function LeadsFilters({
           <FilterIcon className="w-4 h-4 mr-2" />
           Filters
           {activeCount > 0 && (
-            <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center border border-black bg-black px-1 text-[10px] font-medium text-white">
+            <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center border border-border bg-primary px-1 text-[10px] font-medium text-white">
               {activeCount}
             </span>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <PopoverContent className="w-80 border-border">
         <div className="grid gap-4">
           <h4 className="font-medium leading-none">Filters</h4>
 
@@ -97,7 +97,7 @@ export default function LeadsFilters({
                   <Checkbox
                     checked={draft.statuses.includes(status.value)}
                     onCheckedChange={() => toggleStatus(status.value)}
-                    className="border-black data-[state=checked]:bg-black"
+                    className="border-border data-[state=checked]:bg-primary"
                   />
                   {status.label}
                 </label>
@@ -120,11 +120,11 @@ export default function LeadsFilters({
             >
               <SelectTrigger
                 id="sent-at-sort"
-                className="col-span-2 h-8 border-black"
+                className="col-span-2 h-8 border-border"
               >
                 <SelectValue placeholder="Sort by sent date" />
               </SelectTrigger>
-              <SelectContent className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <SelectContent className="border-border">
                 <SelectItem value="NEWEST_FIRST">Newest first</SelectItem>
                 <SelectItem value="OLDEST_FIRST">Oldest first</SelectItem>
               </SelectContent>
@@ -141,11 +141,11 @@ export default function LeadsFilters({
             >
               <SelectTrigger
                 id="stage-filter"
-                className="col-span-2 h-8 border-black"
+                className="col-span-2 h-8 border-border"
               >
                 <SelectValue placeholder="Filter by stage" />
               </SelectTrigger>
-              <SelectContent className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              <SelectContent className="border-border">
                 <SelectItem value="ALL">All stages</SelectItem>
                 {Array.from({ length: (maxStageCount || 5) + 1 }, (_, i) => (
                   <SelectItem key={i} value={i.toString()}>

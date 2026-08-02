@@ -2,16 +2,8 @@
 
 import { useMemo } from "react";
 import { DateTime } from "luxon";
-import {
-  BarChart,
-  Bar,
-  Cell,
-  LabelList,
-  Tooltip,
-  ResponsiveContainer,
-  YAxis,
-  XAxis,
-} from "recharts";
+
+import { EChart } from "@/components/ui/echart";
 
 const DAY_NAMES = [
   "monday",
@@ -49,10 +41,7 @@ function calculateFutureEmails(contacts, campaign) {
   const creds = campaign?.campaignEmailCredentials || [];
   const totalDailyCapacity =
     creds.length > 0
-      ? creds.reduce(
-          (sum, c) => sum + (c.emailCredential?.dailyLimit || 20),
-          0,
-        )
+      ? creds.reduce((sum, c) => sum + (c.emailCredential?.dailyLimit || 20), 0)
       : null;
 
   (contacts || []).forEach((contact) => {
@@ -108,7 +97,11 @@ function calculateFutureEmails(contacts, campaign) {
         futureCounts[nextStr] = (futureCounts[nextStr] || 0) + overflow;
         if (!sortedDates.includes(nextStr)) {
           const insertAt = sortedDates.findIndex((d) => d > nextStr);
-          sortedDates.splice(insertAt === -1 ? sortedDates.length : insertAt, 0, nextStr);
+          sortedDates.splice(
+            insertAt === -1 ? sortedDates.length : insertAt,
+            0,
+            nextStr,
+          );
         }
       }
     }
@@ -117,22 +110,8 @@ function calculateFutureEmails(contacts, campaign) {
   return futureCounts;
 }
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  const emails = payload.find((p) => p.dataKey === "emails")?.value || 0;
-  const replies = payload.find((p) => p.dataKey === "replies")?.value || 0;
-  if (emails === 0 && replies === 0) return null;
-  return (
-    <div className="bg-white border border-black text-[10px] font-mono px-2 py-1 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-      <div className="font-bold mb-0.5">{label}</div>
-      {emails > 0 && <div>{emails} emails</div>}
-      {replies > 0 && <div className="text-green-600">{replies} replies</div>}
-    </div>
-  );
-};
-
 const EmailTimelineChart = ({ contacts, campaign, dailyStatsRaw }) => {
-  const { data, maxCount } = useMemo(() => {
+  const { rows, totalScheduled } = useMemo(() => {
     const today = DateTime.now().startOf("day");
 
     const pastMap = {};
@@ -162,100 +141,65 @@ const EmailTimelineChart = ({ contacts, campaign, dailyStatsRaw }) => {
       });
     }
 
-    const maxCount = Math.max(1, ...rows.map((r) => r.emails + r.replies));
     return {
-      data: rows.map((r) => ({
-        ...r,
-        bg: maxCount - r.emails - r.replies,
-      })),
-      maxCount,
+      rows,
+      totalScheduled: rows.reduce((sum, r) => sum + r.emails + r.replies, 0),
     };
   }, [contacts, campaign, dailyStatsRaw]);
 
+  // Two series -> a legend is required; the axis carries the dates, so no
+  // per-bar labels. The old filler "bg" series is gone: it drew ink that
+  // wasn't data just to fake a track behind each bar.
+  const option = useMemo(
+    () => ({
+      legend: { data: ["Scheduled", "Replies"] },
+      tooltip: { trigger: "axis" },
+      grid: { top: 28, right: 8, bottom: 4, left: 8 },
+      xAxis: {
+        type: "category",
+        data: rows.map((r) => r.label),
+        axisLabel: { interval: 4, fontSize: 10 },
+      },
+      yAxis: { type: "value", minInterval: 1 },
+      series: [
+        {
+          name: "Scheduled",
+          type: "bar",
+          stack: "total",
+          barMaxWidth: 24,
+          // Both segments carry the cap: replies are zero on most days, so if
+          // only the top series were rounded almost every bar would render
+          // square. Whichever segment ends up on top is capped either way.
+          itemStyle: { borderRadius: [4, 4, 0, 0] },
+          data: rows.map((r) => r.emails),
+        },
+        {
+          name: "Replies",
+          type: "bar",
+          stack: "total",
+          barMaxWidth: 24,
+          itemStyle: { borderRadius: [4, 4, 0, 0] },
+          data: rows.map((r) => r.replies),
+        },
+      ],
+    }),
+    [rows],
+  );
+
   return (
-    <div className="border border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] h-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={data}
-          margin={{ top: 0, right: 0, bottom: 0, left: 0 }}
-          barCategoryGap="0%"
-          barGap={0}
-        >
-          <XAxis hide dataKey="label" />
-          <YAxis hide domain={[0, maxCount]} />
-          <Tooltip content={<CustomTooltip />} cursor={false} />
-          <Bar
-            dataKey="emails"
-            stackId="s"
-            fill="#000000"
-            stroke="#9ca3af"
-            strokeWidth={1}
-            isAnimationActive={false}
-          >
-            <LabelList
-              dataKey="emails"
-              content={({ x, y, width, height, value }) => {
-                if (!value || value === 0 || height < 12) return null;
-                const cx = x + width / 2;
-                const cy = y + height / 2;
-                return (
-                  <text
-                    x={cx}
-                    y={cy}
-                    fill="white"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    transform={`rotate(-90, ${cx}, ${cy})`}
-                    fontSize={7}
-                    fontFamily="monospace"
-                  >
-                    {value}
-                  </text>
-                );
-              }}
-            />
-          </Bar>
-          <Bar
-            dataKey="replies"
-            stackId="s"
-            fill="#22c55e"
-            stroke="#9ca3af"
-            strokeWidth={1}
-            isAnimationActive={false}
-          />
-          <Bar
-            dataKey="bg"
-            stackId="s"
-            fill="#e5e7eb"
-            stroke="#9ca3af"
-            strokeWidth={1}
-            isAnimationActive={false}
-          >
-            <LabelList
-              dataKey="bg"
-              content={({ x, y, width, height, value }) => {
-                if (value !== maxCount || height < 16) return null;
-                const cx = x + width / 2;
-                const cy = y + height / 2;
-                return (
-                  <text
-                    x={cx}
-                    y={cy}
-                    fill="#9ca3af"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    transform={`rotate(-90, ${cx}, ${cy})`}
-                    fontSize={7}
-                    fontFamily="monospace"
-                  >
-                    No emails scheduled
-                  </text>
-                );
-              }}
-            />
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+    <div className="flex h-full flex-col rounded-lg border border-border bg-background p-4">
+      <div className="mb-1 flex items-baseline justify-between gap-2">
+        <h3 className="text-sm font-medium">Send schedule</h3>
+        <span className="text-xs text-muted-foreground">next 30 days</span>
+      </div>
+
+      {totalScheduled === 0 ? (
+        <div className="flex flex-1 items-center justify-center text-xs text-muted-foreground">
+          No emails scheduled
+        </div>
+      ) : (
+        <EChart option={option} className="h-full min-h-[140px] w-full" />
+      )}
     </div>
   );
 };

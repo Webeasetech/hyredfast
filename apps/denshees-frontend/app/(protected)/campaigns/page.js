@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ListRowsSkeleton } from "@/components/skeletons";
 import Link from "next/link";
 import { DateTime } from "luxon";
 import { PlusIcon, ReloadIcon } from "mage-icons-react/stroke";
@@ -16,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import fetcher from "@/lib/fetcher";
 import { patch } from "@/lib/apis";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
 
 // Define update functions for SWR mutations
 async function updateCampaignStatus(url, { arg }) {
@@ -77,39 +79,30 @@ export default function CampaignsPage() {
       : fuse.search(searchQuery).map((result) => result.item); // Show only filtered results
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Campaigns</h1>
-          <p className="text-gray-600 mt-1">Manage your email campaigns</p>
-        </div>
-        <CreateCampaignDialog>
-          <Button id="tour-new-campaign-btn">
-            <PlusIcon className="w-4 h-4 mr-2" />
-            New Campaign
-          </Button>
-        </CreateCampaignDialog>
-      </div>
+    <div className="space-y-4">
+      <PageHeader title="Campaigns" description="Manage your email campaigns" />
 
-      <div className="border border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-        <div className="p-4 border-b border-gray-200">
+      <div className="border border-border bg-white rounded-lg">
+        <div className="flex items-center gap-3 p-4 border-b border-border">
           <Input
             placeholder="Search campaigns..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-md"
           />
+          <CreateCampaignDialog>
+            <Button id="tour-new-campaign-btn" className="ml-auto shrink-0">
+              <PlusIcon className="w-4 h-4 mr-2" />
+              New Campaign
+            </Button>
+          </CreateCampaignDialog>
         </div>
 
         {isLoading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block border border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <p className="text-lg font-medium">Loading campaigns...</p>
-            </div>
-          </div>
+          <ListRowsSkeleton />
         ) : error ? (
           <div className="p-8 text-center">
-            <div className="inline-block border border-black p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-red-50">
+            <div className="rounded-lg inline-block border border-border p-4 bg-red-50">
               <p className="text-lg font-medium text-red-600">
                 Error loading campaigns
               </p>
@@ -119,7 +112,7 @@ export default function CampaignsPage() {
         ) : filteredCampaigns.length === 0 ? (
           <div className="p-8 text-center">
             <p className="text-lg">No campaigns found</p>
-            <p className="text-gray-500 mt-1">
+            <p className="text-muted-foreground mt-1">
               {searchQuery.trim() !== ""
                 ? "Try a different search term"
                 : "Create your first campaign to get started"}
@@ -214,7 +207,7 @@ function CampaignRow({ campaign }) {
   };
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 hover:bg-gray-50">
+    <div className="flex items-center justify-between px-6 py-4 hover:bg-muted">
       <div className="flex flex-col">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -230,7 +223,7 @@ function CampaignRow({ campaign }) {
               {campaign.title}
             </h3>
             {campaign.desc && (
-              <p className="text-sm text-gray-500">{campaign.desc}</p>
+              <p className="text-sm text-muted-foreground">{campaign.desc}</p>
             )}
           </Link>
         </div>

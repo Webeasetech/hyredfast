@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { PanelSkeleton } from "@/components/skeletons";
 import useSWR from "swr";
 import fetcher from "@/lib/fetcher";
 import Builder from "@/components/campaigns/builder/builder";
@@ -16,13 +17,7 @@ export default function CampaignBuilderPage() {
   );
 
   if (isLoading) {
-    return (
-      <div className="border border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center h-[400px]">
-        <div className="border border-black p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-          <p className="text-lg font-medium">Loading campaign templates...</p>
-        </div>
-      </div>
-    );
+    return <PanelSkeleton lines={3} />;
   }
 
   return (

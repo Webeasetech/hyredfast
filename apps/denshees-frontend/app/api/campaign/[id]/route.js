@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-export async function GET(request, { params }) {
+export async function GET(request, props) {
+  const params = await props.params;
   const { id } = params;
 
   try {
     const record = await prisma.campaign.findUnique({
       where: { id },
-      include: { campaignEmailCredentials: { include: { emailCredential: true } } },
+      include: {
+        campaignEmailCredentials: { include: { emailCredential: true } },
+      },
     });
 
     if (!record) {
@@ -27,7 +30,8 @@ export async function GET(request, { params }) {
   }
 }
 
-export async function PATCH(request, { params }) {
+export async function PATCH(request, props) {
+  const params = await props.params;
   const { id } = params;
   const {
     setuped,

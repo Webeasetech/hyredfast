@@ -67,14 +67,14 @@ export async function POST(request) {
       </style>
     </head>
     <body>
-      <div class="container">
+ <div class="container">
         <!-- Email Header -->
-        <div class="header">
+ <div class="header">
           <h1>Support Request Received</h1>
         </div>
         
         <!-- Email Content -->
-        <div class="content">
+ <div class="content">
           <p>Hi <strong>{{fullName}}</strong>,</p>
           
           <p>Thank you for reaching out to us. We have received your support request with the following details:</p>
@@ -88,7 +88,7 @@ export async function POST(request) {
         </div>
         
         <!-- Email Footer -->
-        <div class="footer">
+ <div class="footer">
           <p>&copy; 2024 Venture CRM. All rights reserved.</p>
           <p><a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
         </div>

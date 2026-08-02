@@ -64,19 +64,19 @@ export default function LoginPage() {
 
           <div className="space-y-6">
             <div className="flex items-start space-x-4">
-              <div className="bg-black text-white p-2 mt-1">
+              <div className="bg-primary text-primary-foreground p-2 mt-1">
                 <EmailIcon className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Automated Follow-ups</h3>
-                <p className="text-gray-700">
+                <p className="text-foreground">
                   Schedule and send personalized follow-up emails automatically.
                 </p>
               </div>
             </div>
 
             <div className="flex items-start space-x-4">
-              <div className="bg-black text-white p-2 mt-1">
+              <div className="bg-primary text-primary-foreground p-2 mt-1">
                 <svg
                   width="20"
                   height="20"
@@ -94,7 +94,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Campaign Analytics</h3>
-                <p className="text-gray-700">
+                <p className="text-foreground">
                   Track open rates, responses, and campaign performance in
                   real-time.
                 </p>
@@ -102,7 +102,7 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-start space-x-4">
-              <div className="bg-black text-white p-2 mt-1">
+              <div className="bg-primary text-primary-foreground p-2 mt-1">
                 <svg
                   width="20"
                   height="20"
@@ -120,7 +120,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Email Verification</h3>
-                <p className="text-gray-700">
+                <p className="text-foreground">
                   Ensure deliverability with built-in email verification tools.
                 </p>
               </div>
@@ -130,11 +130,11 @@ export default function LoginPage() {
       </div>
 
       {/* Right section - Authentication */}
-      <div className="flex-1 bg-gray-50 p-8 md:p-12 flex items-center justify-center">
+      <div className="flex-1 bg-muted p-8 md:p-12 flex items-center justify-center">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold mb-2">Welcome to Denshees</h2>
-            <p className="text-gray-600 mb-8">
+            <p className="text-foreground mb-8">
               Sign in or create your account
             </p>
           </div>
@@ -144,7 +144,7 @@ export default function LoginPage() {
 
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-gray-300" />
-              <span className="text-sm text-gray-500">or</span>
+              <span className="text-sm text-muted-foreground">or</span>
               <div className="h-px flex-1 bg-gray-300" />
             </div>
 
@@ -152,7 +152,7 @@ export default function LoginPage() {
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-foreground mb-1"
                 >
                   Email address
                 </label>
@@ -179,7 +179,7 @@ export default function LoginPage() {
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+                  className="block text-sm font-medium text-foreground mb-1"
                 >
                   Password
                 </label>

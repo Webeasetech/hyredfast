@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { BoardSkeleton } from "@/components/skeletons";
 import { useParams } from "next/navigation";
 import { SettingsIcon, UserPlusIcon } from "mage-icons-react/bulk";
 import { RefreshIcon } from "mage-icons-react/stroke";
@@ -257,9 +258,9 @@ export default function CampaignCRMPage() {
   if (!isLoading && stages.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <div className="border border-black bg-white p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-center max-w-md">
+        <div className="border border-border bg-white p-8 text-center max-w-md rounded-lg">
           <h3 className="text-lg font-bold mb-2">Set Up Your CRM Pipeline</h3>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             Create default pipeline stages to start tracking your leads through
             the sales process.
           </p>
@@ -276,7 +277,7 @@ export default function CampaignCRMPage() {
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-muted-foreground">
             {deals.length} deal{deals.length !== 1 ? "s" : ""} in pipeline
           </span>
         </div>
@@ -313,11 +314,7 @@ export default function CampaignCRMPage() {
 
       {/* Kanban Board */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-[500px] border border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-          <div className="border border-black p-4 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-            <p className="text-lg font-medium">Loading pipeline...</p>
-          </div>
-        </div>
+        <BoardSkeleton />
       ) : (
         <KanbanBoard
           stages={stages}

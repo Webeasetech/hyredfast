@@ -47,14 +47,14 @@ const ACTIVITY_ICONS = {
 const ACTIVITY_COLORS = {
   STAGE_CHANGE: "bg-blue-100 text-blue-700",
   NOTE: "bg-yellow-100 text-yellow-700",
-  EMAIL_SENT: "bg-gray-100 text-gray-700",
+  EMAIL_SENT: "bg-accent text-foreground",
   EMAIL_OPENED: "bg-indigo-100 text-indigo-700",
   REPLY: "bg-purple-100 text-purple-700",
   CALL: "bg-green-100 text-green-700",
   MEETING: "bg-orange-100 text-orange-700",
   LINKEDIN: "bg-blue-100 text-blue-700",
   TASK: "bg-teal-100 text-teal-700",
-  OTHER: "bg-gray-100 text-gray-700",
+  OTHER: "bg-accent text-foreground",
 };
 
 const ACTIVITY_TYPES = [
@@ -111,7 +111,7 @@ export default function DealDetailPanel({
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent className="w-[420px] sm:w-[480px] border-l-black border-l-2 p-0 overflow-hidden flex flex-col">
         {/* Header */}
-        <SheetHeader className="px-4 py-3 border-b border-black bg-white">
+        <SheetHeader className="px-4 py-3 border-b border-border bg-white">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-base">Lead Details</SheetTitle>
           </div>
@@ -119,16 +119,16 @@ export default function DealDetailPanel({
 
         <div className="flex-1 overflow-y-auto">
           {/* Lead info card */}
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-border">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center text-sm font-bold">
+              <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
                 {(lead?.name || "?")[0].toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">
                   {lead?.name || "Unknown"}
                 </p>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {lead?.email || "-"}
                 </p>
               </div>
@@ -136,14 +136,14 @@ export default function DealDetailPanel({
 
             {/* Stage selector */}
             <div className="mt-3">
-              <label className="text-xs font-medium text-gray-500 mb-1 block">
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">
                 Pipeline Stage
               </label>
               <Select value={deal.stage} onValueChange={handleStageChange}>
-                <SelectTrigger className="h-8 border-black text-sm">
+                <SelectTrigger className="h-8 border-border text-sm">
                   <div className="flex items-center gap-2">
                     <span
-                      className="w-2.5 h-2.5 rounded-full border border-black"
+                      className="w-2.5 h-2.5 rounded-full border border-border"
                       style={{
                         backgroundColor: currentStage?.color || "#6B7280",
                       }}
@@ -151,7 +151,7 @@ export default function DealDetailPanel({
                     <SelectValue />
                   </div>
                 </SelectTrigger>
-                <SelectContent className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                <SelectContent className="border-border">
                   {stages.map((stage) => (
                     <SelectItem key={stage.id} value={stage.id}>
                       <div className="flex items-center gap-2">
@@ -168,31 +168,31 @@ export default function DealDetailPanel({
             </div>
 
             {/* Lead email status */}
-            <div className="mt-3 flex gap-3 text-xs text-gray-500">
+            <div className="mt-3 flex gap-3 text-xs text-muted-foreground">
               <div>
-                <span className="font-medium text-gray-700">Status:</span>{" "}
+                <span className="font-medium text-foreground">Status:</span>{" "}
                 {lead?.status || "PENDING"}
               </div>
               <div>
-                <span className="font-medium text-gray-700">Stage:</span>{" "}
+                <span className="font-medium text-foreground">Stage:</span>{" "}
                 {lead?.stage || 0}/
                 {lead?.expand?.campaign?.max_stage_count || "-"}
               </div>
               <div>
-                <span className="font-medium text-gray-700">Opened:</span>{" "}
+                <span className="font-medium text-foreground">Opened:</span>{" "}
                 {lead?.opened ? "Yes" : "No"}
               </div>
             </div>
           </div>
 
           {/* Add activity */}
-          <div className="p-4 border-b border-gray-200 bg-gray-50/50">
+          <div className="p-4 border-b border-border bg-muted/50">
             <div className="flex items-center gap-2 mb-2">
               <Select value={activityType} onValueChange={setActivityType}>
-                <SelectTrigger className="h-7 w-[110px] border-black text-xs">
+                <SelectTrigger className="h-7 w-[110px] border-border text-xs">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                <SelectContent className="border-border">
                   {ACTIVITY_TYPES.map((t) => (
                     <SelectItem key={t.value} value={t.value}>
                       {t.label}
@@ -200,14 +200,16 @@ export default function DealDetailPanel({
                   ))}
                 </SelectContent>
               </Select>
-              <span className="text-xs text-gray-400">Log an activity</span>
+              <span className="text-xs text-muted-foreground">
+                Log an activity
+              </span>
             </div>
             <div className="flex gap-2">
               <Textarea
                 value={activityDescription}
                 onChange={(e) => setActivityDescription(e.target.value)}
                 placeholder="Add a note, log a call..."
-                className="border-black text-sm min-h-[60px] resize-none"
+                className="border-border text-sm min-h-[60px] resize-none"
                 rows={2}
               />
             </div>
@@ -226,12 +228,12 @@ export default function DealDetailPanel({
 
           {/* Activity timeline */}
           <div className="p-4">
-            <h4 className="text-xs font-semibold text-gray-500 uppercase mb-3">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-3">
               Activity Timeline
             </h4>
 
             {activities.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">
+              <p className="text-sm text-muted-foreground text-center py-6">
                 No activities yet
               </p>
             ) : (
@@ -241,13 +243,13 @@ export default function DealDetailPanel({
                     ACTIVITY_ICONS[activity.type] || DotsHorizontalSquareIcon;
                   const colorClass =
                     ACTIVITY_COLORS[activity.type] ||
-                    "bg-gray-100 text-gray-700";
+                    "bg-accent text-foreground";
 
                   return (
                     <div key={activity.id} className="flex gap-3 relative">
                       {/* Timeline line */}
                       {idx < activities.length - 1 && (
-                        <div className="absolute left-[13px] top-[28px] bottom-0 w-px bg-gray-200" />
+                        <div className="absolute left-[13px] top-[28px] bottom-0 w-px bg-muted" />
                       )}
 
                       {/* Icon */}
@@ -263,14 +265,14 @@ export default function DealDetailPanel({
                           <span className="text-xs font-medium">
                             {activity.type.replace(/_/g, " ")}
                           </span>
-                          <span className="text-[10px] text-gray-400 shrink-0">
+                          <span className="text-[10px] text-muted-foreground shrink-0">
                             {DateTime.fromISO(activity.created).toRelative()}
                           </span>
                         </div>
 
                         {/* Stage change details */}
                         {activity.type === "STAGE_CHANGE" && (
-                          <div className="flex items-center gap-1.5 mt-1 text-xs text-gray-500">
+                          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
                             <span
                               className="inline-block w-2 h-2 rounded-full"
                               style={{
@@ -297,7 +299,7 @@ export default function DealDetailPanel({
 
                         {activity.description && (
                           <p
-                            className="text-xs text-gray-600 mt-1 whitespace-pre-wrap"
+                            className="text-xs text-foreground mt-1 whitespace-pre-wrap"
                             dangerouslySetInnerHTML={{
                               __html: activity.description,
                             }}

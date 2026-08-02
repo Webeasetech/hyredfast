@@ -12,9 +12,7 @@ const InfoToolTip = ({ children, content }) => {
         <TooltipTrigger asChild>
           <span className="cursor-help">{children}</span>
         </TooltipTrigger>
-        <TooltipContent className="bg-white border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-          {content}
-        </TooltipContent>
+        <TooltipContent>{content}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
