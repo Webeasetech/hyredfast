@@ -1,5 +1,6 @@
 import { openai } from "@/lib/openai";
 import { NextResponse } from "next/server";
+import { tryAuth } from "@/lib/auth";
 
 const SYSTEM_PROMPT = `You are a lead extraction assistant. The user will describe leads they want to add to a list. 
 Extract structured lead data from their message.
@@ -29,6 +30,10 @@ Rules:
 - Always return valid JSON only, no markdown fences`;
 
 export async function POST(request) {
+  // No owned records here, but every call spends OpenAI budget.
+  const { response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+
   try {
     const {
       message,

@@ -1,10 +1,23 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+import { ownsCampaign, ownsCrmStage, notFound } from "@/lib/authz";
 
 export async function PATCH(request, props) {
   const params = await props.params;
   const stageId = params.id;
+
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+
   const body = await request.json();
+
+  if (!(await ownsCrmStage(auth.userId, stageId))) return notFound("Stage");
+  if (
+    body.campaign !== undefined &&
+    !(await ownsCampaign(auth.userId, body.campaign))
+  )
+    return notFound("Campaign");
 
   try {
     const data = {};
@@ -36,6 +49,11 @@ export async function PATCH(request, props) {
 export async function DELETE(request, props) {
   const params = await props.params;
   const stageId = params.id;
+
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+
+  if (!(await ownsCrmStage(auth.userId, stageId))) return notFound("Stage");
 
   try {
     await prisma.crmStage.delete({ where: { id: stageId } });

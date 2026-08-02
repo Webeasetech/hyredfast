@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
-import { tasks, auth } from "@trigger.dev/sdk";
+// `auth` here is trigger.dev's, aliased so it cannot be confused with the
+// authenticated user below.
+import { tasks, auth as triggerAuth } from "@trigger.dev/sdk";
+import { tryAuth } from "@/lib/auth";
 
 export async function POST(request) {
+  const { response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+
   try {
     const body = await request.json();
     const { domain, filters, size } = body;
@@ -25,7 +31,7 @@ export async function POST(request) {
     console.log(handle);
 
     // Generate a public access token scoped to this run's tag
-    const publicToken = await auth.createPublicToken({
+    const publicToken = await triggerAuth.createPublicToken({
       scopes: {
         read: {
           tags: [tag],

@@ -1,5 +1,7 @@
 import Hogan from "hogan.js";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+import { ownsContact, notFound } from "@/lib/authz";
 import { NextResponse } from "next/server";
 
 export async function GET(request, props) {
@@ -7,6 +9,10 @@ export async function GET(request, props) {
   console.log(`[API] Getting timeline for lead: ${params.id}`);
 
   const campaign_email_id = params.id;
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsContact(auth.userId, campaign_email_id)))
+    return notFound("Lead");
 
   try {
     console.log(`[API] Fetching messages for lead: ${campaign_email_id}`);

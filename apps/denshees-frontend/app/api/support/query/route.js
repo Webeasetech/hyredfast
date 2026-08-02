@@ -1,6 +1,14 @@
 import nodemailer from "nodemailer";
 import { NextResponse } from "next/server";
 
+/**
+ * Deliberately unauthenticated — this is the public contact form, and people
+ * need to reach support when they can't sign in.
+ *
+ * Not an open relay: recipients come from SUPPORT_NOTIFY_EMAILS, never from the
+ * request, so the worst case is unsolicited mail to our own inbox. Rate
+ * limiting would be the next improvement here, not authentication.
+ */
 export async function POST(request) {
   console.log("[API] Processing support query");
 

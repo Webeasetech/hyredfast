@@ -1,10 +1,16 @@
 import nodemailer from "nodemailer";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+import { ownsCampaign, notFound } from "@/lib/authz";
 
 export async function POST(request, props) {
   const params = await props.params;
   const campaignId = params.campaign_id;
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsCampaign(auth.userId, campaignId)))
+    return notFound("Campaign");
 
   try {
     const { campaignEmailId, text, messageId } = await request.json();

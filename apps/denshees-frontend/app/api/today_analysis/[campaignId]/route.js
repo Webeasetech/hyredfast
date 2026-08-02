@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+import { ownsCampaign, notFound } from "@/lib/authz";
 
 export async function GET(request, props) {
   const params = await props.params;
   const { campaignId } = params;
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsCampaign(auth.userId, campaignId)))
+    return notFound("Campaign");
 
   try {
     // Compute current stats: count of emails per stage + total opened

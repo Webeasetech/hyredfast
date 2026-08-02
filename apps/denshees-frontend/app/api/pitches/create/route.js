@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+import { ownsCampaign, notFound } from "@/lib/authz";
 
 // Appends a new follow-up stage to a campaign. The new stage is always added at
 // the end (stage = current max + 1) to keep the stage sequence contiguous, and
@@ -8,6 +10,10 @@ import prisma from "@/lib/prisma";
 export async function POST(request) {
   const searchParams = new URL(request.url).searchParams;
   const campaign = searchParams.get("campaign");
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsCampaign(auth.userId, campaign))) return notFound("Campaign");
+
   const body = await request.json().catch(() => ({}));
   const delayDays = body.delayDays !== undefined ? Number(body.delayDays) : 2;
 

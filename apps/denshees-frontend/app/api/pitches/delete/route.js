@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+import { ownsPitch, notFound } from "@/lib/authz";
 
 // Deletes the LAST follow-up stage of a campaign. Restricted to the highest
 // stage (never stage 0 / the first email) to keep the stage sequence contiguous.
@@ -8,6 +10,9 @@ import prisma from "@/lib/prisma";
 export async function DELETE(request) {
   const searchParams = new URL(request.url).searchParams;
   const pitchId = searchParams.get("pitch");
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+  if (!(await ownsPitch(auth.userId, pitchId))) return notFound("Pitch");
 
   if (!pitchId) {
     return NextResponse.json({ message: "pitch is required" }, { status: 400 });
