@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { jwtDecode } from "jwt-decode";
+import { tryAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 export async function GET(request) {
-  const token = request.headers.get("authorization");
-  const user = jwtDecode(token);
-
+  const { auth: user, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
   try {
     const [campaigns, totalItems] = await Promise.all([
       prisma.campaign.findMany({

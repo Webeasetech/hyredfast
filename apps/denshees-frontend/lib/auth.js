@@ -56,3 +56,24 @@ export function unauthorized(error) {
     { status: 401 },
   );
 }
+
+/**
+ * Non-throwing form, for routes whose body is already wrapped in a try/catch
+ * that returns 500. Calling verifyAuth inside such a block would turn a bad
+ * token into "Something went wrong" instead of a 401, so authenticate before
+ * entering it:
+ *
+ *   const { auth, response } = tryAuth(request);
+ *   if (response) return response;
+ *
+ * Anything that isn't an auth failure still throws — a missing JWT_SECRET is a
+ * misconfiguration and must not be reported to the caller as "unauthorized".
+ */
+export function tryAuth(request) {
+  try {
+    return { auth: verifyAuth(request) };
+  } catch (error) {
+    if (error instanceof AuthError) return { response: unauthorized(error) };
+    throw error;
+  }
+}

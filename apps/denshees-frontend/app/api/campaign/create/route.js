@@ -1,4 +1,4 @@
-import { jwtDecode } from "jwt-decode";
+import { tryAuth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
@@ -11,9 +11,8 @@ const DEFAULT_DELAY_DAYS = 1;
 export async function POST(request) {
   const { title, max_stage_count, days_interval, desc, email_delivery_period } =
     await request.json();
-  const token = request.headers.get("authorization");
-  const user = jwtDecode(token);
-
+  const { auth: user, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
   const stageCount = max_stage_count ?? DEFAULT_STAGE_COUNT;
   const delayDays = days_interval ?? DEFAULT_DELAY_DAYS;
 

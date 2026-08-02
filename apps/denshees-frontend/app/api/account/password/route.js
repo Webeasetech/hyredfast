@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
-import { jwtDecode } from "jwt-decode";
+import { tryAuth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 
 export async function POST(request) {
-  const token = request.headers.get("authorization");
-
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
-    const decoded = jwtDecode(token);
+    const { auth: decoded, response: authResponse } = tryAuth(request);
+    if (authResponse) return authResponse;
     const userId = decoded.userId;
     const { currentPassword, newPassword } = await request.json();
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jwtDecode } from "jwt-decode";
+import { tryAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 // GET /api/agent/threads — list all chat threads for the current user
 export async function GET(request) {
   try {
-    const token = request.headers.get("authorization");
-    const currUser = jwtDecode(token);
+    const { auth: currUser, response: authResponse } = tryAuth(request);
+    if (authResponse) return authResponse;
     if (!currUser?.userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

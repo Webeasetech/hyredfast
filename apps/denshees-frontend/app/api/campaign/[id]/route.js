@@ -1,15 +1,38 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { tryAuth } from "@/lib/auth";
+
+// Non-secret credential fields. `password` / `imapPassword` must never leave
+// the database — this route used to return whole EmailCredential rows, and it
+// did so without authenticating at all.
+const CREDENTIAL_FIELDS = {
+  id: true,
+  username: true,
+  host: true,
+  port: true,
+  secure: true,
+  status: true,
+  imapEmail: true,
+  imapHost: true,
+  dailyLimit: true,
+};
 
 export async function GET(request, props) {
   const params = await props.params;
   const { id } = params;
 
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+
   try {
-    const record = await prisma.campaign.findUnique({
-      where: { id },
+    // Scoped by userId, not just id: authenticating alone would still let any
+    // signed-in user read any other user's campaign by guessing its id.
+    const record = await prisma.campaign.findFirst({
+      where: { id, userId: auth.userId },
       include: {
-        campaignEmailCredentials: { include: { emailCredential: true } },
+        campaignEmailCredentials: {
+          include: { emailCredential: { select: CREDENTIAL_FIELDS } },
+        },
       },
     });
 
@@ -33,6 +56,10 @@ export async function GET(request, props) {
 export async function PATCH(request, props) {
   const params = await props.params;
   const { id } = params;
+
+  const { auth, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+
   const {
     setuped,
     title,
@@ -49,6 +76,18 @@ export async function PATCH(request, props) {
   } = await request.json();
 
   try {
+    const owned = await prisma.campaign.findFirst({
+      where: { id, userId: auth.userId },
+      select: { id: true },
+    });
+
+    if (!owned) {
+      return NextResponse.json(
+        { message: "Campaign not found" },
+        { status: 404 },
+      );
+    }
+
     const data = {};
     if (setuped !== undefined) data.setuped = setuped;
     if (title !== undefined) data.title = title;
@@ -72,12 +111,19 @@ export async function PATCH(request, props) {
 
     // Handle multi-relation emails update
     if (emails !== undefined && Array.isArray(emails)) {
+      // Only credentials the caller actually owns, so a crafted payload can't
+      // attach someone else's mailbox to this campaign.
+      const ownedCredentials = await prisma.emailCredential.findMany({
+        where: { id: { in: emails }, userId: auth.userId },
+        select: { id: true },
+      });
+
       await prisma.campaignEmailCredential.deleteMany({
         where: { campaignId: id },
       });
-      for (const credId of emails) {
+      for (const cred of ownedCredentials) {
         await prisma.campaignEmailCredential.create({
-          data: { campaignId: id, emailCredentialId: credId },
+          data: { campaignId: id, emailCredentialId: cred.id },
         });
       }
     }

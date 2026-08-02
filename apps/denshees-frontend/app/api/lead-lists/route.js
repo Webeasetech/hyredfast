@@ -1,12 +1,11 @@
-import { jwtDecode } from "jwt-decode";
+import { tryAuth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function GET(request) {
-  const token = request.headers.get("authorization");
-
   try {
-    const user = jwtDecode(token);
+    const { auth: user, response: authResponse } = tryAuth(request);
+    if (authResponse) return authResponse;
     const records = await prisma.leadList.findMany({
       where: { userId: user.userId },
       orderBy: { created: "desc" },
@@ -23,10 +22,9 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  const token = request.headers.get("authorization");
   const { name, description } = await request.json();
-  const user = jwtDecode(token);
-
+  const { auth: user, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
   try {
     const record = await prisma.leadList.create({
       data: {

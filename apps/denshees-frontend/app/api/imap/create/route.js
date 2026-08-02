@@ -1,11 +1,17 @@
-import { jwtDecode } from "jwt-decode";
+import { tryAuth } from "@/lib/auth";
 import axios from "axios";
 import nodemailer from "nodemailer";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function POST(request) {
-  const token = request.headers.get("authorization");
+  // Authenticate before anything else: below, the server opens outbound SMTP
+  // and IMAP connections to hosts named in the request body. Leaving that
+  // ahead of the auth check hands any anonymous caller a way to make this
+  // server connect wherever they like.
+  const { auth: user, response: authResponse } = tryAuth(request);
+  if (authResponse) return authResponse;
+
   const {
     username,
     password,
@@ -35,8 +41,6 @@ export async function POST(request) {
   }
 
   try {
-    const user = jwtDecode(token);
-
     const record = await prisma.emailCredential.create({
       data: {
         username,

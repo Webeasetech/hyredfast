@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jwtDecode } from "jwt-decode";
+import { tryAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 // GET /api/agent/history?thread_id=xxx — load chat history for a thread
 export async function GET(request) {
   try {
-    const token = request.headers.get("authorization");
-    const currUser = jwtDecode(token);
+    const { auth: currUser, response: authResponse } = tryAuth(request);
+    if (authResponse) return authResponse;
     if (!currUser?.userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -40,8 +40,8 @@ export async function GET(request) {
 // POST /api/agent/history — save one or more messages
 export async function POST(request) {
   try {
-    const token = request.headers.get("authorization");
-    const currUser = jwtDecode(token);
+    const { auth: currUser, response: authResponse } = tryAuth(request);
+    if (authResponse) return authResponse;
     if (!currUser?.userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
