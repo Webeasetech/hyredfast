@@ -1,17 +1,12 @@
 import { NextResponse } from "next/server";
-import { jwtDecode } from "jwt-decode";
+import { tryAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export async function GET(request) {
-  const token = request.headers.get("authorization");
-
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
-    const decoded = jwtDecode(token);
+    const { auth: decoded, response: authResponse } = tryAuth(request);
+    if (authResponse) return authResponse;
     const userId = decoded.userId;
 
     const user = await prisma.user.findUnique({
@@ -47,14 +42,9 @@ export async function GET(request) {
 }
 
 export async function PATCH(request) {
-  const token = request.headers.get("authorization");
-
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
-    const decoded = jwtDecode(token);
+    const { auth: decoded, response: authResponse } = tryAuth(request);
+    if (authResponse) return authResponse;
     const userId = decoded.userId;
     const data = await request.json();
 

@@ -1,14 +1,13 @@
-import { jwtDecode } from "jwt-decode";
+import { tryAuth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function PATCH(request) {
-  const token = request.headers.get("authorization");
   const { name, username } = await request.json();
 
   try {
-    const auth = jwtDecode(token);
-
+    const { auth: auth, response: authResponse } = tryAuth(request);
+    if (authResponse) return authResponse;
     await prisma.user.update({
       where: { id: auth.userId },
       data: { name, username },

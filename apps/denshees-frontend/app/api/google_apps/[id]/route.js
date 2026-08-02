@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
-import { jwtDecode } from "jwt-decode";
+import { tryAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { activeCampaignWhere } from "@/lib/credential-usage";
 
 export async function DELETE(request, props) {
   const params = await props.params;
-  const token = request.headers.get("authorization");
   const { id } = params;
 
   try {
-    const user = jwtDecode(token);
-
+    const { auth: user, response: authResponse } = tryAuth(request);
+    if (authResponse) return authResponse;
     const credential = await prisma.emailCredential.findUnique({
       where: { id },
       select: { id: true, userId: true },

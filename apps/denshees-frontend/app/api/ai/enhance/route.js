@@ -1,6 +1,6 @@
 import { openai } from "@/lib/openai";
 import prisma from "@/lib/prisma";
-import { jwtDecode } from "jwt-decode";
+import { tryAuth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
@@ -14,8 +14,8 @@ export async function POST(request) {
   }
 
   try {
-    const token = request.headers.get("authorization");
-    const currUser = jwtDecode(token);
+    const { auth: currUser, response: authResponse } = tryAuth(request);
+    if (authResponse) return authResponse;
     console.log(
       `[API] Processing enhancement request for user: ${currUser.userId}, type: ${type}`,
     );

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jwtDecode } from "jwt-decode";
+import { tryAuth } from "@/lib/auth";
 import Hogan from "hogan.js";
 import prisma from "@/lib/prisma";
 
@@ -13,9 +13,8 @@ export async function GET(request, props) {
   const params = await props.params;
   try {
     const { id } = params;
-    const token = request.headers.get("authorization");
-    const currUser = jwtDecode(token);
-
+    const { auth: currUser, response: authResponse } = tryAuth(request);
+    if (authResponse) return authResponse;
     if (!currUser?.userId) {
       return NextResponse.json(
         { error: "User ID is required" },
