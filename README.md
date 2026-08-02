@@ -67,7 +67,9 @@ Then fill in the values:
 |----------|-------------|
 | `API_KEY` | Internal API key for backend auth |
 | `OPENAI_API_KEY` | OpenAI key for AI features |
-| `DODO_PAYMENTS_API_KEY` | Dodo Payments key |
+| `RAZORPAY_KEY_ID` | Razorpay key id — `rzp_test_…` or `rzp_live_…`; the prefix is what selects test vs live |
+| `RAZORPAY_KEY_SECRET` | Razorpay key secret (shown once at key generation) |
+| `RAZORPAY_WEBHOOK_SECRET` | Webhook signing secret you set in the Razorpay dashboard — see [docs/payments-razorpay.md](docs/payments-razorpay.md) |
 | `JWT_SECRET` | Secret for signing JWT tokens |
 | `DATABASE_URL` | PostgreSQL connection string |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google OAuth client ID (browser) — see [Google Sign-In setup](#google-sign-in-setup) |

@@ -18,6 +18,8 @@ export async function GET(request) {
         avatar: true,
         credits: true,
         aiCredits: true,
+        companiesTotal: true,
+        companiesUsed: true,
         isSetup: true,
         created: true,
         updated: true,

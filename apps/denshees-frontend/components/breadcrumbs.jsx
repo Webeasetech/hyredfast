@@ -67,7 +67,9 @@ export function Breadcrumbs() {
 
     if (looksLikeId(segment)) {
       const parent = segments[i - 1];
-      if (parent === "campaigns") label = currentCampaign?.name ?? "Campaign";
+      // Campaign's display field is `title`, not `name` — `name` is always
+      // undefined, so this silently fell through to the "Campaign" placeholder.
+      if (parent === "campaigns") label = currentCampaign?.title ?? "Campaign";
       else if (parent === "lists") label = list?.name ?? "List";
       else label = "Details";
     }

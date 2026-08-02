@@ -1,110 +1,94 @@
 import { NextResponse } from "next/server";
-import DodoPayments from "dodopayments";
+import prisma from "@/lib/prisma";
+import { AuthError, unauthorized, verifyAuth } from "@/lib/auth";
+import { PLANS } from "@/lib/constants/plans";
+import {
+  getKeyId,
+  getMode,
+  getRazorpay,
+  warnOnModeMismatch,
+} from "@/lib/razorpay";
 
-// Initialize DodoPayments client
-const client = new DodoPayments({
-  bearerToken: process.env["DODO_PAYMENTS_API_KEY"],
-  //   environment: "test_mode",
-});
-
+/**
+ * Creates a Razorpay order and the local Payment row that tracks it.
+ *
+ * The client sends only a planId. The amount comes from the PLANS constant on
+ * the server — never from the request body — so a tampered request cannot buy
+ * 100 companies for ₹1.
+ */
 export async function POST(request) {
+  let auth;
   try {
-    const body = await request.json();
-    const { creditType, quantity, userInfo } = body;
+    auth = verifyAuth(request);
+  } catch (error) {
+    if (error instanceof AuthError) return unauthorized(error);
+    throw error;
+  }
 
-    // Validate required fields
-    if (!creditType || !quantity || !userInfo) {
+  try {
+    const { planId } = await request.json();
+    const plan = PLANS[planId];
+
+    if (!plan) {
       return NextResponse.json(
-        { error: "Missing required fields: creditType, quantity, userInfo" },
-        { status: 400 },
-      );
-    }
-
-    // Define product IDs for different credit types
-    const productIds = {
-      email: "pdt_c4RWntNhdXKORtUOwtVOW",
-      ai: "pdt_Rwecty69q6lJdpnP6dCwb",
-    };
-
-    const productId = productIds[creditType];
-    if (!productId) {
-      return NextResponse.json(
-        { error: 'Invalid credit type. Must be "email" or "ai"' },
-        { status: 400 },
-      );
-    }
-
-    console.log(userInfo);
-    // Create payment with DodoPayments
-    const payment = await client.payments.create({
-      return_url: `${process.env.APP_URL || "http://localhost:3000"}/dashboard`,
-      payment_link: true,
-      billing: {
-        city: userInfo.city || "Unknown",
-        country: userInfo.country || "US",
-        state: userInfo.state || "Unknown",
-        street: userInfo.street || "Unknown",
-        zipcode: userInfo.zipcode || "00000",
-      },
-      customer: {
-        name: userInfo.name,
-        email: userInfo.email,
-        create_new_customer: true,
-      },
-      product_cart: [
         {
-          product_id: productId,
-          quantity: quantity,
+          error: `Unknown plan. Expected one of: ${Object.keys(PLANS).join(", ")}`,
         },
-      ],
+        { status: 400 },
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: auth.userId },
+      select: { id: true, email: true, name: true },
     });
 
-    console.log("Payment created:", payment);
-    // Log payment creation for debugging
-    console.log("Payment created:", payment.payment_id);
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
 
-    // Return payment details
+    warnOnModeMismatch();
+
+    const order = await getRazorpay().orders.create({
+      amount: plan.amount,
+      currency: "INR",
+      // Razorpay caps receipt at 40 characters.
+      receipt: `${plan.id}_${Date.now()}`.slice(0, 40),
+      notes: {
+        userId: user.id,
+        planId: plan.id,
+        companies: String(plan.companies),
+      },
+    });
+
+    await prisma.payment.create({
+      data: {
+        userId: user.id,
+        razorpayOrderId: order.id,
+        planId: plan.id,
+        companiesGranted: plan.companies,
+        amount: plan.amount,
+        currency: "INR",
+        status: "CREATED",
+        notes: { receipt: order.receipt },
+      },
+    });
+
     return NextResponse.json({
-      success: true,
-      payment_id: payment.payment_id,
-      payment_link: payment.payment_link,
-      total_amount: payment.total_amount,
-      expires_on: payment.expires_on,
-      customer: payment.customer,
+      orderId: order.id,
+      amount: plan.amount,
+      currency: "INR",
+      companies: plan.companies,
+      planLabel: plan.label,
+      keyId: getKeyId(),
+      mode: getMode(),
+      prefill: { name: user.name || "", email: user.email },
     });
   } catch (error) {
-    console.error("Payment creation error:", error);
-
-    // Handle different types of errors
-    if (error.response) {
-      // DodoPayments API error
-      return NextResponse.json(
-        {
-          error: "Payment service error",
-          details: error.response.data?.message || error.message,
-        },
-        { status: error.response.status || 500 },
-      );
-    } else if (error.request) {
-      // Network error
-      return NextResponse.json(
-        { error: "Network error - unable to reach payment service" },
-        { status: 503 },
-      );
-    } else {
-      // Other errors
-      return NextResponse.json(
-        { error: "Internal server error", details: error.message },
-        { status: 500 },
-      );
-    }
+    console.error("[payments/create] failed:", error);
+    return NextResponse.json(
+      { error: "Could not start checkout. Please try again." },
+      { status: 500 },
+    );
   }
-}
-
-// Handle unsupported methods
-export async function GET() {
-  return NextResponse.json(
-    { error: "Method not allowed. Use POST to create payments." },
-    { status: 405 },
-  );
 }
