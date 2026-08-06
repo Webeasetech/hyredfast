@@ -55,7 +55,7 @@ export function Navbar() {
           <div className="relative">
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center space-x-2 focus:outline-hidden">
-                <div className="w-8 h-8 border border-border flex items-center justify-center bg-accent rounded-lg">
+                <div className="w-8 h-8 overflow-hidden border border-border flex items-center justify-center bg-accent rounded-lg">
                   {user?.avatar ? (
                     <Image
                       src={user.avatar || "/placeholder.svg"}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import { PanelSkeleton } from "@/components/skeletons";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -167,9 +168,11 @@ function AccountSettings() {
             <div className="relative shrink-0">
               <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-border">
                 {userData?.avatar ? (
-                  <img
-                    src={userData.avatar || "/placeholder.svg"}
+                  <Image
+                    src={userData.avatar}
                     alt="Profile"
+                    width={96}
+                    height={96}
                     className="w-full h-full object-cover"
                   />
                 ) : (
