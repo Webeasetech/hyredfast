@@ -82,6 +82,19 @@ describe("processCampaignJob", () => {
     expect(result).toEqual([]);
   });
 
+  it("filters out campaigns whose timezone is not a real IANA zone", async () => {
+    vi.mocked(prisma.campaign.findMany).mockResolvedValue([
+      makeCampaign({
+        user: { id: "u-1", timezone: "Not/AZone", credits: 10 },
+      }),
+    ] as any);
+
+    const result = await processCampaignJob();
+
+    expect(result).toEqual([]);
+    expect(enqueueEmailBatches).not.toHaveBeenCalled();
+  });
+
   it("filters out campaigns with no emailDeliveryPeriod", async () => {
     vi.mocked(prisma.campaign.findMany).mockResolvedValue([
       makeCampaign({ emailDeliveryPeriod: null }),

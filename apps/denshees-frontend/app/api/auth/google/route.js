@@ -3,12 +3,13 @@ import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import prisma from "@/lib/prisma";
 import { FREE_TRIAL_COMPANIES } from "@/lib/constants/plans";
+import { isValidTimezone } from "@/lib/timezone";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const oauthClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 export async function POST(request) {
-  const { credential } = await request.json();
+  const { credential, timezone } = await request.json();
 
   if (!credential) {
     return NextResponse.json(
@@ -44,8 +45,9 @@ export async function POST(request) {
     }
 
     const email = payload.email.toLowerCase();
+    const zone = isValidTimezone(timezone) ? timezone : null;
 
-    // Find existing user (login) or create one (signup) — same response shape
+    // Find existing user (login) or create one (signup), same response shape
     // either way, so the frontend treats both identically.
     let user = await prisma.user.findUnique({ where: { email } });
 
@@ -57,8 +59,17 @@ export async function POST(request) {
           avatar: payload.picture || null,
           password: null, // Google accounts have no password until set in Settings
           verified: true,
+          timezone: zone,
           companiesTotal: FREE_TRIAL_COMPANIES,
         },
+      });
+    } else if (!user.timezone && zone) {
+      // Backfill accounts created before sign-in captured a timezone. Only fills
+      // a blank, so a zone the user picked in Settings is never overwritten by
+      // whichever machine they happen to log in from.
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { timezone: zone },
       });
     }
 

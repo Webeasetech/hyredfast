@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { prisma } from "../services/prisma.service.js";
+import { log } from "../utils/logger.js";
 import {
   enqueueEmailBatches,
   getEnqueuedEmailIds,
@@ -27,7 +28,19 @@ async function processCampaignJob() {
     }
 
     // Filter campaigns based on delivery period and available credits
-    const validCampaigns = campaigns.filter(passesDeliveryAndCreditCheck);
+    const skipCounts: Record<string, number> = {};
+    const validCampaigns = campaigns.filter((campaign: any) => {
+      const reason = campaignSkipReason(campaign);
+      if (!reason) return true;
+      skipCounts[reason] = (skipCounts[reason] ?? 0) + 1;
+      return false;
+    });
+
+    log("INFO", "Campaign scheduling pass complete", "", {
+      considered: campaigns.length,
+      eligible: validCampaigns.length,
+      skipped: skipCounts,
+    });
 
     // Extract campaign IDs from valid campaigns
     const campaignIds = validCampaigns.map((c: any) => c.id);
@@ -126,37 +139,71 @@ function isCampaignActiveToday(campaign: any, currentTime: DateTime) {
 }
 
 /**
- * Checks if a campaign passes the delivery time and credit requirements.
- * @param {Object} campaign - Campaign object.
- * @returns {boolean} True if the campaign meets the criteria, false otherwise.
+ * Explains why a campaign is not eligible to send right now.
+ *
+ * Misconfiguration (no timezone, unusable timezone, no delivery period) and an
+ * empty credit balance are logged at WARN because they block the campaign until
+ * somebody acts. Being outside the delivery window or off an active day is
+ * normal for most of the day and is only counted, not logged per campaign.
+ *
+ * @param {Object} campaign - Campaign object with its user joined.
+ * @returns {string|null} Skip reason, or null when the campaign may send.
  */
-function passesDeliveryAndCreditCheck(campaign: any) {
+function campaignSkipReason(campaign: any): string | null {
   try {
-    if (
-      !campaign ||
-      !campaign.user?.timezone ||
-      !campaign.emailDeliveryPeriod
-    ) {
-      return false;
+    if (!campaign) return "missing_campaign";
+
+    if (!campaign.user?.timezone) {
+      log("WARN", "Campaign skipped: user has no timezone set", campaign.id, {
+        campaignId: campaign.id,
+        userId: campaign.user?.id,
+      });
+      return "no_timezone";
+    }
+
+    if (!campaign.emailDeliveryPeriod) {
+      log("WARN", "Campaign skipped: no delivery period set", campaign.id, {
+        campaignId: campaign.id,
+        userId: campaign.user?.id,
+      });
+      return "no_delivery_period";
     }
 
     // Use Luxon to get the current time in the campaign's timezone
     const currentTime = DateTime.now().setZone(campaign.user.timezone);
-    const withinPeriod = isWithinDeliveryPeriod(
-      currentTime,
-      campaign.emailDeliveryPeriod,
-    );
 
-    // Check if the campaign's associated user has available credits.
-    const availableCredits = (campaign.user?.credits ?? 0) > 0;
+    if (!currentTime.isValid) {
+      log("WARN", "Campaign skipped: timezone is not a valid IANA zone", campaign.id, {
+        campaignId: campaign.id,
+        userId: campaign.user?.id,
+        timezone: campaign.user.timezone,
+      });
+      return "invalid_timezone";
+    }
 
-    // Check if today is an active day for the campaign
-    const isActiveDay = isCampaignActiveToday(campaign, currentTime);
+    if ((campaign.user?.credits ?? 0) <= 0) {
+      log("WARN", "Campaign skipped: user has no credits left", campaign.id, {
+        campaignId: campaign.id,
+        userId: campaign.user?.id,
+      });
+      return "no_credits";
+    }
 
-    return withinPeriod && availableCredits && isActiveDay;
-  } catch (error) {
-    console.error(`Error checking campaign ${campaign?.id}:`, error);
-    return false;
+    if (!isCampaignActiveToday(campaign, currentTime)) {
+      return "inactive_day";
+    }
+
+    if (!isWithinDeliveryPeriod(currentTime, campaign.emailDeliveryPeriod)) {
+      return "outside_delivery_window";
+    }
+
+    return null;
+  } catch (error: any) {
+    log("ERROR", "Error checking campaign eligibility", campaign?.id, {
+      campaignId: campaign?.id,
+      error: error.message,
+    });
+    return "check_failed";
   }
 }
 
