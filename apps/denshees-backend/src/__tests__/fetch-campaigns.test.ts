@@ -303,7 +303,7 @@ describe("processCampaignJob", () => {
     vi.useRealTimers();
   });
 
-  it("does NOT fire a follow-up early — counts elapsed 24h periods, not calendar days", async () => {
+  it("fires a follow-up once the delay's calendar date arrives, whatever hour the parent went out", async () => {
     vi.useFakeTimers();
     // Now: Mar 25 01:00 UTC (MIDNIGHT window, hour 1).
     vi.setSystemTime(new Date("2026-03-25T01:00:00Z"));
@@ -324,15 +324,127 @@ describe("processCampaignJob", () => {
       }),
     ] as any);
 
-    // Sent Mar 23 23:00 UTC → only ~26h elapsed. With delay=2 the follow-up must
-    // wait a full 48h. The old midnight-normalized code counted 2 *calendar*
-    // days (Mar 23 → Mar 25) and would have sent early; elapsed counting blocks.
+    // Sent Mar 23 23:00, delay 2 → due on Mar 25, any hour inside the window.
+    // Only ~26h have elapsed, so elapsed-hours counting would hold this back
+    // until Mar 25 23:00, past the window, losing the whole day.
     vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
       makeCampaignEmail({
-        id: "ce-early",
+        id: "ce-due",
         stage: 1,
         sentAt: new Date("2026-03-23T23:00:00Z"),
         campaign: { daysInterval: 2 },
+      }),
+    ] as any);
+
+    await processCampaignJob();
+
+    expect(enqueueEmailBatches).toHaveBeenCalledWith(["ce-due"]);
+
+    vi.useRealTimers();
+  });
+
+  it("does not fire a follow-up before its calendar date", async () => {
+    vi.useFakeTimers();
+    // Now: Mar 25 01:00 UTC (MIDNIGHT window, hour 1).
+    vi.setSystemTime(new Date("2026-03-25T01:00:00Z"));
+
+    vi.mocked(prisma.campaign.findMany).mockResolvedValue([
+      makeCampaign({
+        emailDeliveryPeriod: "MIDNIGHT",
+        activeDays: [
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday",
+        ],
+        user: { id: "u-1", timezone: "UTC", credits: 10, email: "o@t.com" },
+      }),
+    ] as any);
+
+    // Sent Mar 24, delay 2 → not due until Mar 26.
+    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+      makeCampaignEmail({
+        id: "ce-not-due",
+        stage: 1,
+        sentAt: new Date("2026-03-24T01:00:00Z"),
+        campaign: { daysInterval: 2 },
+      }),
+    ] as any);
+
+    await processCampaignJob();
+
+    expect(enqueueEmailBatches).not.toHaveBeenCalled();
+
+    vi.useRealTimers();
+  });
+
+  // Measured in production: every follow-up whose parent went out at 9 AM or
+  // 11 AM in a MORNING window slipped a day, because the next tick at or after
+  // the parent's own send hour fell outside the 6-12 window.
+  for (const parentHour of [9, 11]) {
+    it(`sends the follow-up the next morning when the parent went out at ${parentHour} AM`, async () => {
+      vi.useFakeTimers();
+      // Next day, 06:00 UTC, first tick of the MORNING window.
+      vi.setSystemTime(new Date("2026-03-25T06:00:00Z")); // Wednesday
+
+      vi.mocked(prisma.campaign.findMany).mockResolvedValue([
+        makeCampaign({
+          emailDeliveryPeriod: "MORNING",
+          activeDays: ["wednesday"],
+          user: { id: "u-1", timezone: "UTC", credits: 10, email: "o@t.com" },
+        }),
+      ] as any);
+
+      const parentSentAt = new Date(
+        `2026-03-24T${String(parentHour).padStart(2, "0")}:00:00Z`,
+      );
+      vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+        makeCampaignEmail({
+          id: "ce-followup",
+          stage: 1,
+          sentAt: parentSentAt,
+          campaign: { daysInterval: 1 },
+        }),
+      ] as any);
+
+      await processCampaignJob();
+
+      expect(enqueueEmailBatches).toHaveBeenCalledWith(["ce-followup"]);
+
+      vi.useRealTimers();
+    });
+  }
+
+  it("measures the delay in the user's timezone, not UTC", async () => {
+    vi.useFakeTimers();
+    // Mar 25 04:00 UTC = Mar 25 09:30 IST, inside MORNING.
+    vi.setSystemTime(new Date("2026-03-25T04:00:00Z")); // Wednesday
+
+    vi.mocked(prisma.campaign.findMany).mockResolvedValue([
+      makeCampaign({
+        emailDeliveryPeriod: "MORNING",
+        activeDays: ["wednesday"],
+        user: {
+          id: "u-1",
+          timezone: "Asia/Kolkata",
+          credits: 10,
+          email: "o@t.com",
+        },
+      }),
+    ] as any);
+
+    // Sent Mar 24 20:00 UTC, which is Mar 25 01:30 for the user. In UTC days
+    // that reads as yesterday and delay 1 would be satisfied; in the user's own
+    // timezone it is still the same day, so the follow-up waits.
+    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+      makeCampaignEmail({
+        id: "ce-same-day-ist",
+        stage: 1,
+        sentAt: new Date("2026-03-24T20:00:00Z"),
+        campaign: { daysInterval: 1 },
       }),
     ] as any);
 
