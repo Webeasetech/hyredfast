@@ -42,6 +42,12 @@ async function processCampaignJob() {
       skipped: skipCounts,
     });
 
+    // The campaignEmail query below does not join the user, so carry each
+    // campaign's timezone across from the campaigns we already loaded.
+    const campaignTimezones = new Map<string, string>(
+      validCampaigns.map((c: any) => [c.id, c.user.timezone]),
+    );
+
     // Extract campaign IDs from valid campaigns
     const campaignIds = validCampaigns.map((c: any) => c.id);
     if (campaignIds.length === 0) {
@@ -77,7 +83,13 @@ async function processCampaignJob() {
       const delay =
         stagePitch?.delayDays ?? email.campaign?.daysInterval ?? 0;
 
-      return shouldSendToday(email.sentAt?.toISOString() ?? null, delay);
+      const timezone = campaignTimezones.get(email.campaignId) ?? "UTC";
+
+      return shouldSendToday(
+        email.sentAt?.toISOString() ?? null,
+        delay,
+        timezone,
+      );
     });
 
     let emailIds = validEmails.map((email: any) => email.id);
@@ -243,13 +255,18 @@ function isWithinDeliveryPeriod(currentTime: DateTime, deliveryPeriod: string) {
  * Determines if an email should be sent today based on its last sent date and delay.
  * @param {string|null} sentAt - ISO date string of when the email was last sent.
  * @param {number} delay - Minimum number of days between sends.
+ * @param {string} timezone - IANA timezone of the campaign's owner.
  * @returns {boolean} True if the email should be sent, false otherwise.
  */
-function shouldSendToday(sentAt: string | null, delay: number) {
+function shouldSendToday(
+  sentAt: string | null,
+  delay: number,
+  timezone: string,
+) {
   // If no sent date is available, send immediately.
   if (!sentAt) return true;
   try {
-    return daysPassed(sentAt) >= delay;
+    return daysPassed(sentAt, timezone) >= delay;
   } catch (error) {
     console.error("Error determining if email should be sent today:", error);
     return false;
@@ -257,29 +274,30 @@ function shouldSendToday(sentAt: string | null, delay: number) {
 }
 
 /**
- * Calculates the number of days that have passed since the given ISO date.
+ * Counts calendar days between the send date and today, both read in the user's
+ * timezone. A delay is a date difference, not elapsed time: sent on the 5th with
+ * a 2 day delay means eligible anywhere inside the window on the 7th, whatever
+ * hour the parent went out at.
+ *
  * @param {string} isoDateString - ISO formatted date string.
- * @returns {number} Number of full days passed.
- * @throws Will throw an error if the date format is invalid.
+ * @param {string} timezone - IANA timezone the day boundary is measured in.
+ * @returns {number} Number of calendar days passed.
+ * @throws Will throw an error if the date or the timezone is invalid.
  */
-function daysPassed(isoDateString: string) {
-  const pastDate = new Date(isoDateString);
-  if (isNaN(pastDate.getTime())) {
-    throw new Error(`Invalid date format: ${isoDateString}`);
+function daysPassed(isoDateString: string, timezone: string) {
+  const sentDay = DateTime.fromISO(isoDateString, {
+    zone: timezone,
+  }).startOf("day");
+
+  if (!sentDay.isValid) {
+    throw new Error(
+      `Invalid date or timezone: ${isoDateString} / ${timezone}`,
+    );
   }
 
-  // Count full elapsed 24h periods from the actual send instant.
-  //
-  // We deliberately do NOT normalize to midnight. The old code did
-  // `setHours(0,0,0,0)` on both dates, which (a) counted calendar-date
-  // crossings rather than elapsed time — so a follow-up could fire up to a
-  // day early when the send happened late in the day — and (b) used the
-  // server's LOCAL timezone to pick midnight, while `sentAt` is stored in
-  // UTC, drifting the day boundary by the server's offset (e.g. a Europe
-  // Hetzner box firing follow-ups a day early). Working directly on the two
-  // absolute instants is timezone-independent and never fires early.
-  const msPerDay = 1000 * 60 * 60 * 24;
-  return Math.floor((Date.now() - pastDate.getTime()) / msPerDay);
+  const today = DateTime.now().setZone(timezone).startOf("day");
+
+  return Math.floor(today.diff(sentDay, "days").days);
 }
 
 export { processCampaignJob };
