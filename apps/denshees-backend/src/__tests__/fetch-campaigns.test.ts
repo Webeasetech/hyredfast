@@ -82,7 +82,7 @@ describe("processCampaignJob", () => {
     expect(result).toEqual([]);
   });
 
-  it("filters out campaigns whose timezone is not a real IANA zone", async () => {
+  it("filters out the campaigns whose timezone is not a real IANA zone", async () => {
     vi.mocked(prisma.campaign.findMany).mockResolvedValue([
       makeCampaign({
         user: { id: "u-1", timezone: "Not/AZone", credits: 10 },
