@@ -137,6 +137,10 @@ const joyrideOptions = {
   primaryColor: token("--primary", "#0a66c2"),
   textColor: token("--foreground", "#111827"),
   zIndex: 10000,
+  // Rounds the spotlight cutout. It belongs here rather than in `styles`,
+  // because `styles.spotlight` is spread as attributes onto the SVG path that
+  // draws the cutout, and CSS properties are not valid there.
+  spotlightRadius: 8,
   // No back button
   buttons: ["close", "primary"],
   // Prevent overlay clicks from closing the tour — fixes Radix portal
@@ -183,9 +187,6 @@ const joyrideStyles = {
   buttonSkip: {
     color: token("--muted-foreground", "#6b7280"),
     fontSize: "13px",
-  },
-  spotlight: {
-    borderRadius: 8,
   },
   buttonClose: {
     color: "#111827",

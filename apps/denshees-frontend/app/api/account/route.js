@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { tryAuth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { isValidTimezone } from "@/lib/timezone";
 
 export async function GET(request) {
   try {
@@ -19,6 +20,7 @@ export async function GET(request) {
         avatar: true,
         created: true,
         updated: true,
+        timezone: true,
         millionVerifierApiKey: true,
         password: true,
       },
@@ -28,7 +30,7 @@ export async function GET(request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Never leak the hash — expose only whether a password is set, so the
+    // Never leak the hash, expose only whether a password is set, so the
     // Settings UI can show "Set password" vs "Change password".
     const { password, ...rest } = user;
     return NextResponse.json({ ...rest, hasPassword: !!password });
@@ -57,6 +59,15 @@ export async function PATCH(request) {
     if (data.millionVerifierApiKey !== undefined) {
       updateData.millionVerifierApiKey = data.millionVerifierApiKey || null;
     }
+    if (data.timezone !== undefined) {
+      if (!isValidTimezone(data.timezone)) {
+        return NextResponse.json(
+          { error: "Invalid timezone" },
+          { status: 400 },
+        );
+      }
+      updateData.timezone = data.timezone;
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
@@ -69,6 +80,7 @@ export async function PATCH(request) {
         avatar: true,
         created: true,
         updated: true,
+        timezone: true,
         millionVerifierApiKey: true,
       },
     });

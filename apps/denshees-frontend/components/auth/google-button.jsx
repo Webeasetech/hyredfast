@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { GoogleLogin } from "@react-oauth/google";
 import { toast } from "sonner";
 import useAuthStore from "@/store/auth.store";
+import { detectTimezone } from "@/lib/timezone";
 
 /**
  * Renders the Google Sign-In button. On success it sends the Google ID token
@@ -23,7 +24,10 @@ export default function GoogleButton() {
       const res = await fetch("/api/auth/google", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential: credentialResponse.credential }),
+        body: JSON.stringify({
+          credential: credentialResponse.credential,
+          timezone: detectTimezone(),
+        }),
       });
 
       const result = await res.json();

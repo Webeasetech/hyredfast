@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Image from "next/image";
 import { PanelSkeleton } from "@/components/skeletons";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,8 @@ import useSWRMutation from "swr/mutation";
 import { patch, post } from "@/lib/apis";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
+import TimezoneSelect from "@/components/timezone-select";
+import { detectTimezone } from "@/lib/timezone";
 
 export default function AccountSettingsPage() {
   return (
@@ -39,6 +42,7 @@ export default function AccountSettingsPage() {
 
 function AccountSettings() {
   const [showApiKey, setShowApiKey] = useState(false);
+  const [pickedZone, setPickedZone] = useState(null);
 
   // Setup react-hook-form
   const {
@@ -62,6 +66,11 @@ function AccountSettings() {
     error,
     mutate: refreshUserData,
   } = useSWR("/api/account", fetcher);
+
+  // Falls back to the browser zone when the account has none stored, so saving
+  // the form is enough to fix an account that cannot send.
+  const timezone =
+    pickedZone ?? userData?.timezone ?? detectTimezone() ?? "";
 
   // Setup mutation for updating user account
   const { trigger: updateAccount, isMutating: isUpdating } = useSWRMutation(
@@ -93,6 +102,7 @@ function AccountSettings() {
       await updateAccount({
         name: data.name,
         username: data.username,
+        timezone,
         millionVerifierApiKey: data.millionVerifierApiKey || null,
       });
     } catch (error) {
@@ -126,7 +136,7 @@ function AccountSettings() {
           <div>
             <h2 className="text-xl font-bold">Account Information</h2>
             <p className="text-sm text-foreground mt-1">
-              Your name, username, and how leads get verified.
+              Your name, username, timezone, and how leads get verified.
             </p>
           </div>
           <Button
@@ -158,9 +168,11 @@ function AccountSettings() {
             <div className="relative shrink-0">
               <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-border">
                 {userData?.avatar ? (
-                  <img
-                    src={userData.avatar || "/placeholder.svg"}
+                  <Image
+                    src={userData.avatar}
                     alt="Profile"
+                    width={96}
+                    height={96}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -208,6 +220,19 @@ function AccountSettings() {
                 )}
               </div>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="timezone">Timezone</Label>
+            <TimezoneSelect
+              id="timezone"
+              value={timezone}
+              onChange={setPickedZone}
+            />
+            <p className="text-xs text-muted-foreground">
+              Campaign delivery windows and follow-up dates are calculated in
+              this timezone.
+            </p>
           </div>
 
           <div className="space-y-2">
