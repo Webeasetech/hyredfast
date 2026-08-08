@@ -5,10 +5,7 @@ import {
   isCampaignActiveToday,
   isWithinDeliveryPeriod,
 } from "../utils/delivery-window.js";
-import {
-  enqueueEmailBatches,
-  getEnqueuedEmailIds,
-} from "../queues/batch-email.queue.js";
+import { enqueueEmails } from "../queues/batch-email.queue.js";
 
 /**
  * Processes the campaign job by fetching campaigns and their emails,
@@ -96,23 +93,17 @@ async function processCampaignJob() {
       );
     });
 
-    let emailIds = validEmails.map((email: any) => email.id);
+    const emailIds = validEmails.map((email: any) => email.id);
     if (emailIds.length === 0) {
       console.log("No valid emails to process.");
       return [];
     }
 
-    // Fetch enqueued email IDs
-    const alreadyEnqueuedIds = await getEnqueuedEmailIds();
-    emailIds = emailIds.filter((id: any) => !alreadyEnqueuedIds.has(id));
-
-    if (emailIds.length === 0) {
-      console.log("No new emails to enqueue (all are already queued).");
-      return [];
-    }
-
+    // Rows already in flight are offered again on purpose. The queue keys each
+    // job on the email id and rejects the repeats, which is what a scheduler
+    // tick after a restart relies on.
     console.log("Enqueuing email IDs:", emailIds);
-    await enqueueEmailBatches(emailIds);
+    await enqueueEmails(emailIds);
 
     return emailIds;
   } catch (error) {

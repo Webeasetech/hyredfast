@@ -5,60 +5,42 @@ import { log } from "../utils/logger.js"
 // Create a queue for batch email processing
 const batchEmailQueue = new Queue("batchEmailQueue", { connection: redis })
 
-// Set to track enqueued email IDs
-const enqueuedEmailIds = new Set<string>()
-
 /**
- * Enqueues batches of emails for processing
+ * Enqueues one job per email, keyed by the email's own id.
+ *
+ * BullMQ refuses to add a job whose jobId already has a record, so an email
+ * that is queued, running or recently failed cannot be queued a second time.
+ * That is the whole dedup mechanism: the scheduler is free to offer the same
+ * row on every tick, and it survives a restart, which an in-process Set did not.
+ *
  * @param emailIds - Array of email IDs to process
  * @returns Array of job IDs
  */
-export async function enqueueEmailBatches(emailIds: string[]): Promise<string[]> {
-  const batchSize = 50 // Process emails in batches of 50
-  const jobIds: string[] = []
+export async function enqueueEmails(emailIds: string[]): Promise<string[]> {
+  if (emailIds.length === 0) return []
 
-  // Process emails in batches
-  for (let i = 0; i < emailIds.length; i += batchSize) {
-    const batch = emailIds.slice(i, i + batchSize)
-
-    const job = await batchEmailQueue.add(
-      "process-emails",
-      { emailIds: batch },
-      {
+  const jobs = await batchEmailQueue.addBulk(
+    emailIds.map((emailId) => ({
+      name: "process-emails",
+      data: { emailIds: [emailId] },
+      opts: {
+        jobId: emailId,
         attempts: 3,
         backoff: {
           type: "exponential",
           delay: 60000, // 1 minute
         },
+        // Completed jobs go immediately so the next stage of the same lead can
+        // be queued on a later day. Failed ones age out instead of being kept
+        // by count alone, because a surviving failed record would lock its
+        // email out of the queue for good.
         removeOnComplete: true,
-        removeOnFail: 1000, // Keep the last 1000 failed jobs
+        removeOnFail: { age: 3600, count: 1000 },
       },
-    )
+    })),
+  )
 
-    // Add the email IDs to the tracking set
-    batch.forEach((id) => enqueuedEmailIds.add(id))
+  log("INFO", `Offered ${emailIds.length} emails to the queue`, "")
 
-    jobIds.push(job.id)
-    log("INFO", `Enqueued batch of ${batch.length} emails`, job.id)
-  }
-
-  return jobIds
-}
-
-/**
- * Gets the set of currently enqueued email IDs
- * @returns Set of enqueued email IDs
- */
-export async function getEnqueuedEmailIds(): Promise<Set<string>> {
-  // In a production environment, you might want to store this in Redis
-  // instead of in-memory to handle multiple instances
-  return enqueuedEmailIds
-}
-
-/**
- * Removes email IDs from the enqueued set
- * @param emailIds - Array of email IDs to remove
- */
-export function removeEnqueuedEmailIds(emailIds: string[]): void {
-  emailIds.forEach((id) => enqueuedEmailIds.delete(id))
+  return jobs.map((job) => job.id)
 }
