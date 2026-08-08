@@ -131,14 +131,6 @@ export async function updateEmailStatus(email: EmailRecord): Promise<void> {
   try {
     const user = email.campaign?.user;
 
-    if (user && user.id) {
-      log("INFO", `Updating user credits`, txId, { userId: user.id });
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { credits: { decrement: 1 } },
-      });
-    }
-
     const nextStage = email.stage + 1;
     const maxStage = email.campaign?.maxStageCount || 1;
     // >= (not ===) so a lead already at or past the last stage — e.g. after the
@@ -151,16 +143,36 @@ export async function updateEmailStatus(email: EmailRecord): Promise<void> {
       nextStage,
       nextStatus,
       maxStage,
+      userId: user?.id,
     });
 
-    await prisma.campaignEmail.update({
-      where: { id: email.id },
-      data: {
-        status: nextStatus,
-        stage: nextStage,
-        sentAt: new Date(),
-      },
-    });
+    const writes: any[] = [
+      prisma.campaignEmail.update({
+        where: { id: email.id },
+        data: {
+          status: nextStatus,
+          stage: nextStage,
+          sentAt: new Date(),
+        },
+      }),
+    ];
+
+    if (user && user.id) {
+      // updateMany with a balance guard rather than update, so the decrement
+      // is an atomic compare and set that cannot take credits below zero.
+      // Matching no rows is fine and deliberate: the mail is already out, and
+      // failing here would leave the lead eligible to be sent a second time.
+      writes.push(
+        prisma.user.updateMany({
+          where: { id: user.id, credits: { gt: 0 } },
+          data: { credits: { decrement: 1 } },
+        }),
+      );
+    }
+
+    // Both writes or neither. A charge that lands without the row update
+    // leaves the lead eligible on the next tick, and it gets mailed twice.
+    await prisma.$transaction(writes);
 
     log("INFO", `Email status updated successfully`, txId, {
       emailId: email.id,

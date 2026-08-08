@@ -19,7 +19,10 @@ const { mockPrisma, enqueuedBatches, mockSendMail, mockRedis } = vi.hoisted(
         findFirst: vi.fn(),
         findMany: vi.fn(),
       },
-      user: { update: vi.fn() },
+      user: { update: vi.fn(), updateMany: vi.fn() },
+      // The real client runs the array as one transaction. Awaiting the
+      // members here keeps the mocked writes observable.
+      $transaction: vi.fn((writes: any[]) => Promise.all(writes)),
     },
     enqueuedBatches: [] as string[][],
     mockSendMail: vi.fn().mockResolvedValue({ messageId: "<msg-1@test>" }),
@@ -156,7 +159,7 @@ describe("E2E pipeline: fetch → batch → send", () => {
     vi.clearAllMocks();
     enqueuedBatches.length = 0;
     mockPrisma.campaignEmail.update.mockResolvedValue({});
-    mockPrisma.user.update.mockResolvedValue({});
+    mockPrisma.user.updateMany.mockResolvedValue({ count: 1 });
     mockPrisma.campaignMessage.create.mockResolvedValue({});
     mockSendMail.mockResolvedValue({ messageId: "<msg-1@test>" });
     mockRedis.set.mockResolvedValue("OK");
@@ -216,9 +219,9 @@ describe("E2E pipeline: fetch → batch → send", () => {
     // Campaign message record was created
     expect(mockPrisma.campaignMessage.create).toHaveBeenCalled();
 
-    // User credits decremented
-    expect(mockPrisma.user.update).toHaveBeenCalledWith({
-      where: { id: "user-1" },
+    // User credits decremented, guarded so the balance cannot go negative
+    expect(mockPrisma.user.updateMany).toHaveBeenCalledWith({
+      where: { id: "user-1", credits: { gt: 0 } },
       data: { credits: { decrement: 1 } },
     });
   });
@@ -291,7 +294,7 @@ describe("E2E pipeline: fetch → batch → send", () => {
     expect(results).toEqual([]);
     // Nothing written, so the next tick inside the window picks it up as is.
     expect(mockPrisma.campaignEmail.update).not.toHaveBeenCalled();
-    expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    expect(mockPrisma.user.updateMany).not.toHaveBeenCalled();
     expect(mockPrisma.campaignMessage.create).not.toHaveBeenCalled();
   });
 
@@ -309,7 +312,7 @@ describe("E2E pipeline: fetch → batch → send", () => {
     expect(mockSendMail).not.toHaveBeenCalled();
     // Nothing written, so the row is untouched when the job comes back.
     expect(mockPrisma.campaignEmail.update).not.toHaveBeenCalled();
-    expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    expect(mockPrisma.user.updateMany).not.toHaveBeenCalled();
     expect(mockPrisma.campaignMessage.create).not.toHaveBeenCalled();
   });
 
