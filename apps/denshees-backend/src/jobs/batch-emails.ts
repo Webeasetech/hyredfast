@@ -4,7 +4,6 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { log } from "../utils/logger.js";
-import { delay } from "../utils/helpers.js";
 import {
   extractUniqueCredentials,
   setupEmailTransporters,
@@ -13,6 +12,7 @@ import { fetchCampaignEmails } from "../services/campaign-service.js";
 import { sendCampaignEmail } from "../services/email-service.js";
 import type { EmailRecord } from "../models/email.js";
 import { isWithinDeliveryWindow } from "../utils/delivery-window.js";
+import { CredentialBusyError } from "../utils/send-lock.js";
 
 /**
  * Processes a batch job for sending campaign emails.
@@ -90,6 +90,8 @@ export async function processEmailBatchJob(
 
     return results;
   } catch (error: any) {
+    if (error instanceof CredentialBusyError) throw error;
+
     log("ERROR", `Error processing email batch job`, batchId, {
       error: error.message,
       stack: error.stack,
@@ -159,32 +161,26 @@ async function processEmailsByCredential(
         log("INFO", `Processing email ${email.id}`, emailTxId);
         await sendCampaignEmail(email, emailTxId);
         results.push(email);
-
-        // Use a longer delay between emails from the same credential (3-5 seconds)
-        const delayMs = 20000 + Math.random() * 2000;
-        log(
-          "INFO",
-          `Delaying ${Math.round(delayMs)}ms before next email`,
-          emailTxId,
-        );
-        await delay(delayMs);
       } catch (error: any) {
+        // Spacing is the credential's own lock now, so a busy mailbox means
+        // this job reschedules itself rather than the whole worker waiting.
+        // Rescheduling re-runs the whole job, so only bounce it while nothing
+        // has gone out. A job holds one email today, so that is the normal case.
+        if (error instanceof CredentialBusyError) {
+          if (results.length === 0) throw error;
+
+          log("INFO", `Deferring email, mailbox busy`, emailTxId, {
+            emailId: email.id,
+          });
+          deferred.push(email);
+          continue;
+        }
+
         log("ERROR", `Error processing email ${email.id}`, emailTxId, {
           error: error.message,
           stack: error.stack,
         });
       }
-    }
-
-    // Add a longer delay between processing different credentials
-    if (credId !== "unassigned" && emailsByCredential.size > 1) {
-      const delayMs = 10000 + Math.random() * 5000;
-      log(
-        "INFO",
-        `Delaying ${Math.round(delayMs)}ms before next credential`,
-        batchId,
-      );
-      await delay(delayMs);
     }
   }
 
