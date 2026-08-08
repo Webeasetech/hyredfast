@@ -52,7 +52,9 @@ export async function POST(request) {
         imapHost: imap_host,
         imapEmail,
         imapPassword,
-        dailyLimit: 20,
+        // Under Gmail's 500/day personal cap with room to spare. The sender
+        // paces itself, so this is the ceiling, not a target.
+        dailyLimit: 200,
       },
     });
 

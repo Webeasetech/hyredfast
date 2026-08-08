@@ -649,6 +649,84 @@ describe("processCampaignJob", () => {
     vi.useRealTimers();
   });
 
+  it("does not send to an address verification marked FAILED", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-25T09:00:00Z"));
+
+    vi.mocked(prisma.campaign.findMany).mockResolvedValue([
+      makeCampaign({
+        activeDays: ["wednesday"],
+        user: { id: "u-1", timezone: "UTC", credits: 10, email: "o@t.com" },
+      }),
+    ] as any);
+
+    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+      makeCampaignEmail({
+        id: "ce-bad",
+        verified: "FAILED",
+        campaign: { daysInterval: 1, ignoreVerification: false },
+      }),
+    ] as any);
+
+    const result = await processCampaignJob();
+
+    expect(result).toEqual([]);
+    expect(enqueueEmails).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("still sends addresses that were never verified", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-25T09:00:00Z"));
+
+    vi.mocked(prisma.campaign.findMany).mockResolvedValue([
+      makeCampaign({
+        activeDays: ["wednesday"],
+        user: { id: "u-1", timezone: "UTC", credits: 10, email: "o@t.com" },
+      }),
+    ] as any);
+
+    // PENDING is the default and nothing in the app moves a row off it yet,
+    // so blocking it here would stop every campaign from sending.
+    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+      makeCampaignEmail({
+        id: "ce-pending",
+        verified: "PENDING",
+        campaign: { daysInterval: 1, ignoreVerification: false },
+      }),
+    ] as any);
+
+    const result = await processCampaignJob();
+
+    expect(result).toEqual(["ce-pending"]);
+    vi.useRealTimers();
+  });
+
+  it("sends a FAILED address when the campaign opts out of the check", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-25T09:00:00Z"));
+
+    vi.mocked(prisma.campaign.findMany).mockResolvedValue([
+      makeCampaign({
+        activeDays: ["wednesday"],
+        user: { id: "u-1", timezone: "UTC", credits: 10, email: "o@t.com" },
+      }),
+    ] as any);
+
+    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+      makeCampaignEmail({
+        id: "ce-bad",
+        verified: "FAILED",
+        campaign: { daysInterval: 1, ignoreVerification: true },
+      }),
+    ] as any);
+
+    const result = await processCampaignJob();
+
+    expect(result).toEqual(["ce-bad"]);
+    vi.useRealTimers();
+  });
+
   it("handles errors gracefully and returns empty array", async () => {
     vi.mocked(prisma.campaign.findMany).mockRejectedValue(
       new Error("DB connection lost"),

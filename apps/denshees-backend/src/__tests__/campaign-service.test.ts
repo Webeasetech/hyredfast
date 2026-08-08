@@ -15,7 +15,9 @@ vi.mock("../services/prisma.service.js", () => ({
     },
     user: {
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
+    $transaction: vi.fn(),
   },
 }));
 
@@ -150,20 +152,18 @@ describe("fetchPitch", () => {
 });
 
 describe("updateEmailStatus", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Identifiable stand-ins so the transaction's contents can be asserted.
+    vi.mocked(prisma.campaignEmail.update).mockReturnValue("row-write" as any);
+    vi.mocked(prisma.user.updateMany).mockReturnValue("credit-write" as any);
+    vi.mocked(prisma.$transaction).mockResolvedValue([] as any);
+  });
 
   it("decrements user credits and advances stage", async () => {
-    vi.mocked(prisma.user.update).mockResolvedValue({} as any);
-    vi.mocked(prisma.campaignEmail.update).mockResolvedValue({} as any);
-
     const email = makeEmail({ stage: 0 });
 
     await updateEmailStatus(email);
-
-    expect(prisma.user.update).toHaveBeenCalledWith({
-      where: { id: "user-1" },
-      data: { credits: { decrement: 1 } },
-    });
 
     expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
@@ -175,10 +175,28 @@ describe("updateEmailStatus", () => {
     });
   });
 
-  it("sets COMPLETED status when at final stage", async () => {
-    vi.mocked(prisma.user.update).mockResolvedValue({} as any);
-    vi.mocked(prisma.campaignEmail.update).mockResolvedValue({} as any);
+  it("writes the row and the credit in one transaction", async () => {
+    // Charging without recording the send leaves the lead eligible again on
+    // the next tick, so it goes out twice.
+    await updateEmailStatus(makeEmail({ stage: 0 }));
 
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(prisma.$transaction).mock.calls[0][0]).toEqual([
+      "row-write",
+      "credit-write",
+    ]);
+  });
+
+  it("guards the decrement so credits cannot go negative", async () => {
+    await updateEmailStatus(makeEmail({ stage: 0 }));
+
+    expect(prisma.user.updateMany).toHaveBeenCalledWith({
+      where: { id: "user-1", credits: { gt: 0 } },
+      data: { credits: { decrement: 1 } },
+    });
+  });
+
+  it("sets COMPLETED status when at final stage", async () => {
     // maxStageCount=3, so final sending stage is 2 (0-indexed)
     const email = makeEmail({ stage: 2 });
 
@@ -195,9 +213,6 @@ describe("updateEmailStatus", () => {
   });
 
   it("sets COMPLETED when a lead is past the cap (e.g. follow-up count reduced)", async () => {
-    vi.mocked(prisma.user.update).mockResolvedValue({} as any);
-    vi.mocked(prisma.campaignEmail.update).mockResolvedValue({} as any);
-
     // Lead is at stage 3 but the campaign was shrunk to maxStageCount=3
     // (last stage index 2). The >= check must complete it, not loop it.
     const email = makeEmail({ stage: 3, campaign: { id: "c-1", maxStageCount: 3 } });
@@ -215,17 +230,18 @@ describe("updateEmailStatus", () => {
   });
 
   it("skips credit decrement when no user on campaign", async () => {
-    vi.mocked(prisma.campaignEmail.update).mockResolvedValue({} as any);
-
     const email = makeEmail({ campaign: { id: "c-1", maxStageCount: 1 } });
 
     await updateEmailStatus(email);
 
-    expect(prisma.user.update).not.toHaveBeenCalled();
+    expect(prisma.user.updateMany).not.toHaveBeenCalled();
+    expect(vi.mocked(prisma.$transaction).mock.calls[0][0]).toEqual([
+      "row-write",
+    ]);
   });
 
-  it("rethrows errors from prisma update", async () => {
-    vi.mocked(prisma.user.update).mockRejectedValue(new Error("db error"));
+  it("rethrows errors from the transaction", async () => {
+    vi.mocked(prisma.$transaction).mockRejectedValue(new Error("db error"));
 
     await expect(updateEmailStatus(makeEmail())).rejects.toThrow("db error");
   });

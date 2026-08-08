@@ -214,6 +214,9 @@ model CampaignEmail {
   crmDeals         CrmDeal[]
 
   @@index([email])
+  // Read on every send and on every scheduler tick to size a mailbox's
+  // remaining daily allowance.
+  @@index([credId])
   @@map("campaigns_email")
 }
 
@@ -233,6 +236,10 @@ model CampaignMessage {
   created         DateTime       @default(now())
   updated         DateTime       @updatedAt
 
+  // Daily allowance counts sent rows per credential over a rolling day, and
+  // reply matching looks a message up by its Message-ID on every inbound mail.
+  @@index([campaignEmailId, sent, created])
+  @@index([messageId])
   @@map("campaign_messages")
 }
 

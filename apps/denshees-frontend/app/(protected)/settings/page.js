@@ -180,7 +180,13 @@ function EmailSettings() {
               <TableRow>
                 <TableHead className="pl-6">Email</TableHead>
                 <TableHead>Host</TableHead>
-                <TableHead>Daily Limit</TableHead>
+                <TableHead>
+                  Daily Limit
+                  <span className="block text-xs font-normal text-muted-foreground">
+                    Gmail allows 500/day, Workspace 2,000. Staying well under
+                    protects the account.
+                  </span>
+                </TableHead>
                 <TableHead className="pr-6 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>

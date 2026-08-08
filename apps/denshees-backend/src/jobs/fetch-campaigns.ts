@@ -81,6 +81,8 @@ async function processCampaignJob() {
     // For follow-ups, use the per-stage delay from the matching pitch, falling back
     // to the campaign-wide daysInterval when a pitch has no explicit delay.
     const validEmails = campaignEmails.filter((email: any) => {
+      if (isKnownBadAddress(email)) return false;
+
       if (email.stage === 0) return true;
 
       const stagePitch = email.campaign?.pitches?.find(
@@ -125,6 +127,23 @@ async function processCampaignJob() {
     console.error("Error processing campaign job:", error);
     return [];
   }
+}
+
+/**
+ * Whether verification has already said this address is bad.
+ *
+ * Only an explicit FAILED is held back. PENDING is the default every imported
+ * contact carries and nothing in the app moves a row off it yet, so treating
+ * "not verified" as "do not send" would stop every campaign from sending.
+ * Once verification results are persisted this can tighten to require VERIFIED.
+ *
+ * @param {Object} email - Campaign email with its campaign joined.
+ * @returns {boolean} True when the address should be skipped.
+ */
+function isKnownBadAddress(email: any): boolean {
+  if (email.campaign?.ignoreVerification) return false;
+
+  return email.verified === "FAILED";
 }
 
 /**
