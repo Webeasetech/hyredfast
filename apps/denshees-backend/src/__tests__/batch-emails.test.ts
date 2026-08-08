@@ -21,6 +21,8 @@ vi.mock("../services/email-service.js", () => ({
   sendCampaignEmail: vi.fn(),
 }));
 
+vi.mock("../config/redis.js", () => ({ redis: {} }));
+
 import { fetchCampaignEmails } from "../services/campaign-service.js";
 import { sendCampaignEmail } from "../services/email-service.js";
 import {
@@ -28,6 +30,8 @@ import {
   setupEmailTransporters,
 } from "../utils/credential-service.js";
 import { processEmailBatchJob } from "../jobs/batch-emails.js";
+import { CredentialBusyError } from "../utils/send-lock.js";
+import { delay } from "../utils/helpers.js";
 import type { EmailRecord } from "../models/email.js";
 
 // ----- Helpers -----
@@ -110,6 +114,44 @@ describe("processEmailBatchJob", () => {
     const result = await processEmailBatchJob(["email-1"]);
 
     expect(result).toEqual([]);
+  });
+
+  it("lets a busy mailbox out so the worker can reschedule the job", async () => {
+    vi.mocked(fetchCampaignEmails).mockResolvedValue([makeEmail()]);
+    vi.mocked(sendCampaignEmail).mockRejectedValue(
+      new CredentialBusyError("cred-1", 5000),
+    );
+
+    // Every other send error is swallowed here. This one has to escape, or the
+    // job completes, its jobId frees, and the email waits for the next tick.
+    await expect(processEmailBatchJob(["email-1"])).rejects.toBeInstanceOf(
+      CredentialBusyError,
+    );
+  });
+
+  it("does not bounce a job that has already sent something", async () => {
+    const emails = [makeEmail({ id: "e-1" }), makeEmail({ id: "e-2" })];
+    vi.mocked(fetchCampaignEmails).mockResolvedValue(emails);
+    vi.mocked(sendCampaignEmail)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new CredentialBusyError("cred-1", 5000));
+
+    // Rescheduling re-runs every email in the job, so e-1 would go out twice.
+    const result = await processEmailBatchJob(["e-1", "e-2"]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("e-1");
+  });
+
+  it("no longer paces sends itself, the credential lock does", async () => {
+    const emails = [makeEmail({ id: "e-1" }), makeEmail({ id: "e-2" })];
+    vi.mocked(fetchCampaignEmails).mockResolvedValue(emails);
+    vi.mocked(sendCampaignEmail).mockResolvedValue();
+
+    await processEmailBatchJob(["e-1", "e-2"]);
+
+    expect(sendCampaignEmail).toHaveBeenCalledTimes(2);
+    expect(delay).not.toHaveBeenCalled();
   });
 
   it("continues processing remaining emails when one fails", async () => {

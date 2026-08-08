@@ -48,6 +48,9 @@ services:
         condition: service_healthy
     networks:
       - internal
+    # The default 10s is not enough for the workers to drain an in-flight SMTP
+    # send on SIGTERM, and a killed send is retried from the start.
+    stop_grace_period: 30s
     restart: always
 
   frontend:

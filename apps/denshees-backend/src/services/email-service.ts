@@ -18,6 +18,11 @@ import {
 } from "./campaign-service.js";
 import type { EmailRecord } from "../models/email.js";
 import { getCredentialSentCount } from "./credential-service.js";
+import {
+  acquireCredentialLock,
+  credentialRetryDelay,
+  CredentialBusyError,
+} from "../utils/send-lock.js";
 import { htmlToText } from "html-to-text";
 
 /**
@@ -177,8 +182,30 @@ export async function sendCampaignEmail(
 
       log("INFO", `Found ${availableCreds.length} available credentials`, txId);
 
-      credential =
-        availableCreds[Math.floor(Math.random() * availableCreds.length)];
+      // Walk the available mailboxes from a random start and take the first one
+      // whose send lock is free. Starting at random keeps the even spread the
+      // old random pick gave, and trying the rest turns contention into load
+      // balancing instead of a wasted attempt.
+      const start = Math.floor(Math.random() * availableCreds.length);
+      for (let i = 0; i < availableCreds.length; i++) {
+        const candidate = availableCreds[(start + i) % availableCreds.length];
+        if (await acquireCredentialLock(candidate.id)) {
+          credential = candidate;
+          break;
+        }
+      }
+
+      if (!credential) {
+        const retryAfterMs = await credentialRetryDelay(
+          availableCreds.map((cred: any) => cred.id),
+        );
+        log("INFO", `Every mailbox sent too recently, deferring`, txId, {
+          emailId: email.id,
+          retryAfterMs,
+        });
+        throw new CredentialBusyError(availableCreds[0].id, retryAfterMs);
+      }
+
       log("INFO", `Selected credential for initial email`, txId, {
         credentialId: credential.id,
         emailProvider: credential.host,
@@ -240,6 +267,18 @@ export async function sendCampaignEmail(
           limit: credential.dailyLimit || 30,
         });
         return;
+      }
+
+      // A follow-up is stuck with the mailbox that sent stage 0, so there is
+      // nothing to fall back to when it is busy.
+      if (!(await acquireCredentialLock(credential.id))) {
+        const retryAfterMs = await credentialRetryDelay([credential.id]);
+        log("INFO", `Sticky sender sent too recently, deferring`, txId, {
+          emailId: email.id,
+          credentialId: credential.id,
+          retryAfterMs,
+        });
+        throw new CredentialBusyError(credential.id, retryAfterMs);
       }
     }
 
@@ -483,6 +522,10 @@ export async function sendCampaignEmail(
       }
     }
   } catch (error: any) {
+    // A busy mailbox is not a failure, it is a "come back shortly", and the
+    // worker needs to see it to reschedule the job.
+    if (error instanceof CredentialBusyError) throw error;
+
     log("ERROR", `Unexpected error in sendCampaignEmail`, txId, {
       error: error.message,
       stack: error.stack,

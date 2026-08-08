@@ -2,6 +2,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // ----- Mocks -----
 
+const { mockRedis } = vi.hoisted(() => ({
+  mockRedis: { set: vi.fn(), pttl: vi.fn() },
+}));
+
+// The send lock runs for real against a fake Redis, so these tests exercise the
+// actual lock logic rather than a stub of it.
+vi.mock("../config/redis.js", () => ({ redis: mockRedis }));
+
 vi.mock("../services/prisma.service.js", () => ({
   prisma: {
     campaignEmail: { update: vi.fn() },
@@ -50,6 +58,7 @@ import {
 } from "../services/campaign-service.js";
 import { getCredentialSentCount } from "../services/credential-service.js";
 import { sendCampaignEmail } from "../services/email-service.js";
+import { CredentialBusyError } from "../utils/send-lock.js";
 import type { EmailRecord } from "../models/email.js";
 
 // ----- Helpers -----
@@ -94,6 +103,9 @@ const mockTransporter = {
  * Sets up the "happy path" mocks so a test can override one aspect at a time.
  */
 function setupHappyPath() {
+  // Mailbox is free unless a test says otherwise.
+  mockRedis.set.mockResolvedValue("OK");
+  mockRedis.pttl.mockResolvedValue(20000);
   vi.mocked(fetchPitch).mockResolvedValue({
     id: "pitch-1",
     subject: "Hello {{name}}",
@@ -414,6 +426,80 @@ describe("sendCampaignEmail", () => {
       where: { id: "email-1" },
       data: { credId: "cred-1" },
     });
+  });
+
+  // ================== Per-credential send lock ==================
+
+  it("claims the sending mailbox before handing anything to nodemailer", async () => {
+    await sendCampaignEmail(makeEmail(), "tx");
+
+    expect(mockRedis.set).toHaveBeenCalledWith(
+      "sendlock:cred:cred-1",
+      "1",
+      "EX",
+      25,
+      "NX",
+    );
+    expect(mockTransporter.sendMail).toHaveBeenCalled();
+  });
+
+  it("throws CredentialBusyError when the only mailbox sent too recently", async () => {
+    mockRedis.set.mockResolvedValue(null);
+
+    await expect(sendCampaignEmail(makeEmail(), "tx")).rejects.toBeInstanceOf(
+      CredentialBusyError,
+    );
+
+    expect(mockTransporter.sendMail).not.toHaveBeenCalled();
+    // The row is left exactly as it was so a later attempt can pick it up.
+    expect(prisma.campaignEmail.update).not.toHaveBeenCalled();
+  });
+
+  it("moves to a free mailbox when one of the campaign's is busy", async () => {
+    mockRedis.set.mockImplementation(async (key: string) =>
+      key.endsWith("cred-busy") ? null : "OK",
+    );
+
+    const email = makeEmail({
+      campaign: {
+        id: "campaign-1",
+        maxStageCount: 3,
+        isTrackingEnabled: false,
+        user: { id: "user-1", email: "o@t.com", credits: 10 },
+        campaignEmailCredentials: [
+          { emailCredential: makeCred({ id: "cred-busy" }) },
+          { emailCredential: makeCred({ id: "cred-free" }) },
+        ],
+      },
+    });
+
+    await sendCampaignEmail(email, "tx");
+
+    expect(mockTransporter.sendMail).toHaveBeenCalled();
+    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+      where: { id: "email-1" },
+      data: { credId: "cred-free" },
+    });
+  });
+
+  it("throws CredentialBusyError for a follow-up whose sticky sender is busy", async () => {
+    mockRedis.set.mockResolvedValue(null);
+
+    const email = makeEmail({ stage: 1, credId: "cred-1" });
+
+    await expect(sendCampaignEmail(email, "tx")).rejects.toBeInstanceOf(
+      CredentialBusyError,
+    );
+
+    expect(mockTransporter.sendMail).not.toHaveBeenCalled();
+  });
+
+  it("does not claim a mailbox that is already at its daily limit", async () => {
+    vi.mocked(getCredentialSentCount).mockResolvedValue(100);
+
+    await sendCampaignEmail(makeEmail(), "tx");
+
+    expect(mockRedis.set).not.toHaveBeenCalled();
   });
 
   // ================== Follow-up threading ==================

@@ -8,21 +8,32 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
  */
 
 // Use vi.hoisted() so these are available inside hoisted vi.mock factories
-const { mockPrisma, enqueuedBatches, mockSendMail } = vi.hoisted(() => ({
-  mockPrisma: {
-    campaign: { findMany: vi.fn() },
-    campaignEmail: { findMany: vi.fn(), update: vi.fn() },
-    pitchEmail: { findFirst: vi.fn() },
-    campaignMessage: { create: vi.fn(), findFirst: vi.fn(), findMany: vi.fn() },
-    user: { update: vi.fn() },
-  },
-  enqueuedBatches: [] as string[][],
-  mockSendMail: vi.fn().mockResolvedValue({ messageId: "<msg-1@test>" }),
-}));
+const { mockPrisma, enqueuedBatches, mockSendMail, mockRedis } = vi.hoisted(
+  () => ({
+    mockPrisma: {
+      campaign: { findMany: vi.fn() },
+      campaignEmail: { findMany: vi.fn(), update: vi.fn() },
+      pitchEmail: { findFirst: vi.fn() },
+      campaignMessage: {
+        create: vi.fn(),
+        findFirst: vi.fn(),
+        findMany: vi.fn(),
+      },
+      user: { update: vi.fn() },
+    },
+    enqueuedBatches: [] as string[][],
+    mockSendMail: vi.fn().mockResolvedValue({ messageId: "<msg-1@test>" }),
+    mockRedis: { set: vi.fn(), pttl: vi.fn() },
+  }),
+);
 
 vi.mock("../services/prisma.service.js", () => ({
   prisma: mockPrisma,
 }));
+
+// Redis is a boundary like Prisma and nodemailer, so the send lock itself runs
+// for real through this fake.
+vi.mock("../config/redis.js", () => ({ redis: mockRedis }));
 
 vi.mock("../utils/logger.js", () => ({ log: vi.fn() }));
 
@@ -145,6 +156,8 @@ describe("E2E pipeline: fetch → batch → send", () => {
     mockPrisma.user.update.mockResolvedValue({});
     mockPrisma.campaignMessage.create.mockResolvedValue({});
     mockSendMail.mockResolvedValue({ messageId: "<msg-1@test>" });
+    mockRedis.set.mockResolvedValue("OK");
+    mockRedis.pttl.mockResolvedValue(20000);
     // Wednesday 9 AM UTC, inside the fixture's MORNING window.
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-03-25T09:00:00Z"));
@@ -274,6 +287,24 @@ describe("E2E pipeline: fetch → batch → send", () => {
     expect(mockSendMail).not.toHaveBeenCalled();
     expect(results).toEqual([]);
     // Nothing written, so the next tick inside the window picks it up as is.
+    expect(mockPrisma.campaignEmail.update).not.toHaveBeenCalled();
+    expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    expect(mockPrisma.campaignMessage.create).not.toHaveBeenCalled();
+  });
+
+  it("defers the whole job when the sending mailbox went too recently", async () => {
+    mockRedis.set.mockResolvedValue(null);
+    mockRedis.pttl.mockResolvedValue(12000);
+
+    mockPrisma.campaignEmail.findMany.mockResolvedValue([fullCampaignEmail()]);
+    mockPrisma.pitchEmail.findFirst.mockResolvedValue(fullPitch());
+
+    await expect(processEmailBatchJob(["ce-1"])).rejects.toMatchObject({
+      name: "CredentialBusyError",
+    });
+
+    expect(mockSendMail).not.toHaveBeenCalled();
+    // Nothing written, so the row is untouched when the job comes back.
     expect(mockPrisma.campaignEmail.update).not.toHaveBeenCalled();
     expect(mockPrisma.user.update).not.toHaveBeenCalled();
     expect(mockPrisma.campaignMessage.create).not.toHaveBeenCalled();

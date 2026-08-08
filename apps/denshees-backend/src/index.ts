@@ -21,3 +21,22 @@ app.route("/", miscRoutes);
 serve({ fetch: app.fetch, port: parseInt(process.env.PORT || "8100") });
 
 console.log("Hono server running...");
+
+// Docker sends SIGTERM on every deploy. Without this the workers are killed
+// mid-send, and a job that already handed mail to SMTP is retried from the
+// start, so the lead gets it twice. Closing lets active jobs finish first.
+async function shutdown(signal: string) {
+  console.log(`${signal} received, finishing active jobs before exit...`);
+
+  await Promise.all([
+    campaignWorker.close(),
+    batchemailWorker.close(),
+    imapWorker.close(),
+  ]);
+
+  console.log("Workers closed.");
+  process.exit(0);
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
