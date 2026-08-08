@@ -13,8 +13,13 @@ vi.mock("../queues/batch-email.queue.js", () => ({
   enqueueEmails: vi.fn().mockResolvedValue(["job-1"]),
 }));
 
+vi.mock("../services/credential-service.js", () => ({
+  getCredentialSentCount: vi.fn().mockResolvedValue(0),
+}));
+
 import { prisma } from "../services/prisma.service.js";
 import { enqueueEmails } from "../queues/batch-email.queue.js";
+import { getCredentialSentCount } from "../services/credential-service.js";
 import { processCampaignJob } from "../jobs/fetch-campaigns.js";
 
 // ----- Helpers -----
@@ -36,6 +41,9 @@ function makeCampaign(overrides: Record<string, any> = {}) {
       timezone: "America/New_York",
       credits: 10,
     },
+    campaignEmailCredentials: [
+      { emailCredential: { id: "cred-1", dailyLimit: 500 } },
+    ],
     ...overrides,
   };
 }
@@ -57,7 +65,11 @@ function makeCampaignEmail(overrides: Record<string, any> = {}) {
 // ----- Tests -----
 
 describe("processCampaignJob", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // clearAllMocks keeps implementations, so restore the default explicitly.
+    vi.mocked(getCredentialSentCount).mockResolvedValue(0);
+  });
 
   it("returns empty when no campaigns exist", async () => {
     vi.mocked(prisma.campaign.findMany).mockResolvedValue([]);
@@ -452,6 +464,191 @@ describe("processCampaignJob", () => {
     vi.useRealTimers();
   });
 
+  it("skips a campaign with no sending credentials attached", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-25T09:00:00Z"));
+
+    vi.mocked(prisma.campaign.findMany).mockResolvedValue([
+      makeCampaign({
+        activeDays: ["wednesday"],
+        campaignEmailCredentials: [],
+        user: { id: "u-1", timezone: "UTC", credits: 10, email: "o@t.com" },
+      }),
+    ] as any);
+
+    const result = await processCampaignJob();
+
+    expect(result).toEqual([]);
+    expect(enqueueEmails).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("enqueues only what the remaining window can carry", async () => {
+    vi.useFakeTimers();
+    // 11:58:20, so 100 seconds of MORNING left. At one send per 25s that is
+    // four, no matter how many leads are waiting.
+    vi.setSystemTime(new Date("2026-03-25T11:58:20Z"));
+
+    vi.mocked(prisma.campaign.findMany).mockResolvedValue([
+      makeCampaign({
+        activeDays: ["wednesday"],
+        user: { id: "u-1", timezone: "UTC", credits: 10, email: "o@t.com" },
+      }),
+    ] as any);
+
+    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue(
+      Array.from({ length: 50 }, (_, i) =>
+        makeCampaignEmail({ id: `ce-${i}` }),
+      ) as any,
+    );
+
+    const result = await processCampaignJob();
+
+    expect(result).toHaveLength(4);
+    expect(enqueueEmails).toHaveBeenCalledWith(result);
+    vi.useRealTimers();
+  });
+
+  it("stops enqueuing for a mailbox that has spent its daily limit", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-25T09:00:00Z"));
+    vi.mocked(getCredentialSentCount).mockResolvedValue(500);
+
+    vi.mocked(prisma.campaign.findMany).mockResolvedValue([
+      makeCampaign({
+        activeDays: ["wednesday"],
+        user: { id: "u-1", timezone: "UTC", credits: 10, email: "o@t.com" },
+      }),
+    ] as any);
+
+    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+      makeCampaignEmail(),
+    ] as any);
+
+    const result = await processCampaignJob();
+
+    expect(result).toEqual([]);
+    expect(enqueueEmails).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it("spends scarce capacity on date-due follow-ups before new leads", async () => {
+    vi.useFakeTimers();
+    // 50 seconds of MORNING left, so room for exactly two sends.
+    vi.setSystemTime(new Date("2026-03-25T11:59:10Z"));
+
+    vi.mocked(prisma.campaign.findMany).mockResolvedValue([
+      makeCampaign({
+        activeDays: ["wednesday"],
+        user: { id: "u-1", timezone: "UTC", credits: 10, email: "o@t.com" },
+      }),
+    ] as any);
+
+    // Query order is stage ascending, so the new leads arrive first.
+    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+      makeCampaignEmail({ id: "ce-new-1", stage: 0 }),
+      makeCampaignEmail({ id: "ce-new-2", stage: 0 }),
+      makeCampaignEmail({
+        id: "ce-followup",
+        stage: 1,
+        sentAt: new Date("2026-03-20T09:00:00Z"),
+        campaign: { daysInterval: 1 },
+      }),
+    ] as any);
+
+    const result = await processCampaignJob();
+
+    // A follow-up is anchored to a calendar date. A new lead is not, so it can
+    // wait for the next window without anything breaking.
+    expect(result).toContain("ce-followup");
+    expect(result).toHaveLength(2);
+    vi.useRealTimers();
+  });
+
+  it("spends one mailbox's budget once across the campaigns sharing it", async () => {
+    vi.useFakeTimers();
+    // 100 seconds of MORNING left, so the shared mailbox can send four in
+    // total, not four per campaign.
+    vi.setSystemTime(new Date("2026-03-25T11:58:20Z"));
+
+    const shared = [{ emailCredential: { id: "cred-shared", dailyLimit: 500 } }];
+
+    vi.mocked(prisma.campaign.findMany).mockResolvedValue([
+      makeCampaign({
+        id: "campaign-a",
+        activeDays: ["wednesday"],
+        campaignEmailCredentials: shared,
+        user: { id: "u-1", timezone: "UTC", credits: 10, email: "o@t.com" },
+      }),
+      makeCampaign({
+        id: "campaign-b",
+        activeDays: ["wednesday"],
+        campaignEmailCredentials: shared,
+        user: { id: "u-1", timezone: "UTC", credits: 10, email: "o@t.com" },
+      }),
+    ] as any);
+
+    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+      ...Array.from({ length: 10 }, (_, i) =>
+        makeCampaignEmail({ id: `a-${i}`, campaignId: "campaign-a" }),
+      ),
+      ...Array.from({ length: 10 }, (_, i) =>
+        makeCampaignEmail({ id: `b-${i}`, campaignId: "campaign-b" }),
+      ),
+    ] as any);
+
+    const result = await processCampaignJob();
+
+    expect(result).toHaveLength(4);
+    vi.useRealTimers();
+  });
+
+  it("round-robins across users instead of draining one user first", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-25T09:00:00Z"));
+
+    vi.mocked(prisma.campaign.findMany).mockResolvedValue([
+      makeCampaign({
+        id: "campaign-heavy",
+        activeDays: ["wednesday"],
+        userId: "user-heavy",
+        user: {
+          id: "user-heavy",
+          timezone: "UTC",
+          credits: 10,
+          email: "heavy@t.com",
+        },
+      }),
+      makeCampaign({
+        id: "campaign-light",
+        activeDays: ["wednesday"],
+        userId: "user-light",
+        user: {
+          id: "user-light",
+          timezone: "UTC",
+          credits: 10,
+          email: "light@t.com",
+        },
+        campaignEmailCredentials: [
+          { emailCredential: { id: "cred-2", dailyLimit: 500 } },
+        ],
+      }),
+    ] as any);
+
+    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+      ...Array.from({ length: 10 }, (_, i) =>
+        makeCampaignEmail({ id: `heavy-${i}`, campaignId: "campaign-heavy" }),
+      ),
+      makeCampaignEmail({ id: "light-0", campaignId: "campaign-light" }),
+    ] as any);
+
+    const result = await processCampaignJob();
+
+    // The light user's single lead must not sit behind ten of the heavy one's.
+    expect(result[1]).toBe("light-0");
+    vi.useRealTimers();
+  });
+
   it("handles errors gracefully and returns empty array", async () => {
     vi.mocked(prisma.campaign.findMany).mockRejectedValue(
       new Error("DB connection lost"),
@@ -464,7 +661,11 @@ describe("processCampaignJob", () => {
 });
 
 describe("delivery period boundaries", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // clearAllMocks keeps implementations, so restore the default explicitly.
+    vi.mocked(getCredentialSentCount).mockResolvedValue(0);
+  });
 
   const periods = [
     { name: "MORNING", validHour: 9, invalidHour: 13 },
@@ -524,7 +725,11 @@ describe("delivery period boundaries", () => {
 });
 
 describe("timezone handling", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // clearAllMocks keeps implementations, so restore the default explicitly.
+    vi.mocked(getCredentialSentCount).mockResolvedValue(0);
+  });
 
   it("respects user timezone for delivery period check", async () => {
     vi.useFakeTimers();
