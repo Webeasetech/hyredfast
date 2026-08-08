@@ -10,15 +10,11 @@ vi.mock("../services/prisma.service.js", () => ({
 }));
 
 vi.mock("../queues/batch-email.queue.js", () => ({
-  enqueueEmailBatches: vi.fn().mockResolvedValue(["job-1"]),
-  getEnqueuedEmailIds: vi.fn().mockResolvedValue(new Set<string>()),
+  enqueueEmails: vi.fn().mockResolvedValue(["job-1"]),
 }));
 
 import { prisma } from "../services/prisma.service.js";
-import {
-  enqueueEmailBatches,
-  getEnqueuedEmailIds,
-} from "../queues/batch-email.queue.js";
+import { enqueueEmails } from "../queues/batch-email.queue.js";
 import { processCampaignJob } from "../jobs/fetch-campaigns.js";
 
 // ----- Helpers -----
@@ -69,7 +65,7 @@ describe("processCampaignJob", () => {
     const result = await processCampaignJob();
 
     expect(result).toEqual([]);
-    expect(enqueueEmailBatches).not.toHaveBeenCalled();
+    expect(enqueueEmails).not.toHaveBeenCalled();
   });
 
   it("filters out campaigns with no user timezone", async () => {
@@ -92,7 +88,7 @@ describe("processCampaignJob", () => {
     const result = await processCampaignJob();
 
     expect(result).toEqual([]);
-    expect(enqueueEmailBatches).not.toHaveBeenCalled();
+    expect(enqueueEmails).not.toHaveBeenCalled();
   });
 
   it("filters out campaigns with no emailDeliveryPeriod", async () => {
@@ -157,7 +153,7 @@ describe("processCampaignJob", () => {
 
     const result = await processCampaignJob();
 
-    expect(enqueueEmailBatches).toHaveBeenCalled();
+    expect(enqueueEmails).toHaveBeenCalled();
     vi.useRealTimers();
   });
 
@@ -181,7 +177,7 @@ describe("processCampaignJob", () => {
     vi.useRealTimers();
   });
 
-  it("does not re-enqueue already enqueued email IDs", async () => {
+  it("offers an eligible email on every tick and leaves dedup to the queue", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-03-25T09:00:00Z")); // Wednesday 9am UTC
 
@@ -194,17 +190,18 @@ describe("processCampaignJob", () => {
     ] as any);
 
     vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
-      makeCampaignEmail({ id: "ce-already-queued" }),
+      makeCampaignEmail({ id: "ce-still-queued" }),
     ] as any);
 
-    // This ID is already enqueued
-    vi.mocked(getEnqueuedEmailIds).mockResolvedValue(
-      new Set(["ce-already-queued"]),
-    );
+    // The scheduler keeps no memory of what it queued. A row still in flight is
+    // offered again and the queue rejects it on the jobId, which is what makes
+    // this survive a restart.
+    await processCampaignJob();
+    await processCampaignJob();
 
-    const result = await processCampaignJob();
-
-    expect(enqueueEmailBatches).not.toHaveBeenCalled();
+    expect(enqueueEmails).toHaveBeenCalledTimes(2);
+    expect(enqueueEmails).toHaveBeenNthCalledWith(1, ["ce-still-queued"]);
+    expect(enqueueEmails).toHaveBeenNthCalledWith(2, ["ce-still-queued"]);
     vi.useRealTimers();
   });
 
@@ -234,7 +231,7 @@ describe("processCampaignJob", () => {
     const result = await processCampaignJob();
 
     // Fixed: email is correctly filtered out (only 1 day passed, need 5)
-    expect(enqueueEmailBatches).not.toHaveBeenCalled();
+    expect(enqueueEmails).not.toHaveBeenCalled();
 
     vi.useRealTimers();
   });
@@ -264,7 +261,7 @@ describe("processCampaignJob", () => {
 
     const result = await processCampaignJob();
 
-    expect(enqueueEmailBatches).toHaveBeenCalledWith(["ce-ready"]);
+    expect(enqueueEmails).toHaveBeenCalledWith(["ce-ready"]);
 
     vi.useRealTimers();
   });
@@ -298,7 +295,7 @@ describe("processCampaignJob", () => {
 
     const result = await processCampaignJob();
 
-    expect(enqueueEmailBatches).not.toHaveBeenCalled();
+    expect(enqueueEmails).not.toHaveBeenCalled();
 
     vi.useRealTimers();
   });
@@ -338,7 +335,7 @@ describe("processCampaignJob", () => {
 
     await processCampaignJob();
 
-    expect(enqueueEmailBatches).toHaveBeenCalledWith(["ce-due"]);
+    expect(enqueueEmails).toHaveBeenCalledWith(["ce-due"]);
 
     vi.useRealTimers();
   });
@@ -376,7 +373,7 @@ describe("processCampaignJob", () => {
 
     await processCampaignJob();
 
-    expect(enqueueEmailBatches).not.toHaveBeenCalled();
+    expect(enqueueEmails).not.toHaveBeenCalled();
 
     vi.useRealTimers();
   });
@@ -412,7 +409,7 @@ describe("processCampaignJob", () => {
 
       await processCampaignJob();
 
-      expect(enqueueEmailBatches).toHaveBeenCalledWith(["ce-followup"]);
+      expect(enqueueEmails).toHaveBeenCalledWith(["ce-followup"]);
 
       vi.useRealTimers();
     });
@@ -450,7 +447,7 @@ describe("processCampaignJob", () => {
 
     await processCampaignJob();
 
-    expect(enqueueEmailBatches).not.toHaveBeenCalled();
+    expect(enqueueEmails).not.toHaveBeenCalled();
 
     vi.useRealTimers();
   });
@@ -499,7 +496,7 @@ describe("delivery period boundaries", () => {
 
       await processCampaignJob();
 
-      expect(enqueueEmailBatches).toHaveBeenCalled();
+      expect(enqueueEmails).toHaveBeenCalled();
       vi.useRealTimers();
     });
 
@@ -520,7 +517,7 @@ describe("delivery period boundaries", () => {
 
       await processCampaignJob();
 
-      expect(enqueueEmailBatches).not.toHaveBeenCalled();
+      expect(enqueueEmails).not.toHaveBeenCalled();
       vi.useRealTimers();
     });
   }
@@ -554,7 +551,7 @@ describe("timezone handling", () => {
     await processCampaignJob();
 
     // 9 AM EST is within MORNING (6-12), so emails should be enqueued
-    expect(enqueueEmailBatches).toHaveBeenCalled();
+    expect(enqueueEmails).toHaveBeenCalled();
     vi.useRealTimers();
   });
 
@@ -579,7 +576,7 @@ describe("timezone handling", () => {
     await processCampaignJob();
 
     // 4 AM EST is NOT within MORNING (6-12)
-    expect(enqueueEmailBatches).not.toHaveBeenCalled();
+    expect(enqueueEmails).not.toHaveBeenCalled();
     vi.useRealTimers();
   });
 });

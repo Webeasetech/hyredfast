@@ -8,12 +8,7 @@ const batchemailWorker = new Worker(
     // Process the batch of emails
     const results = await processEmailBatchJob(job.data)
 
-    console.log(
-      `Job ${job.id} completed. Processed ${results.length} emails. Waiting 1 minute before processing the next job...`,
-    )
-
-    // Wait for 1 minute (60,000 ms) before processing the next job
-    await new Promise((resolve) => setTimeout(resolve, 60000))
+    console.log(`Job ${job.id} completed. Processed ${results.length} emails.`)
   },
   { connection: redis, concurrency: 1 }, // Ensuring only one job processes at a time
 )

@@ -27,12 +27,10 @@ vi.mock("../services/prisma.service.js", () => ({
 vi.mock("../utils/logger.js", () => ({ log: vi.fn() }));
 
 vi.mock("../queues/batch-email.queue.js", () => ({
-  enqueueEmailBatches: vi.fn(async (ids: string[]) => {
+  enqueueEmails: vi.fn(async (ids: string[]) => {
     enqueuedBatches.push(ids);
-    return ["job-1"];
+    return ids;
   }),
-  getEnqueuedEmailIds: vi.fn(async () => new Set<string>()),
-  removeEnqueuedEmailIds: vi.fn(),
 }));
 
 vi.mock("../utils/credential-service.js", () => {

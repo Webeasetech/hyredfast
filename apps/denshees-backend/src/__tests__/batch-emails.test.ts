@@ -21,17 +21,12 @@ vi.mock("../services/email-service.js", () => ({
   sendCampaignEmail: vi.fn(),
 }));
 
-vi.mock("../queues/batch-email.queue.js", () => ({
-  removeEnqueuedEmailIds: vi.fn(),
-}));
-
 import { fetchCampaignEmails } from "../services/campaign-service.js";
 import { sendCampaignEmail } from "../services/email-service.js";
 import {
   extractUniqueCredentials,
   setupEmailTransporters,
 } from "../utils/credential-service.js";
-import { removeEnqueuedEmailIds } from "../queues/batch-email.queue.js";
 import { processEmailBatchJob } from "../jobs/batch-emails.js";
 import type { EmailRecord } from "../models/email.js";
 
@@ -109,22 +104,12 @@ describe("processEmailBatchJob", () => {
     expect(result).toHaveLength(2);
   });
 
-  it("removes enqueued email IDs after processing", async () => {
-    vi.mocked(fetchCampaignEmails).mockResolvedValue([makeEmail()]);
-    vi.mocked(sendCampaignEmail).mockResolvedValue();
-
-    await processEmailBatchJob(["email-1"]);
-
-    expect(removeEnqueuedEmailIds).toHaveBeenCalledWith(["email-1"]);
-  });
-
-  it("removes enqueued IDs even on error", async () => {
+  it("returns an empty array when the fetch fails", async () => {
     vi.mocked(fetchCampaignEmails).mockRejectedValue(new Error("DB down"));
 
     const result = await processEmailBatchJob(["email-1"]);
 
     expect(result).toEqual([]);
-    expect(removeEnqueuedEmailIds).toHaveBeenCalledWith(["email-1"]);
   });
 
   it("continues processing remaining emails when one fails", async () => {

@@ -13,7 +13,6 @@ import { fetchCampaignEmails } from "../services/campaign-service.js";
 import { sendCampaignEmail } from "../services/email-service.js";
 import type { EmailRecord } from "../models/email.js";
 import { isWithinDeliveryWindow } from "../utils/delivery-window.js";
-import { removeEnqueuedEmailIds } from "../queues/batch-email.queue.js";
 
 /**
  * Processes a batch job for sending campaign emails.
@@ -89,15 +88,12 @@ export async function processEmailBatchJob(
           : "N/A",
     });
 
-    removeEnqueuedEmailIds(emailIds);
-
     return results;
   } catch (error: any) {
     log("ERROR", `Error processing email batch job`, batchId, {
       error: error.message,
       stack: error.stack,
     });
-    removeEnqueuedEmailIds(emailIds);
 
     return [];
   }
