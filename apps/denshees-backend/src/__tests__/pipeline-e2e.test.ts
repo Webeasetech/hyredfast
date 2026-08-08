@@ -92,6 +92,9 @@ function fullCampaign() {
       timezone: "UTC",
       credits: 10,
     },
+    campaignEmailCredentials: [
+      { emailCredential: { id: "cred-1", dailyLimit: 50 } },
+    ],
   };
 }
 

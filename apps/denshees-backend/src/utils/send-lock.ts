@@ -12,7 +12,7 @@
 
 import { redis } from "../config/redis.js";
 
-const SEND_SPACING_SECONDS = 25;
+export const SEND_SPACING_SECONDS = 25;
 
 /** Raised when a send cannot proceed because its mailbox went too recently. */
 export class CredentialBusyError extends Error {

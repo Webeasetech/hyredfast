@@ -8,6 +8,14 @@
 
 import { DateTime } from "luxon";
 
+/** Delivery periods as local hour ranges, start inclusive and end exclusive. */
+export const DELIVERY_PERIODS: Record<string, { start: number; end: number }> = {
+  MORNING: { start: 6, end: 12 }, // 6 AM - 12 PM
+  EVENING: { start: 12, end: 18 }, // 12 PM - 6 PM
+  NIGHT: { start: 18, end: 24 }, // 6 PM - 12 AM
+  MIDNIGHT: { start: 0, end: 6 }, // 12 AM - 6 AM
+};
+
 /**
  * Checks if a campaign is active on the current day based on active_days array.
  * @param {Object} campaign - Campaign object with active_days array.
@@ -57,15 +65,8 @@ export function isWithinDeliveryPeriod(
     return false;
   }
 
-  const periods: Record<string, { start: number; end: number }> = {
-    MORNING: { start: 6, end: 12 }, // 6 AM - 12 PM
-    EVENING: { start: 12, end: 18 }, // 12 PM - 6 PM
-    NIGHT: { start: 18, end: 24 }, // 6 PM - 12 AM
-    MIDNIGHT: { start: 0, end: 6 }, // 12 AM - 6 AM
-  };
-
   const periodKey = deliveryPeriod.toUpperCase();
-  const period = periods[periodKey];
+  const period = DELIVERY_PERIODS[periodKey];
 
   if (!period) {
     console.warn(`Unrecognized delivery period: ${deliveryPeriod}`);

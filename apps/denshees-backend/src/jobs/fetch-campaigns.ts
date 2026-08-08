@@ -5,6 +5,8 @@ import {
   isCampaignActiveToday,
   isWithinDeliveryPeriod,
 } from "../utils/delivery-window.js";
+import { credentialSendBudget } from "../utils/send-capacity.js";
+import { getCredentialSentCount } from "../services/credential-service.js";
 import { enqueueEmails } from "../queues/batch-email.queue.js";
 
 /**
@@ -20,7 +22,10 @@ async function processCampaignJob() {
         deleted: false,
         userId: { not: null },
       },
-      include: { user: true },
+      include: {
+        user: true,
+        campaignEmailCredentials: { include: { emailCredential: true } },
+      },
     });
 
     if (campaigns.length === 0) {
@@ -93,16 +98,26 @@ async function processCampaignJob() {
       );
     });
 
-    const emailIds = validEmails.map((email: any) => email.id);
-    if (emailIds.length === 0) {
+    if (validEmails.length === 0) {
       console.log("No valid emails to process.");
       return [];
     }
 
+    const emailIds = await selectWithinCapacity(validCampaigns, validEmails);
+    if (emailIds.length === 0) {
+      console.log("No sending capacity left in the window.");
+      return [];
+    }
+
+    log("INFO", "Enqueuing within window capacity", "", {
+      eligible: validEmails.length,
+      enqueued: emailIds.length,
+      heldBack: validEmails.length - emailIds.length,
+    });
+
     // Rows already in flight are offered again on purpose. The queue keys each
     // job on the email id and rejects the repeats, which is what a scheduler
     // tick after a restart relies on.
-    console.log("Enqueuing email IDs:", emailIds);
     await enqueueEmails(emailIds);
 
     return emailIds;
@@ -110,6 +125,148 @@ async function processCampaignJob() {
     console.error("Error processing campaign job:", error);
     return [];
   }
+}
+
+/**
+ * Trims the eligible emails down to what can actually go out, and orders them
+ * so no single user's backlog is enqueued ahead of everybody else's.
+ *
+ * Each campaign gets what its own mailboxes can send before the window closes.
+ * Anything past that would only wake, miss the credential lock and requeue
+ * until the window shut, so it is left for a later pass instead.
+ *
+ * @param {Array} validCampaigns - Campaigns cleared to send, credentials joined.
+ * @param {Array} validEmails - Emails whose delay has elapsed.
+ * @returns {Promise<Array<string>>} Email IDs to enqueue, in send order.
+ */
+async function selectWithinCapacity(
+  validCampaigns: any[],
+  validEmails: any[],
+): Promise<string[]> {
+  const credentialIds = [
+    ...new Set(validCampaigns.flatMap(credentialIdsOf)),
+  ] as string[];
+
+  const sentToday = new Map<string, number>(
+    await Promise.all(
+      credentialIds.map(
+        async (credId) =>
+          [credId, await getCredentialSentCount(credId)] as [string, number],
+      ),
+    ),
+  );
+
+  // One mailbox can serve several campaigns, so the budget is held per
+  // credential and spent once, not handed to each campaign in full.
+  const budgets = new Map<string, number>();
+  for (const campaign of validCampaigns) {
+    const currentTime = DateTime.now().setZone(campaign.user.timezone);
+
+    for (const credId of credentialIdsOf(campaign)) {
+      const credential = campaign.campaignEmailCredentials.find(
+        (cec: any) => cec.emailCredential?.id === credId,
+      ).emailCredential;
+
+      const budget = credentialSendBudget(
+        credential,
+        currentTime,
+        campaign.emailDeliveryPeriod,
+        sentToday,
+      );
+
+      budgets.set(credId, Math.max(budgets.get(credId) ?? 0, budget));
+    }
+  }
+
+  const emailsByCampaign = new Map<string, any[]>();
+  for (const email of validEmails) {
+    const forCampaign = emailsByCampaign.get(email.campaignId) ?? [];
+    forCampaign.push(email);
+    emailsByCampaign.set(email.campaignId, forCampaign);
+  }
+
+  const idsByUser = new Map<string, string[]>();
+  for (const campaign of validCampaigns) {
+    const credIds = credentialIdsOf(campaign);
+    const capacity = credIds.reduce(
+      (total, credId) => total + (budgets.get(credId) ?? 0),
+      0,
+    );
+    if (capacity === 0) continue;
+
+    // A follow-up is due on a calendar date and slips a whole cycle if it
+    // misses today. A new lead has no date attached, so it gives way.
+    const selected = (emailsByCampaign.get(campaign.id) ?? [])
+      .sort((a: any, b: any) => (b.stage ?? 0) - (a.stage ?? 0))
+      .slice(0, capacity)
+      .map((email: any) => email.id);
+
+    spendBudget(budgets, credIds, selected.length);
+
+    const forUser = idsByUser.get(campaign.userId) ?? [];
+    idsByUser.set(campaign.userId, forUser.concat(selected));
+  }
+
+  return interleave([...idsByUser.values()]);
+}
+
+/**
+ * Credential IDs attached to a campaign.
+ * @param {Object} campaign - Campaign with its credentials joined.
+ * @returns {Array<string>} Credential IDs.
+ */
+function credentialIdsOf(campaign: any): string[] {
+  return (campaign.campaignEmailCredentials ?? [])
+    .map((cec: any) => cec.emailCredential?.id)
+    .filter(Boolean);
+}
+
+/**
+ * Draws a campaign's allocation from its mailboxes, filling each in turn.
+ *
+ * Which mailbox actually sends a given email is decided later, at send time,
+ * so this only has to keep the totals honest across campaigns sharing one.
+ *
+ * @param {Map<string, number>} budgets - Remaining sends per credential id.
+ * @param {Array<string>} credIds - Credentials the campaign can draw on.
+ * @param {number} count - Emails allocated to the campaign.
+ */
+function spendBudget(
+  budgets: Map<string, number>,
+  credIds: string[],
+  count: number,
+): void {
+  let left = count;
+
+  for (const credId of credIds) {
+    if (left === 0) break;
+
+    const available = budgets.get(credId) ?? 0;
+    const spent = Math.min(available, left);
+
+    budgets.set(credId, available - spent);
+    left -= spent;
+  }
+}
+
+/**
+ * Takes one item from each list in turn, so every user is represented at the
+ * front of the queue rather than whoever imported leads first.
+ *
+ * @param {Array<Array<string>>} lists - One list of email IDs per user.
+ * @returns {Array<string>} Flattened, round-robin ordered IDs.
+ */
+function interleave(lists: string[][]): string[] {
+  const ordered: string[] = [];
+  const longest = Math.max(0, ...lists.map((list) => list.length));
+
+  for (let i = 0; i < longest; i++) {
+    for (const list of lists) {
+      if (i < list.length) ordered.push(list[i]);
+    }
+  }
+
+  return ordered;
 }
 
 /**
@@ -141,6 +298,14 @@ function campaignSkipReason(campaign: any): string | null {
         userId: campaign.user?.id,
       });
       return "no_delivery_period";
+    }
+
+    if (!campaign.campaignEmailCredentials?.length) {
+      log("WARN", "Campaign skipped: no sending credentials", campaign.id, {
+        campaignId: campaign.id,
+        userId: campaign.user?.id,
+      });
+      return "no_credentials";
     }
 
     // Use Luxon to get the current time in the campaign's timezone
