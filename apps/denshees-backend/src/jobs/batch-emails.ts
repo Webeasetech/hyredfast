@@ -12,6 +12,7 @@ import {
 import { fetchCampaignEmails } from "../services/campaign-service.js";
 import { sendCampaignEmail } from "../services/email-service.js";
 import type { EmailRecord } from "../models/email.js";
+import { isWithinDeliveryWindow } from "../utils/delivery-window.js";
 import { removeEnqueuedEmailIds } from "../queues/batch-email.queue.js";
 
 /**
@@ -68,7 +69,7 @@ export async function processEmailBatchJob(
     });
 
     // Process emails by credential with appropriate delays
-    const results = await processEmailsByCredential(
+    const { results, deferred } = await processEmailsByCredential(
       emailsByCredential,
       batchId,
     );
@@ -80,7 +81,8 @@ export async function processEmailBatchJob(
       duration: `${duration}ms`,
       totalEmails: campaignEmails.length,
       successCount: results.length,
-      failureCount: campaignEmails.length - results.length,
+      deferredCount: deferred.length,
+      failureCount: campaignEmails.length - results.length - deferred.length,
       successRate:
         campaignEmails.length > 0
           ? `${Math.round((results.length / campaignEmails.length) * 100)}%`
@@ -126,13 +128,14 @@ function groupEmailsByCredential(
  * Processes emails grouped by credential.
  * @param emailsByCredential - Map of credential IDs to arrays of emails.
  * @param batchId - Batch ID for logging.
- * @returns Array of successfully processed emails.
+ * @returns Successfully processed emails, and the ones deferred to a later window.
  */
 async function processEmailsByCredential(
   emailsByCredential: Map<string, EmailRecord[]>,
   batchId: string,
-): Promise<EmailRecord[]> {
+): Promise<{ results: EmailRecord[]; deferred: EmailRecord[] }> {
   const results: EmailRecord[] = [];
+  const deferred: EmailRecord[] = [];
 
   for (const [credId, emails] of emailsByCredential.entries()) {
     log("INFO", `Processing emails for credential ${credId}`, batchId, {
@@ -142,6 +145,20 @@ async function processEmailsByCredential(
     // Process emails for this credential with a longer delay
     for (const email of emails) {
       const emailTxId = `${batchId}:${email.id.substring(0, 6)}`;
+
+      // The window is checked again here, not just at enqueue time. A batch of
+      // 50 takes about 18 minutes, so one that starts near the end of a window
+      // finishes outside it. Deferred emails keep their status and sentAt, so
+      // the next scheduler tick inside the window picks them up untouched.
+      if (!isWithinDeliveryWindow(email.campaign)) {
+        log("INFO", `Deferring email, delivery window has closed`, emailTxId, {
+          emailId: email.id,
+          campaignId: email.campaign?.id,
+        });
+        deferred.push(email);
+        continue;
+      }
+
       try {
         log("INFO", `Processing email ${email.id}`, emailTxId);
         await sendCampaignEmail(email, emailTxId);
@@ -175,5 +192,5 @@ async function processEmailsByCredential(
     }
   }
 
-  return results;
+  return { results, deferred };
 }

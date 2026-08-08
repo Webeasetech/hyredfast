@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // ----- Mocks -----
 
@@ -48,7 +48,9 @@ function makeEmail(overrides: Partial<any> = {}): EmailRecord {
     campaign: {
       id: "campaign-1",
       maxStageCount: 3,
-      user: { id: "user-1", email: "o@t.com", credits: 10 },
+      emailDeliveryPeriod: "MORNING",
+      activeDays: ["wednesday"],
+      user: { id: "user-1", email: "o@t.com", credits: 10, timezone: "UTC" },
       campaignEmailCredentials: [
         {
           emailCredential: {
@@ -70,7 +72,15 @@ function makeEmail(overrides: Partial<any> = {}): EmailRecord {
 // ----- Tests -----
 
 describe("processEmailBatchJob", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Inside the fixture's MORNING window, Wednesday 9 AM UTC. The batch job
+    // re-checks the window per email, so the clock has to be pinned.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-25T09:00:00Z"));
+  });
+
+  afterEach(() => vi.useRealTimers());
 
   it("returns empty array when no email IDs provided", async () => {
     const result = await processEmailBatchJob([]);
@@ -158,5 +168,50 @@ describe("processEmailBatchJob", () => {
     await processEmailBatchJob(["e-1", "e-2", "e-3"]);
 
     expect(sendCampaignEmail).toHaveBeenCalledTimes(3);
+  });
+
+  it("defers every email when the window closed before the batch ran", async () => {
+    // Queued inside MORNING, running at 3 PM. A batch of 50 takes about 18
+    // minutes, so one started near noon lands here.
+    vi.setSystemTime(new Date("2026-03-25T15:00:00Z"));
+
+    const emails = [makeEmail({ id: "e-1" }), makeEmail({ id: "e-2" })];
+    vi.mocked(fetchCampaignEmails).mockResolvedValue(emails);
+
+    const result = await processEmailBatchJob(["e-1", "e-2"]);
+
+    expect(sendCampaignEmail).not.toHaveBeenCalled();
+    expect(result).toEqual([]);
+  });
+
+  it("defers on a day the campaign is not active", async () => {
+    // Thursday, and the fixture is only active on Wednesday.
+    vi.setSystemTime(new Date("2026-03-26T09:00:00Z"));
+
+    vi.mocked(fetchCampaignEmails).mockResolvedValue([makeEmail()]);
+
+    const result = await processEmailBatchJob(["email-1"]);
+
+    expect(sendCampaignEmail).not.toHaveBeenCalled();
+    expect(result).toEqual([]);
+  });
+
+  it("sends only the campaigns still inside their window", async () => {
+    const openCampaign = makeEmail({ id: "e-open" });
+    const closedCampaign = makeEmail({ id: "e-closed" });
+    (closedCampaign as any).campaign.id = "campaign-2";
+    (closedCampaign as any).campaign.emailDeliveryPeriod = "MIDNIGHT";
+
+    vi.mocked(fetchCampaignEmails).mockResolvedValue([
+      openCampaign,
+      closedCampaign,
+    ]);
+    vi.mocked(sendCampaignEmail).mockResolvedValue();
+
+    const result = await processEmailBatchJob(["e-open", "e-closed"]);
+
+    expect(sendCampaignEmail).toHaveBeenCalledTimes(1);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("e-open");
   });
 });
