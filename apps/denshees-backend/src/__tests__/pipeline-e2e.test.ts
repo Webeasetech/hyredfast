@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 /**
  * End-to-end pipeline test: fetch-campaigns → batch-emails → email-service
@@ -102,7 +102,14 @@ function fullCampaignEmail() {
       maxStageCount: 2,
       isTrackingEnabled: false,
       daysInterval: 1,
-      user: { id: "user-1", email: "owner@test.com", credits: 10 },
+      emailDeliveryPeriod: "MORNING",
+      activeDays: ["wednesday"],
+      user: {
+        id: "user-1",
+        email: "owner@test.com",
+        credits: 10,
+        timezone: "UTC",
+      },
       campaignEmailCredentials: [
         {
           emailCredential: {
@@ -140,7 +147,12 @@ describe("E2E pipeline: fetch → batch → send", () => {
     mockPrisma.user.update.mockResolvedValue({});
     mockPrisma.campaignMessage.create.mockResolvedValue({});
     mockSendMail.mockResolvedValue({ messageId: "<msg-1@test>" });
+    // Wednesday 9 AM UTC, inside the fixture's MORNING window.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-25T09:00:00Z"));
   });
+
+  afterEach(() => vi.useRealTimers());
 
   it("fetchPitch correctly passes campaign ID string to prisma query", async () => {
     const emailFromDb = fullCampaignEmail();
@@ -250,6 +262,23 @@ describe("E2E pipeline: fetch → batch → send", () => {
       where: { id: "ce-1" },
       data: { status: "FAILED" },
     });
+  });
+
+  it("does not send once the window has closed, and leaves the row untouched", async () => {
+    // Enqueued during MORNING, still queued at 3 PM.
+    vi.setSystemTime(new Date("2026-03-25T15:00:00Z"));
+
+    mockPrisma.campaignEmail.findMany.mockResolvedValue([fullCampaignEmail()]);
+    mockPrisma.pitchEmail.findFirst.mockResolvedValue(fullPitch());
+
+    const results = await processEmailBatchJob(["ce-1"]);
+
+    expect(mockSendMail).not.toHaveBeenCalled();
+    expect(results).toEqual([]);
+    // Nothing written, so the next tick inside the window picks it up as is.
+    expect(mockPrisma.campaignEmail.update).not.toHaveBeenCalled();
+    expect(mockPrisma.user.update).not.toHaveBeenCalled();
+    expect(mockPrisma.campaignMessage.create).not.toHaveBeenCalled();
   });
 
   it("rate-limit error does NOT mark FAILED (left for retry)", async () => {
