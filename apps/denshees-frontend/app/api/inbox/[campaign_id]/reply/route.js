@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { tryAuth } from "@/lib/auth";
 import { ownsCampaign, notFound } from "@/lib/authz";
+import { decryptSecret } from "@/lib/crypto";
 
 export async function POST(request, props) {
   const params = await props.params;
@@ -52,7 +53,7 @@ export async function POST(request, props) {
       secure: emailCredential.secure,
       auth: {
         user: emailCredential.username,
-        pass: emailCredential.password,
+        pass: decryptSecret(emailCredential.password),
       },
     });
 

@@ -5,6 +5,7 @@
 import nodemailer from "nodemailer";
 import { v4 as uuidv4 } from "uuid";
 import { log } from "./logger.js";
+import { decryptSecret } from "./crypto.js";
 import type { CredentialRecord } from "../models/email.js";
 
 // Store transporters by credential id
@@ -106,7 +107,7 @@ export function setupEmailTransporters(
         secure: cred.secure,
         auth: {
           user: cred.username,
-          pass: cred.password,
+          pass: decryptSecret(cred.password),
         },
         // Add connection pool settings
         pool: true,

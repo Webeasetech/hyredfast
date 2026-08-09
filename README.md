@@ -61,6 +61,7 @@ Then fill in the values:
 | `REDIS_HOST` | Redis host (`localhost` for local, `redis` for Docker) |
 | `REDIS_PORT` | Redis port (default: `6379`) |
 | `DATABASE_URL` | PostgreSQL connection string |
+| `CREDENTIAL_ENC_KEY` | Decrypts stored SMTP/IMAP passwords. Must match the frontend value |
 
 **`apps/denshees-frontend/.env`**
 | Variable | Description |
@@ -71,6 +72,7 @@ Then fill in the values:
 | `RAZORPAY_KEY_SECRET` | Razorpay key secret (shown once at key generation) |
 | `RAZORPAY_WEBHOOK_SECRET` | Webhook signing secret you set in the Razorpay dashboard — see [docs/payments-razorpay.md](docs/payments-razorpay.md) |
 | `JWT_SECRET` | Secret for signing JWT tokens |
+| `CREDENTIAL_ENC_KEY` | AES-256-GCM key (32 bytes, base64) encrypting stored SMTP/IMAP passwords. Generate with `openssl rand -base64 32`, and use the same value in the backend |
 | `DATABASE_URL` | PostgreSQL connection string |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google OAuth client ID (browser) — see [Google Sign-In setup](#google-sign-in-setup) |
 | `GOOGLE_CLIENT_ID` | Same Google OAuth client ID (server-side token verification) |

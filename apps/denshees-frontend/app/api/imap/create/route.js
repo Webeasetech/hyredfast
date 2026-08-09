@@ -3,6 +3,7 @@ import axios from "axios";
 import nodemailer from "nodemailer";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { encryptSecret } from "@/lib/crypto";
 
 export async function POST(request) {
   // Authenticate before anything else: below, the server opens outbound SMTP
@@ -44,21 +45,27 @@ export async function POST(request) {
     const record = await prisma.emailCredential.create({
       data: {
         username,
-        password,
+        // Encrypted at rest: these are live mailbox passwords, and a Postgres
+        // dump or a stray SELECT would otherwise hand over every user's inbox.
+        password: encryptSecret(password),
         userId: user.userId,
         host: host || "smtp.gmail.com",
         port: port || 465,
         secure: secure || true,
         imapHost: imap_host,
         imapEmail,
-        imapPassword,
+        imapPassword: encryptSecret(imapPassword),
         // Under Gmail's 500/day personal cap with room to spare. The sender
         // paces itself, so this is the ceiling, not a target.
         dailyLimit: 200,
       },
     });
 
-    return NextResponse.json(record);
+    // Echo the row back without the secrets. The client only needs the id to
+    // revalidate its list, and /api/google_apps already refuses to select these.
+    const { password: _p, imapPassword: _i, ...safeRecord } = record;
+
+    return NextResponse.json(safeRecord);
   } catch (error) {
     console.error("[API] Error creating email credentials:", error);
     return NextResponse.json(

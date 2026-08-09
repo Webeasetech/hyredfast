@@ -4,6 +4,7 @@
   "globalEnv": [
     "DATABASE_URL",
     "JWT_SECRET",
+    "CREDENTIAL_ENC_KEY",
     "API_KEY",
     "OPENAI_API_KEY",
     "RAZORPAY_KEY_ID",

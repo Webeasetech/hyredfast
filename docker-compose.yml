@@ -40,6 +40,8 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=${REDIS_PORT:-6379}
       - DATABASE_URL=${DATABASE_URL}
+      # Decrypts the SMTP/IMAP passwords the frontend stored. Same value both sides.
+      - CREDENTIAL_ENC_KEY=${CREDENTIAL_ENC_KEY}
       - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
       # Publicly reachable backend URL — embedded in the open-tracking pixel
       - TRACKING_BASE_URL=${TRACKING_BASE_URL}
@@ -70,6 +72,8 @@ services:
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET}
       - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET}
       - JWT_SECRET=${JWT_SECRET}
+      # Encrypts SMTP/IMAP passwords at rest. Same value as the backend.
+      - CREDENTIAL_ENC_KEY=${CREDENTIAL_ENC_KEY}
       # Server-side: used by /api/auth/google to verify Google ID tokens.
       # (NEXT_PUBLIC_GOOGLE_CLIENT_ID is baked into the bundle at build time via
       #  apps/denshees-frontend/.env.production — see deploy.yml.)
