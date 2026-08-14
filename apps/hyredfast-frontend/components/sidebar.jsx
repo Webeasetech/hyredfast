@@ -48,6 +48,7 @@ const settingsLink = {
 
 const settingsSubLinks = [
   { label: "Email settings", href: "/settings" },
+  { label: "Job preferences", href: "/settings/preferences" },
   { label: "Account", href: "/settings/account" },
   { label: "Billing", href: "/settings/billing" },
 ];
