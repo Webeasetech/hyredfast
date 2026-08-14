@@ -66,7 +66,7 @@ Then fill in the values:
 **`apps/hyredfast-frontend/.env`**
 | Variable | Description |
 |----------|-------------|
-| `API_KEY` | Internal API key for backend auth |
+| `API_KEY` | Internal API key for the backend auth |
 | `OPENAI_API_KEY` | OpenAI key for AI features |
 | `RAZORPAY_KEY_ID` | Razorpay key id — `rzp_test_…` or `rzp_live_…`; the prefix is what selects test vs live |
 | `RAZORPAY_KEY_SECRET` | Razorpay key secret (shown once at key generation) |
