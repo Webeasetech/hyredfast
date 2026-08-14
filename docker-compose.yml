@@ -34,7 +34,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: apps/denshees-backend/Dockerfile.monorepo
+      dockerfile: apps/hyredfast-backend/Dockerfile.monorepo
     environment:
       - NODE_ENV=production
       - REDIS_HOST=redis
@@ -58,7 +58,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: apps/denshees-frontend/Dockerfile
+      dockerfile: apps/hyredfast-frontend/Dockerfile
     environment:
       - NODE_ENV=production
       - BACKEND_URL=http://backend:8100
@@ -76,7 +76,7 @@ services:
       - CREDENTIAL_ENC_KEY=${CREDENTIAL_ENC_KEY}
       # Server-side: used by /api/auth/google to verify Google ID tokens.
       # (NEXT_PUBLIC_GOOGLE_CLIENT_ID is baked into the bundle at build time via
-      #  apps/denshees-frontend/.env.production — see deploy.yml.)
+      #  apps/hyredfast-frontend/.env.production — see deploy.yml.)
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASS=${SMTP_PASS}

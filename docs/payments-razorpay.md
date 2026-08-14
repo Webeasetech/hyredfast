@@ -7,7 +7,7 @@ only **test mode** works — that is fine, the code path is identical.
 ## What we sell
 
 The billing unit is the **company**. One-time purchases, no subscription, no
-tiers. Prices live in one place, [`lib/constants/plans.js`](../apps/denshees-frontend/lib/constants/plans.js):
+tiers. Prices live in one place, [`lib/constants/plans.js`](../apps/hyredfast-frontend/lib/constants/plans.js):
 
 | Plan | Price | Companies |
 | --- | --- | --- |
@@ -32,7 +32,7 @@ prefix alone** (`rzp_test_…` / `rzp_live_…`); there is deliberately no
 
 Set them in:
 
-- **Local** — `apps/denshees-frontend/.env` and the root `.env` (test keys only)
+- **Local** — `apps/hyredfast-frontend/.env` and the root `.env` (test keys only)
 - **Deployed** — GitHub repo secrets, which `deploy.yml` writes into the
   server's `.env`; `docker-compose.yml` passes them to the frontend container
 
@@ -53,7 +53,7 @@ The webhook is the **authoritative** fulfilment path: it fires even if the user
 closes the tab mid-payment. The browser also posts to `/api/payments/verify` the
 moment Checkout closes, so the balance updates immediately. Both call the same
 idempotent `fulfilPayment()`, and exactly one grants — see
-[`lib/payments/fulfil.js`](../apps/denshees-frontend/lib/payments/fulfil.js).
+[`lib/payments/fulfil.js`](../apps/hyredfast-frontend/lib/payments/fulfil.js).
 
 ### Local webhook testing
 
