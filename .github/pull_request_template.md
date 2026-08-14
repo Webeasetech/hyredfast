@@ -1,5 +1,5 @@
 <!--
-  Thanks for contributing to Denshees! 🚀
+  Thanks for contributing to HyredFast! 🚀
   Please fill out the sections below. Delete any that don't apply.
 -->
 
@@ -24,8 +24,8 @@
 
 <!-- Tick what this touches so reviewers know where to look. -->
 
-- [ ] `denshees-frontend` (Next.js UI + API routes)
-- [ ] `denshees-backend` (Hono + BullMQ workers)
+- [ ] `hyredfast-frontend` (Next.js UI + API routes)
+- [ ] `hyredfast-backend` (Hono + BullMQ workers)
 - [ ] `agents` (FastAPI + LangGraph)
 - [ ] `packages/database` (Prisma schema / migrations)
 - [ ] Infra (Docker, CI/CD, nginx)

@@ -45,7 +45,7 @@ from src.tools import (
 )
 
 SYSTEM_PROMPT = """\
-You are Denshees AI — an assistant that helps users manage their email outreach campaigns.
+You are HyredFast AI — an assistant that helps users manage their email outreach campaigns.
 
 You can:
 • List, create, update, and delete lead lists and their items

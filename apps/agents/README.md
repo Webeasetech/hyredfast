@@ -1,6 +1,6 @@
-# Denshees Agents
+# HyredFast Agents
 
-AI agents built with [LangGraph](https://langchain-ai.github.io/langgraph/) to help Denshees users work faster.
+AI agents built with [LangGraph](https://langchain-ai.github.io/langgraph/) to help HyredFast users work faster.
 
 ## Setup
 
