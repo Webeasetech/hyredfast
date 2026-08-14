@@ -44,6 +44,7 @@ jobs:
             RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }}
             RAZORPAY_WEBHOOK_SECRET=${{ secrets.RAZORPAY_WEBHOOK_SECRET }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
+            CREDENTIAL_ENC_KEY=${{ secrets.CREDENTIAL_ENC_KEY }}
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             SMTP_USER=${{ secrets.SMTP_USER }}
             SMTP_PASS=${{ secrets.SMTP_PASS }}

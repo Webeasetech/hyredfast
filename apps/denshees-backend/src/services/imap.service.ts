@@ -8,6 +8,7 @@ import { simpleParser } from "mailparser";
 // @ts-ignore -- no type declarations available
 import EmailBounceParser from "email-bounce-parser";
 import { prisma } from "./prisma.service.js";
+import { decryptSecret } from "../utils/crypto.js";
 
 const IMAP_DEFAULT_PORT = 993;
 const IMAP_DEFAULT_SECURE = true;
@@ -126,7 +127,7 @@ async function fetchNewEmails(credential: {
       host,
       port: IMAP_DEFAULT_PORT,
       secure: IMAP_DEFAULT_SECURE,
-      auth: { user: username, pass: password },
+      auth: { user: username, pass: decryptSecret(password) },
       logger: false,
     });
 

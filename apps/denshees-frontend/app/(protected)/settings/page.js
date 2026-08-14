@@ -5,12 +5,6 @@ import { PanelSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   AlertDialog,
   AlertDialogContent,
   AlertDialogHeader,
@@ -21,7 +15,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { EmailIcon, SaveFloppyIcon } from "mage-icons-react/bulk";
-import { PlusIcon, ReloadIcon, TrashIcon } from "mage-icons-react/stroke";
+import { ReloadIcon, TrashIcon } from "mage-icons-react/stroke";
 import useSWR from "swr";
 import fetcher from "@/lib/fetcher";
 import useSWRMutation from "swr/mutation";
@@ -52,7 +46,6 @@ export default function SettingsPage() {
 }
 
 function EmailSettings() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingLimits, setEditingLimits] = useState({});
   const [savingIds, setSavingIds] = useState([]);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -148,14 +141,19 @@ function EmailSettings() {
   const emails = emailAccounts || [];
 
   return (
-    <div id="email-settings">
+    <div id="email-settings" className="space-y-4">
       <div className="rounded-lg border border-border bg-white">
-        <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-4">
+        <div className="border-b border-border px-6 py-4">
+          <h2 className="text-xl font-bold">Connect an inbox</h2>
+        </div>
+        <div className="p-6">
+          <CreateSMTP />
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-border bg-white">
+        <div className="border-b border-border px-6 py-4">
           <h2 className="text-xl font-bold">Connected Email Accounts</h2>
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            Setup New Email
-          </Button>
         </div>
 
         {emails.length === 0 ? (
@@ -165,14 +163,8 @@ function EmailSettings() {
               No email accounts
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Add an email account to use in your campaigns
+              Connect one above to use it in your campaigns
             </p>
-            <div className="mt-6">
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <PlusIcon className="mr-2 h-4 w-4" />
-                Setup Email
-              </Button>
-            </div>
           </div>
         ) : (
           <Table>
@@ -245,16 +237,6 @@ function EmailSettings() {
           </Table>
         )}
       </div>
-
-      {/* Setup Email Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Setup Email Account</DialogTitle>
-          </DialogHeader>
-          <CreateSMTP />
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Credential Confirmation */}
       <AlertDialog
