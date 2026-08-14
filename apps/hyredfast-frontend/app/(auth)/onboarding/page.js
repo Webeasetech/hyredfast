@@ -14,10 +14,7 @@ import { Label } from "@/components/ui/label";
 import { OptionGrid } from "@/components/onboarding/option-grid";
 import { ResumeUpload } from "@/components/onboarding/resume-upload";
 import { SetupLoader } from "@/components/onboarding/setup-loader";
-import {
-  StepArt,
-  OnboardingBackdrop,
-} from "@/components/onboarding/onboarding-art";
+import { OnboardingBackdrop } from "@/components/onboarding/onboarding-backdrop";
 import {
   SENIORITY,
   EMPLOYMENT_TYPES,
@@ -201,18 +198,15 @@ export default function OnboardingPage() {
               transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
               className="space-y-6"
             >
-              <div className="space-y-3">
-                <StepArt name={current.art} />
-                <div className="space-y-1.5">
-                  <h1 className="text-3xl font-bold tracking-tight text-balance">
-                    {current.title}
-                  </h1>
-                  {current.subtitle && (
-                    <p className="text-muted-foreground text-balance">
-                      {current.subtitle}
-                    </p>
-                  )}
-                </div>
+              <div className="space-y-1.5">
+                <h1 className="text-3xl font-bold tracking-tight text-balance">
+                  {current.title}
+                </h1>
+                {current.subtitle && (
+                  <p className="text-muted-foreground text-balance">
+                    {current.subtitle}
+                  </p>
+                )}
               </div>
 
               {current.body}
@@ -262,7 +256,6 @@ function buildSteps({
 }) {
   return [
     {
-      art: "roles",
       title: "What roles are you going after?",
       subtitle: `Pick up to ${MAX_ROLES}. This decides who we find for you and how your emails read.`,
       optional: answers.targetRoles.length === 0,
@@ -279,7 +272,6 @@ function buildSteps({
       ),
     },
     {
-      art: "seniority",
       title: "Where are you in your career?",
       subtitle:
         "A senior pitch reads nothing like a fresher one, so this changes how yours is written.",
@@ -296,7 +288,6 @@ function buildSteps({
       ),
     },
     {
-      art: "employment",
       title: "What kind of work are you open to?",
       subtitle: "Pick as many as apply.",
       optional: answers.employmentTypes.length === 0,
@@ -310,7 +301,6 @@ function buildSteps({
       ),
     },
     {
-      art: "location",
       title: "Where do you want to work?",
       optional: answers.workModes.length === 0,
       body: (
@@ -360,7 +350,6 @@ function buildSteps({
       ),
     },
     {
-      art: "urgency",
       title: "How's the search going?",
       subtitle: "Last one about you. It tunes how your first campaign is paced.",
       optional: !answers.urgency && answers.blockers.length === 0,
@@ -388,7 +377,6 @@ function buildSteps({
       ),
     },
     {
-      art: "resume",
       title: "Want us to fill in the rest?",
       subtitle:
         "Optional. Drop your résumé and we'll read your title, experience and skills off it, so you don't have to type them.",

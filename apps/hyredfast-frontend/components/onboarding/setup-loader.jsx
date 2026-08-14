@@ -69,10 +69,13 @@ const HEADS = [
 
 function LogoMark() {
   return (
+    // The box is padded past the mark on every side. The heads travel 5 units
+    // up and the H scales out under it, and at a tight 0 0 120 120 both clipped
+    // against the edge at the extremes of the loop.
     <svg
-      viewBox="0 0 120 120"
+      viewBox="-12 -12 144 144"
       fill="currentColor"
-      className="size-28 text-primary"
+      className="size-32 text-primary"
       aria-label="Setting up"
       role="img"
     >
