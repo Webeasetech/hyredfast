@@ -146,7 +146,7 @@ function CampaignStats({ campaign }) {
   ];
 
   return (
-    <div className="hidden items-center gap-6 sm:flex">
+    <div className="hidden items-center gap-10 sm:flex">
       {stats.map((stat) => (
         <div key={stat.label} className="w-14 text-right">
           <p className="text-sm font-medium tabular-nums">
@@ -257,7 +257,7 @@ function CampaignRow({ campaign }) {
           </Link>
         </div>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-6">
         <CampaignStats campaign={campaign} />
 
         <StatusChip status={campaign.status} />
