@@ -146,9 +146,13 @@ function CampaignStats({ campaign }) {
   ];
 
   return (
-    <div className="hidden items-center gap-10 sm:flex">
+    // Equal-width centred columns rather than gap between right-aligned boxes:
+    // with right alignment the visible gap depended on how wide each number
+    // happened to be, so "8  1,134" and "1,134  22" read as different spacings.
+    // A uniform column pitch spaces them evenly whatever the values are.
+    <div className="hidden items-center sm:flex">
       {stats.map((stat) => (
-        <div key={stat.label} className="w-14 text-right">
+        <div key={stat.label} className="w-20 text-center">
           <p className="text-sm font-medium tabular-nums">
             {(stat.value ?? 0).toLocaleString()}
           </p>
@@ -257,7 +261,7 @@ function CampaignRow({ campaign }) {
           </Link>
         </div>
       </div>
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-5">
         <CampaignStats campaign={campaign} />
 
         <StatusChip status={campaign.status} />
