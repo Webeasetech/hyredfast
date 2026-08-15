@@ -12,25 +12,22 @@ function formatDate(dateString) {
   });
 }
 
-const DailyAnalysisChart = ({ dailyData, todayData }) => {
+const DailyAnalysisChart = ({ dailyData }) => {
   const { labels, sent, opened } = useMemo(() => {
+    // Already chronological from the API. Today needs no special handling —
+    // if anything was sent today, the day is a row in this series like any
+    // other. A separate "Today" point used to be appended here from
+    // today_analysis, but that endpoint returns lifetime totals (the sum of
+    // every lead's stage), so it plotted a cumulative figure against daily
+    // ones and always spiked to the top of the chart.
     const days = Array.isArray(dailyData) ? dailyData : [];
 
-    const labels = days.map((item) => formatDate(item.date));
-    const sent = days.map((item) => item.emails_sent || 0);
-    const opened = days.map((item) => item.opened || 0);
-
-    // The axios response interceptor already unwraps response.data, so the
-    // today-analysis payload lands here flat — { stages_sum, opened_sum,
-    // total } — not nested under another `.data`.
-    if (todayData) {
-      labels.push("Today");
-      sent.push(todayData.stages_sum ?? 0);
-      opened.push(todayData.opened_sum ?? 0);
-    }
-
-    return { labels, sent, opened };
-  }, [dailyData, todayData]);
+    return {
+      labels: days.map((item) => formatDate(item.date)),
+      sent: days.map((item) => item.emails_sent || 0),
+      opened: days.map((item) => item.opened || 0),
+    };
+  }, [dailyData]);
 
   const option = useMemo(
     () => ({

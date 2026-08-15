@@ -5,8 +5,10 @@ import prisma from "@/lib/prisma";
 /**
  * GET /api/analysis/campaign/[id]/daily-stats
  *
- * Returns aggregated daily stats for this campaign.
- * Used to power the calendar heat-map without fetching individual activities.
+ * Returns aggregated daily stats for this campaign, oldest day first.
+ * Powers the calendar heat-map and the Daily Activity chart without fetching
+ * individual activities. Only days with messages appear, so the series is
+ * sparse rather than gap-filled.
  */
 export async function GET(request, props) {
   const params = await props.params;
@@ -60,7 +62,7 @@ export async function GET(request, props) {
         COALESCE(os.opens, 0) as opens
       FROM msg_stats ms
       LEFT JOIN open_stats os ON ms.day = os.day
-      ORDER BY ms.day DESC
+      ORDER BY ms.day ASC
     `;
 
     // Format to match the old PB view shape
