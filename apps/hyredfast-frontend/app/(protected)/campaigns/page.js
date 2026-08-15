@@ -130,6 +130,35 @@ export default function CampaignsPage() {
   );
 }
 
+/**
+ * The three figures worth seeing without opening a campaign, matching the
+ * analytics KPI boxes. Active leads shows the count alone — the total is on
+ * the campaign's own page and only crowds a list row.
+ *
+ * Hidden below `sm`, where the row has no space for it and the title matters
+ * more than the numbers.
+ */
+function CampaignStats({ campaign }) {
+  const stats = [
+    { label: "Active", value: campaign.activeLeads },
+    { label: "Sent", value: campaign.emailsSent },
+    { label: "Replies", value: campaign.replies },
+  ];
+
+  return (
+    <div className="hidden items-center gap-6 sm:flex">
+      {stats.map((stat) => (
+        <div key={stat.label} className="w-14 text-right">
+          <p className="text-sm font-medium tabular-nums">
+            {(stat.value ?? 0).toLocaleString()}
+          </p>
+          <p className="text-xs text-muted-foreground">{stat.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // Separate component for each campaign row to properly handle SWR mutations
 function CampaignRow({ campaign }) {
   // Create a unique key for this specific campaign
@@ -229,6 +258,8 @@ function CampaignRow({ campaign }) {
         </div>
       </div>
       <div className="flex items-center gap-4">
+        <CampaignStats campaign={campaign} />
+
         <StatusChip status={campaign.status} />
 
         <CampaignDropdown
