@@ -325,7 +325,10 @@ export default function AgentChat() {
               setButtonContentVisible(false);
               setIsOpen(true);
             }}
-            className={`rounded-full fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 flex items-center gap-2 px-4 py-3 border transition-colors duration-50 ${
+            // z-40, not z-50: every Radix overlay in the app (dialog, sheet,
+            // popover, dropdown) sits at z-50, so tying with them left paint
+            // order to decide and the button sometimes floated over a modal.
+            className={`rounded-full fixed bottom-20 right-4 md:bottom-6 md:right-6 z-40 flex items-center gap-2 px-4 py-3 border transition-colors duration-50 ${
               buttonContentVisible
                 ? "bg-primary text-primary-foreground border-border  hover:bg-primary/90"
                 : "bg-white text-transparent border-border "
@@ -352,7 +355,7 @@ export default function AgentChat() {
       {/* Chat panel */}
       {isOpen && (
         <Flipped flipId="agent-chat" onComplete={() => setContentVisible(true)}>
-          <div className="fixed bottom-20 right-2 left-2 md:bottom-6 md:right-6 md:left-auto z-50 w-auto md:w-[400px] max-h-[560px] bg-white border border-border flex flex-col overflow-hidden rounded-lg">
+          <div className="fixed bottom-20 right-2 left-2 md:bottom-6 md:right-6 md:left-auto z-40 w-auto md:w-[400px] max-h-[560px] bg-white border border-border flex flex-col overflow-hidden rounded-lg">
             <div
               className={`flex flex-col flex-1 overflow-hidden transition-opacity duration-75 ${
                 contentVisible ? "opacity-100" : "opacity-0"

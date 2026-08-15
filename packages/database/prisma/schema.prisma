@@ -47,8 +47,59 @@ model User {
   leads              Lead[]
   chatMessages       AgentChatMessage[]
   payments           Payment[]
+  profile            UserProfile?
 
   @@map("users")
+}
+
+// Answers to the signup questionnaire. Kept off User on purpose: User is read
+// on every send, these fields are only read by the agent and by segmentation,
+// and this is the table that will keep growing as we ask more.
+//
+// Every field is nullable or an empty array — each question is skippable, and a
+// user who skips the lot still gets a row, so "answered nothing" and "never
+// onboarded" stay distinguishable.
+model UserProfile {
+  id     String @id @default(cuid())
+  userId String @unique @map("user")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Presets plus anything the user typed themselves, so this stays free-form
+  // rather than a constrained set.
+  targetRoles String[] @map("target_roles")
+
+  // INTERN | JUNIOR | MID | SENIOR | LEAD
+  seniority String?
+
+  // FULL_TIME | INTERNSHIP | CONTRACT | FREELANCE | PART_TIME
+  employmentTypes String[] @map("employment_types")
+
+  country   String?
+  city      String?
+  // REMOTE | HYBRID | ONSITE
+  workModes String[] @map("work_modes")
+  willRelocate Boolean? @map("will_relocate")
+  // Needs visa sponsorship to work where they are targeting. The single
+  // strongest predictor of whether outreach abroad is worth sending at all.
+  needsSponsorship Boolean? @map("needs_sponsorship")
+
+  // ACTIVELY_LOOKING | NOTICE_SERVED | LAID_OFF | PASSIVE
+  urgency String?
+  // FINDING_CONTACTS | WRITING_EMAILS | NO_REPLIES | NO_INTERVIEWS
+  blockers String[]
+
+  // The uploaded résumé is parsed and the bytes are dropped on the same
+  // request — there is no résumé file at rest anywhere. Only these extracted
+  // fields survive.
+  resumeParsed   Json?     @map("resume_parsed")
+  resumeFileName String?   @map("resume_file_name")
+  resumeParsedAt DateTime? @map("resume_parsed_at")
+
+  completedAt DateTime? @map("completed_at")
+  created     DateTime  @default(now())
+  updated     DateTime  @updatedAt
+
+  @@map("user_profiles")
 }
 
 // ==========================================
