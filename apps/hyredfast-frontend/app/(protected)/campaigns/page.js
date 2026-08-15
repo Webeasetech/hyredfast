@@ -130,6 +130,39 @@ export default function CampaignsPage() {
   );
 }
 
+/**
+ * The three figures worth seeing without opening a campaign, matching the
+ * analytics KPI boxes. Active leads shows the count alone — the total is on
+ * the campaign's own page and only crowds a list row.
+ *
+ * Hidden below `sm`, where the row has no space for it and the title matters
+ * more than the numbers.
+ */
+function CampaignStats({ campaign }) {
+  const stats = [
+    { label: "Active", value: campaign.activeLeads },
+    { label: "Sent", value: campaign.emailsSent },
+    { label: "Replies", value: campaign.replies },
+  ];
+
+  return (
+    // Equal-width centred columns rather than gap between right-aligned boxes:
+    // with right alignment the visible gap depended on how wide each number
+    // happened to be, so "8  1,134" and "1,134  22" read as different spacings.
+    // A uniform column pitch spaces them evenly whatever the values are.
+    <div className="hidden items-center sm:flex">
+      {stats.map((stat) => (
+        <div key={stat.label} className="w-20 text-center">
+          <p className="text-sm font-medium tabular-nums">
+            {(stat.value ?? 0).toLocaleString()}
+          </p>
+          <p className="text-xs text-muted-foreground">{stat.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // Separate component for each campaign row to properly handle SWR mutations
 function CampaignRow({ campaign }) {
   // Create a unique key for this specific campaign
@@ -228,7 +261,9 @@ function CampaignRow({ campaign }) {
           </Link>
         </div>
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-5">
+        <CampaignStats campaign={campaign} />
+
         <StatusChip status={campaign.status} />
 
         <CampaignDropdown

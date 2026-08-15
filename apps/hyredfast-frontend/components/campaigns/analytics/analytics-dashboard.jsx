@@ -38,13 +38,7 @@ const AnalyticsDashboard = ({ campaignId, campaign }) => {
     emails_sent: row.sent,
   }));
 
-  // Fetch today's analysis data
-  const { data: todayAnalysisData, isLoading: todayAnalysisLoading } = useSWR(
-    campaignId ? `/api/today_analysis/${campaignId}` : null,
-    fetcher,
-  );
-
-  if (contactsLoading || dailyAnalysisLoading || todayAnalysisLoading) {
+  if (contactsLoading || dailyAnalysisLoading) {
     return (
       <div className="space-y-4">
         <CardsSkeleton count={5} className="lg:grid-cols-5" />
@@ -168,10 +162,7 @@ const AnalyticsDashboard = ({ campaignId, campaign }) => {
           <h3 className="mb-3 text-sm font-medium">Daily Activity</h3>
 
           {totalContacts > 0 ? (
-            <DailyAnalysisChart
-              dailyData={dailyAnalysisData}
-              todayData={todayAnalysisData}
-            />
+            <DailyAnalysisChart dailyData={dailyAnalysisData} />
           ) : (
             <p className="text-center py-12 text-muted-foreground">
               Add leads to this campaign to see daily progress.
