@@ -13,7 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OptionGrid } from "@/components/onboarding/option-grid";
 import { ResumeUpload } from "@/components/onboarding/resume-upload";
-import { SetupLoader } from "@/components/onboarding/setup-loader";
+import {
+  SetupLoader,
+  setupLoaderDuration,
+} from "@/components/onboarding/setup-loader";
 import { OnboardingBackdrop } from "@/components/onboarding/onboarding-backdrop";
 import {
   SENIORITY,
@@ -26,10 +29,26 @@ import {
 
 const MAX_ROLES = 3;
 
-/** How long the hand-off screen runs. Matches the copy cycle in SetupLoader. */
-const SETUP_LOADER_MS = 4500;
-
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Reads the picked résumé. Returns null on any failure, because a résumé that
+ * won't parse must not cost the user the answers they already gave — they land
+ * in the app either way and can fill the gaps in Settings.
+ */
+async function parseResume(file, token) {
+  const body = new FormData();
+  body.append("file", file);
+
+  const res = await fetch("/api/onboarding/resume", {
+    method: "POST",
+    headers: { Authorization: token },
+    body,
+  });
+
+  if (!res.ok) return null;
+  return res.json();
+}
 
 const EMPTY = {
   targetRoles: [],
@@ -52,7 +71,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [answers, setAnswers] = useState(EMPTY);
-  const [resume, setResume] = useState(null);
+  const [resumeFile, setResumeFile] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -86,9 +105,8 @@ export default function OnboardingPage() {
   const steps = buildSteps({
     answers,
     set,
-    resume,
-    setResume,
-    token,
+    resumeFile,
+    setResumeFile,
     scheduleAdvance,
   });
   const current = steps[step];
@@ -98,22 +116,39 @@ export default function OnboardingPage() {
     try {
       setIsSaving(true);
 
-      const save = fetch("/api/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: token },
-        body: JSON.stringify({
-          ...answers,
-          country: answers.country.trim() || null,
-          city: answers.city.trim() || null,
-          resumeParsed: resume?.parsed ?? null,
-          resumeFileName: resume?.fileName ?? null,
-        }),
-      });
+      // Both the parse and the save happen behind the hand-off screen, where
+      // the user is already waiting, rather than on the question itself.
+      const work = (async () => {
+        const resume = resumeFile
+          ? await parseResume(resumeFile, token).catch(() => null)
+          : null;
 
-      // The request usually lands in under a second, which reads as a flicker.
-      // Holding the loader for its full run gives the hand-off a beat, and a
-      // slower request simply extends it rather than being raced.
-      const [res] = await Promise.all([save, wait(SETUP_LOADER_MS)]);
+        if (resumeFile && !resume) {
+          toast.error(
+            "We couldn't read your résumé. Everything else was saved, and you can add those details in Settings.",
+          );
+        }
+
+        return fetch("/api/onboarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: token },
+          body: JSON.stringify({
+            ...answers,
+            country: answers.country.trim() || null,
+            city: answers.city.trim() || null,
+            resumeParsed: resume?.parsed ?? null,
+            resumeFileName: resume?.fileName ?? null,
+          }),
+        });
+      })();
+
+      // Without a résumé the save lands in under a second, which reads as a
+      // flicker. Holding the screen for its full copy cycle gives the hand-off
+      // a beat; slower work simply extends it rather than being raced.
+      const [res] = await Promise.all([
+        work,
+        wait(setupLoaderDuration(!!resumeFile)),
+      ]);
 
       if (!res.ok) {
         toast.error("Couldn't save your answers");
@@ -146,13 +181,13 @@ export default function OnboardingPage() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, answers, resume, isSaving]);
+  }, [step, answers, resumeFile, isSaving]);
 
   if (!mounted || !isAuthenticated) return null;
 
   // Checked before the isSetup guard, so the hand-off screen survives the
   // re-render that flipping isSetup causes.
-  if (isSaving) return <SetupLoader />;
+  if (isSaving) return <SetupLoader hasResume={!!resumeFile} />;
 
   if (user?.isSetup) return null;
 
@@ -249,9 +284,8 @@ export default function OnboardingPage() {
 function buildSteps({
   answers,
   set,
-  resume,
-  setResume,
-  token,
+  resumeFile,
+  setResumeFile,
   scheduleAdvance,
 }) {
   return [
@@ -380,13 +414,13 @@ function buildSteps({
       title: "Want us to fill in the rest?",
       subtitle:
         "Optional. Drop your résumé and we'll read your title, experience and skills off it, so you don't have to type them.",
-      optional: !resume,
+      optional: !resumeFile,
       body: (
         <div className="space-y-3">
-          <ResumeUpload result={resume} onParsed={setResume} token={token} />
+          <ResumeUpload file={resumeFile} onSelect={setResumeFile} />
           <p className="text-xs text-muted-foreground">
-            We read the file once and then discard it. Your résumé is never
-            stored, and never sent to anyone.
+            We read it once when you finish, then discard the file. Your résumé
+            is never stored, and never sent to anyone.
           </p>
         </div>
       ),

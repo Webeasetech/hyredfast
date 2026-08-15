@@ -12,27 +12,42 @@ import { AnimatePresence, motion } from "framer-motion";
  */
 
 // Held long enough to read, short enough not to feel stuck.
-const LINE_MS = 1500;
+const LINE_MS = 1200;
 
-const LINES = [
+const BASE_LINES = [
   "Saving your answers",
   "Setting up your workspace",
   "Tuning your outreach templates",
   "Almost there",
 ];
 
-export function SetupLoader() {
+// The résumé is read during this screen, so it gets its own line, first,
+// because it is the step that actually takes the time.
+const linesFor = (hasResume) =>
+  hasResume ? ["Reading your résumé", ...BASE_LINES] : BASE_LINES;
+
+/**
+ * How long this screen runs at minimum, so the caller can hold it open for the
+ * full copy cycle rather than cutting off mid-sentence. Real work that outlasts
+ * it simply extends the screen.
+ */
+export function setupLoaderDuration(hasResume) {
+  return linesFor(hasResume).length * LINE_MS;
+}
+
+export function SetupLoader({ hasResume = false }) {
   const [line, setLine] = useState(0);
+  const lines = linesFor(hasResume);
 
   useEffect(() => {
     const timer = setInterval(
       // Sticks on the last line rather than looping, so a slow request doesn't
       // look like it restarted.
-      () => setLine((i) => Math.min(i + 1, LINES.length - 1)),
+      () => setLine((i) => Math.min(i + 1, lines.length - 1)),
       LINE_MS,
     );
     return () => clearInterval(timer);
-  }, []);
+  }, [lines.length]);
 
   return (
     <motion.div
@@ -53,7 +68,7 @@ export function SetupLoader() {
             transition={{ duration: 0.25 }}
             className="font-medium text-muted-foreground"
           >
-            {LINES[line]}
+            {lines[line]}
           </motion.p>
         </AnimatePresence>
       </div>
