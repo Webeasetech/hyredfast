@@ -14,12 +14,11 @@ function formatDate(dateString) {
 
 const DailyAnalysisChart = ({ dailyData }) => {
   const { labels, sent, opened } = useMemo(() => {
-    // Already chronological from the API. Today needs no special handling —
-    // if anything was sent today, the day is a row in this series like any
-    // other. A separate "Today" point used to be appended here from
-    // today_analysis, but that endpoint returns lifetime totals (the sum of
-    // every lead's stage), so it plotted a cumulative figure against daily
-    // ones and always spiked to the top of the chart.
+    // Already chronological from the API, and today needs no special handling:
+    // if anything went out today, that day is a row in this series like any
+    // other. Resist appending a separate "Today" point from a campaign-wide
+    // total — that is a lifetime cumulative figure, and plotting one against
+    // daily values pins the last point to the top of the chart every time.
     const days = Array.isArray(dailyData) ? dailyData : [];
 
     return {
