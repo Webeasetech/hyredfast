@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import {
   UserPlusIcon,
-  FileUploadIcon,
   SearchIcon,
 } from "mage-icons-react/bulk";
 import { ArrowsAllDirectionIcon } from "mage-icons-react/stroke";
@@ -17,12 +16,11 @@ import useCampaignStore from "@/store/campaign.store";
 import StatusChip from "@/components/ui/status-chip";
 import DataTableActionsMenu from "@/components/campaigns/data-table-actions-menu";
 import { DataTable } from "@/components/campaigns/data-table";
-import ImportLeadsDialog from "@/components/campaigns/import-leads-dialog";
 import AddLeadDialog from "@/components/campaigns/add-lead-dialog";
+import LeadComposerDialog from "@/components/campaigns/lead-composer/lead-composer-dialog";
 import EditLeadDialog from "@/components/campaigns/edit-lead-dialog";
 import ExportLeadsButton from "@/components/campaigns/export-leads-button";
 import LeadsFilters from "@/components/campaigns/leads-filters";
-import LeadsGrowthChart from "@/components/campaigns/analytics/leads-growth-chart";
 import fetcher from "@/lib/fetcher";
 import { cn } from "@/lib/utils";
 import { remove } from "@/lib/apis";
@@ -75,17 +73,11 @@ export default function CampaignLeadsPage() {
   } = useCampaignStore();
 
   const [search, setSearch] = useState(searchQuery || "");
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [addLeadDialogOpen, setAddLeadDialogOpen] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
   const [editLeadDialogOpen, setEditLeadDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
-
-  // Fetch leads growth data
-  const { data: growthData } = useSWR(
-    campaignId ? `/api/contacts/leads-growth?campaign=${campaignId}` : null,
-    fetcher,
-  );
 
   // Fetch leads using SWR. Filtering, sorting and paging all happen server-side,
   // so a change to any of them re-keys this request.
@@ -334,12 +326,6 @@ export default function CampaignLeadsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Leads Growth Chart */}
-      <div className="border border-border bg-white p-4 rounded-lg">
-        <h3 className="text-lg font-semibold mb-2">Leads Added Over Time</h3>
-        <LeadsGrowthChart growthData={growthData} />
-      </div>
-
       {/* Search and actions */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <form
@@ -370,9 +356,9 @@ export default function CampaignLeadsPage() {
             <UserPlusIcon className="w-4 h-4 mr-2" />
             Add Lead
           </Button>
-          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-            <FileUploadIcon className="w-4 h-4 mr-2" />
-            Import
+          <Button onClick={() => setComposerOpen(true)}>
+            <UserPlusIcon className="w-4 h-4 mr-2" />
+            Import leads
           </Button>
           <ExportLeadsButton
             campaignId={campaignId}
@@ -412,13 +398,24 @@ export default function CampaignLeadsPage() {
       </div>
 
       {/* Import Dialog */}
-      <ImportLeadsDialog
-        open={importDialogOpen}
-        setOpen={setImportDialogOpen}
-        campaign={campaignId}
-      />
 
       {/* Add Lead Dialog */}
+      <LeadComposerDialog
+        open={composerOpen}
+        onOpenChange={(next) => {
+          setComposerOpen(next);
+          // Leads may have been committed while it was open.
+          if (!next) mutate();
+        }}
+        campaignId={campaignId}
+        onCommitted={() => {
+          // Closing programmatically does not fire onOpenChange, so the leads
+          // table has to be refreshed here as well as on a dismissed dialog.
+          setComposerOpen(false);
+          mutate();
+        }}
+      />
+
       <AddLeadDialog
         open={addLeadDialogOpen}
         setOpen={setAddLeadDialogOpen}

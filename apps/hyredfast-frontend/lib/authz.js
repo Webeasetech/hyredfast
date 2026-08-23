@@ -56,6 +56,26 @@ export async function ownsLead(userId, leadId) {
   return !!found;
 }
 
+/** LeadDraft — the composer's staging area. Scoped via its campaign. */
+export async function ownsLeadDraft(userId, draftId) {
+  if (!draftId) return false;
+  const found = await prisma.leadDraft.findFirst({
+    where: { id: draftId, campaign: { userId } },
+    select: { id: true },
+  });
+  return !!found;
+}
+
+/** A single row inside a draft. Scoped via the draft's campaign. */
+export async function ownsLeadDraftRow(userId, rowId) {
+  if (!rowId) return false;
+  const found = await prisma.leadDraftRow.findFirst({
+    where: { id: rowId, draft: { campaign: { userId } } },
+    select: { id: true },
+  });
+  return !!found;
+}
+
 /** CampaignEmail — a contact inside a campaign. Scoped via its campaign. */
 export async function ownsContact(userId, contactId) {
   if (!contactId) return false;

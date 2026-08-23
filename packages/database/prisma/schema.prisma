@@ -44,6 +44,7 @@ model User {
   emailCredentials   EmailCredential[]
   creditTransactions CreditTransaction[]
   leadLists          LeadList[]
+  leadDrafts         LeadDraft[]
   leads              Lead[]
   chatMessages       AgentChatMessage[]
   payments           Payment[]
@@ -190,6 +191,7 @@ model Campaign {
   updated             DateTime         @updatedAt
 
   campaignEmails               CampaignEmail[]
+  leadDraft                    LeadDraft?
   pitches                      PitchEmail[]
   crmStages                    CrmStage[]
   crmActivities                CrmActivity[]
@@ -439,6 +441,60 @@ model LeadList {
   items LeadListItem[]
 
   @@map("lead_lists")
+}
+
+// ==========================================
+// Lead Drafts
+// ==========================================
+// The composer's staging area. Rows here are deliberately allowed to be
+// invalid — half-typed names, blank emails, columns not filled in yet — because
+// a draft that refuses to save what you typed loses your work on close, which
+// is the whole thing it exists to prevent.
+//
+// They are kept out of CampaignEmail rather than living there behind a
+// status flag: that table is read by the send workers, the rolling daily
+// allowance query, analytics and the CRM, and every one of those would need a
+// "not a draft" guard forever, including queries written later by someone who
+// never heard the rule. A miss there means mailing a prospect an unrendered
+// template. Commit is the single gate where validation runs.
+//
+// There is deliberately no column set stored here. The grid's columns are the
+// variables the campaign's pitches reference, derived on every read — storing a
+// copy would go stale the moment someone edits a template.
+model LeadDraft {
+  id         String   @id @default(cuid())
+  campaignId String   @unique @map("campaign")
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId     String?  @map("user")
+  user       User?    @relation(fields: [userId], references: [id])
+  created    DateTime @default(now())
+  updated    DateTime @updatedAt
+
+  rows LeadDraftRow[]
+
+  @@map("lead_drafts")
+}
+
+
+model LeadDraftRow {
+  id       String    @id @default(cuid())
+  draftId  String    @map("draft")
+  draft    LeadDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  // Explicit, so a debounced save never reshuffles the grid under the cursor.
+  position Int       @default(0)
+  name     String?
+  email    String?
+  // Everything past name/email, mirroring CampaignEmail.personalization so
+  // commit is a straight copy. Company and role live in here too — they are
+  // stated once per group in the UI and written onto every row in it, so the
+  // stored shape of a row is unchanged and no endpoint has to know about groups.
+  personalization Json?
+  created  DateTime @default(now())
+  updated  DateTime @updatedAt
+
+  // The grid always reads a whole draft in display order.
+  @@index([draftId, position])
+  @@map("lead_draft_rows")
 }
 
 // ==========================================
