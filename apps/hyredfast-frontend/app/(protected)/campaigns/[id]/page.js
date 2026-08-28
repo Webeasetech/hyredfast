@@ -14,8 +14,10 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import useCampaignStore from "@/store/campaign.store";
 import StatusChip from "@/components/ui/status-chip";
+import { Skeleton } from "@/components/ui/skeleton";
 import DataTableActionsMenu from "@/components/campaigns/data-table-actions-menu";
-import { DataTable } from "@/components/campaigns/data-table";
+import LeadGroupTable from "@/components/campaigns/lead-group-table";
+import TablePagination from "@/components/campaigns/table-pagination";
 import AddLeadDialog from "@/components/campaigns/add-lead-dialog";
 import LeadComposerDialog from "@/components/campaigns/lead-composer/lead-composer-dialog";
 import EditLeadDialog from "@/components/campaigns/edit-lead-dialog";
@@ -26,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { remove } from "@/lib/apis";
 import { buildLeadsQuery } from "@/lib/leads-query";
 import { DEFAULT_LEAD_STATUSES } from "@/lib/constants/lead-status";
+import { groupColor } from "@/lib/group-colors";
 import { DateTime } from "luxon";
 
 const DEFAULT_FILTERS = {
@@ -62,7 +65,9 @@ export default function CampaignLeadsPage() {
 
   const {
     leads,
+    leadGroups,
     totalLeads,
+    totalGroups,
     currentPage,
     totalPages,
     searchQuery,
@@ -175,9 +180,11 @@ export default function CampaignLeadsPage() {
     fetcher,
   );
 
-  // Format data for the table
-  const formattedData = useMemo(() => {
-    return leads.map((lead) => ({
+  // The server groups and pages; this only shapes each group's leads for the
+  // table. A page is 5 company/role groups and every lead inside them, so a
+  // company is never split across a page boundary.
+  const groups = useMemo(() => {
+    const toRow = (lead) => ({
       id: lead.id,
       name: lead.name,
       email: lead.email,
@@ -194,8 +201,19 @@ export default function CampaignLeadsPage() {
         onEdit: handleEditLead,
         onDelete: handleDeleteLead,
       },
+    });
+
+    return leadGroups.map((group) => ({
+      ...group,
+      rows: (group.items || []).map(toRow),
     }));
-  }, [leads, campaignId, handleViewTimeline, handleEditLead, handleDeleteLead]);
+  }, [
+    leadGroups,
+    campaignId,
+    handleViewTimeline,
+    handleEditLead,
+    handleDeleteLead,
+  ]);
 
   // Define columns
   const columns = useMemo(
@@ -375,11 +393,31 @@ export default function CampaignLeadsPage() {
         </div>
       )}
 
-      {/* Data table */}
-      <div className="border border-border bg-white min-h-[400px] rounded-lg">
-        <DataTable
-          columns={columns}
-          data={formattedData}
+      {/* Leads, in the company/role blocks the composer added them as */}
+      <div className="min-h-[400px] space-y-4">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-40 w-full rounded-lg" />
+          ))
+        ) : groups.length === 0 ? (
+          <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border border-border bg-white">
+            <p className="text-lg font-medium">No results found</p>
+            <p className="mt-1 text-muted-foreground">
+              Try adjusting your search or filters
+            </p>
+          </div>
+        ) : (
+          groups.map((group, index) => (
+            <LeadGroupTable
+              key={group.key}
+              group={group}
+              color={groupColor(index)}
+              columns={columns}
+            />
+          ))
+        )}
+
+        <TablePagination
           pageCount={totalPages}
           currentPage={currentPage}
           onPageChange={handlePageChange}
@@ -389,10 +427,12 @@ export default function CampaignLeadsPage() {
 
       {/* Summary */}
       <div className="text-sm text-muted-foreground">
-        {totalLeads > 0 && (
+        {totalGroups > 0 && (
           <p>
-            Showing {Math.min((currentPage - 1) * 15 + 1, totalLeads)} to{" "}
-            {Math.min(currentPage * 15, totalLeads)} of {totalLeads} leads
+            Showing {Math.min((currentPage - 1) * 5 + 1, totalGroups)} to{" "}
+            {Math.min(currentPage * 5, totalGroups)} of {totalGroups} group
+            {totalGroups === 1 ? "" : "s"} · {totalLeads} lead
+            {totalLeads === 1 ? "" : "s"} in total
           </p>
         )}
       </div>

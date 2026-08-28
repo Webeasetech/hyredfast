@@ -4,9 +4,13 @@ const useCampaignStore = create((set) => ({
   // Campaign data
   currentCampaign: null,
 
-  // Leads/contacts data
+  // Leads/contacts data. The list pages by company/role group, so `leadGroups`
+  // is the shape the table renders and `leads` is the same rows flattened, for
+  // lookups that only care about a lead by id.
   leads: [],
+  leadGroups: [],
   totalLeads: 0,
+  totalGroups: 0,
   currentPage: 1,
   totalPages: 1,
   searchQuery: "",
@@ -18,9 +22,12 @@ const useCampaignStore = create((set) => ({
 
   // Set leads data
   setLeadsData: (data) => {
+    const groups = data.groups || [];
     set({
-      leads: data.items || [],
+      leadGroups: groups,
+      leads: groups.flatMap((group) => group.items || []),
       totalLeads: data.totalItems || 0,
+      totalGroups: data.totalGroups || 0,
       totalPages: data.totalPages || 1,
     });
   },
@@ -40,7 +47,9 @@ const useCampaignStore = create((set) => ({
     set({
       currentCampaign: null,
       leads: [],
+      leadGroups: [],
       totalLeads: 0,
+      totalGroups: 0,
       currentPage: 1,
       totalPages: 1,
       searchQuery: "",
