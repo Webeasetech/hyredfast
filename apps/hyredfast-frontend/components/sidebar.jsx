@@ -11,6 +11,10 @@ import {
   SettingsIcon,
   QuestionMarkCircleIcon,
   MessageSquareIcon,
+  InboxIcon,
+  BriefcaseIcon,
+  UserIcon,
+  CreditCardIcon,
 } from "mage-icons-react/bulk";
 import {
   ChevronLeftIcon,
@@ -47,10 +51,15 @@ const settingsLink = {
 };
 
 const settingsSubLinks = [
-  { label: "Email settings", href: "/settings" },
-  { label: "Job preferences", href: "/settings/preferences" },
-  { label: "Account", href: "/settings/account" },
-  { label: "Billing", href: "/settings/billing" },
+  // Inbox rather than EmailIcon: that one already means Campaigns.
+  { label: "Email settings", icon: InboxIcon, href: "/settings" },
+  {
+    label: "Job preferences",
+    icon: BriefcaseIcon,
+    href: "/settings/preferences",
+  },
+  { label: "Account", icon: UserIcon, href: "/settings/account" },
+  { label: "Billing", icon: CreditCardIcon, href: "/settings/billing" },
 ];
 
 const supportLinks = [
@@ -136,13 +145,16 @@ function SettingsSection({ active, collapsed, open, onOpenChange, pathname }) {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "rounded-md px-3 py-1.5 text-sm whitespace-nowrap transition-colors",
+                  "flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm whitespace-nowrap transition-colors",
                   subActive
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
-                {link.label}
+                {/* A size down from the top-level rows, so the nesting reads
+                    in the icons as well as the indent. */}
+                <link.icon className="size-4 shrink-0" />
+                <span className="truncate">{link.label}</span>
               </Link>
             );
           })}
@@ -227,8 +239,17 @@ export function Sidebar() {
           {/* Collapsed, the rail is too narrow for the wordmark, so the mark
               alone sits on its own row above the toggle. */}
           {collapsed && (
-            <Link href="/" className="flex justify-center" aria-label="HyredFast">
-              <Image src={hyredfastIconPNG} alt="" className="size-7" priority />
+            <Link
+              href="/"
+              className="flex justify-center"
+              aria-label="HyredFast"
+            >
+              <Image
+                src={hyredfastIconPNG}
+                alt=""
+                className="size-7"
+                priority
+              />
             </Link>
           )}
           <div className="flex items-center justify-between gap-2">
