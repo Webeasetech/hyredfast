@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("../services/prisma.service.js", () => ({
   prisma: {
     campaign: { findMany: vi.fn() },
-    campaignEmail: { findMany: vi.fn() },
+    campaignLead: { findMany: vi.fn() },
   },
 }));
 
@@ -159,7 +159,7 @@ describe("processCampaignJob", () => {
     });
 
     vi.mocked(prisma.campaign.findMany).mockResolvedValue([campaign] as any);
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail({ campaignId: campaign.id }),
     ] as any);
 
@@ -201,7 +201,7 @@ describe("processCampaignJob", () => {
       }),
     ] as any);
 
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail({ id: "ce-still-queued" }),
     ] as any);
 
@@ -231,7 +231,7 @@ describe("processCampaignJob", () => {
 
     // This email was sent yesterday and daysInterval=5, so it should NOT be sent yet.
     const yesterday = new Date("2026-03-24T09:00:00Z");
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail({
         id: "ce-too-soon",
         stage: 1,
@@ -262,7 +262,7 @@ describe("processCampaignJob", () => {
 
     // Sent 6 days ago with daysInterval=5 → should be sent
     const sixDaysAgo = new Date("2026-03-19T09:00:00Z");
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail({
         id: "ce-ready",
         stage: 1,
@@ -293,7 +293,7 @@ describe("processCampaignJob", () => {
     // Global daysInterval=1 would allow a send after 1 day, but the stage-1
     // pitch's delayDays=5 must win → NOT sent yet (only 1 day passed).
     const yesterday = new Date("2026-03-24T09:00:00Z");
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail({
         id: "ce-perstage",
         stage: 1,
@@ -336,7 +336,7 @@ describe("processCampaignJob", () => {
     // Sent Mar 23 23:00, delay 2 → due on Mar 25, any hour inside the window.
     // Only ~26h have elapsed, so elapsed-hours counting would hold this back
     // until Mar 25 23:00, past the window, losing the whole day.
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail({
         id: "ce-due",
         stage: 1,
@@ -374,7 +374,7 @@ describe("processCampaignJob", () => {
     ] as any);
 
     // Sent Mar 24, delay 2 → not due until Mar 26.
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail({
         id: "ce-not-due",
         stage: 1,
@@ -410,7 +410,7 @@ describe("processCampaignJob", () => {
       const parentSentAt = new Date(
         `2026-03-24T${String(parentHour).padStart(2, "0")}:00:00Z`,
       );
-      vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+      vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
         makeCampaignEmail({
           id: "ce-followup",
           stage: 1,
@@ -448,7 +448,7 @@ describe("processCampaignJob", () => {
     // Sent Mar 24 20:00 UTC, which is Mar 25 01:30 for the user. In UTC days
     // that reads as yesterday and delay 1 would be satisfied; in the user's own
     // timezone it is still the same day, so the follow-up waits.
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail({
         id: "ce-same-day-ist",
         stage: 1,
@@ -496,7 +496,7 @@ describe("processCampaignJob", () => {
       }),
     ] as any);
 
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue(
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue(
       Array.from({ length: 50 }, (_, i) =>
         makeCampaignEmail({ id: `ce-${i}` }),
       ) as any,
@@ -521,7 +521,7 @@ describe("processCampaignJob", () => {
       }),
     ] as any);
 
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail(),
     ] as any);
 
@@ -545,7 +545,7 @@ describe("processCampaignJob", () => {
     ] as any);
 
     // Query order is stage ascending, so the new leads arrive first.
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail({ id: "ce-new-1", stage: 0 }),
       makeCampaignEmail({ id: "ce-new-2", stage: 0 }),
       makeCampaignEmail({
@@ -588,7 +588,7 @@ describe("processCampaignJob", () => {
       }),
     ] as any);
 
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       ...Array.from({ length: 10 }, (_, i) =>
         makeCampaignEmail({ id: `a-${i}`, campaignId: "campaign-a" }),
       ),
@@ -635,7 +635,7 @@ describe("processCampaignJob", () => {
       }),
     ] as any);
 
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       ...Array.from({ length: 10 }, (_, i) =>
         makeCampaignEmail({ id: `heavy-${i}`, campaignId: "campaign-heavy" }),
       ),
@@ -660,7 +660,7 @@ describe("processCampaignJob", () => {
       }),
     ] as any);
 
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail({
         id: "ce-bad",
         verified: "FAILED",
@@ -688,7 +688,7 @@ describe("processCampaignJob", () => {
 
     // PENDING is the default and nothing in the app moves a row off it yet,
     // so blocking it here would stop every campaign from sending.
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail({
         id: "ce-pending",
         verified: "PENDING",
@@ -713,7 +713,7 @@ describe("processCampaignJob", () => {
       }),
     ] as any);
 
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail({
         id: "ce-bad",
         verified: "FAILED",
@@ -769,7 +769,7 @@ describe("delivery period boundaries", () => {
         }),
       ] as any);
 
-      vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+      vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
         makeCampaignEmail(),
       ] as any);
 
@@ -827,7 +827,7 @@ describe("timezone handling", () => {
       }),
     ] as any);
 
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeCampaignEmail(),
     ] as any);
 

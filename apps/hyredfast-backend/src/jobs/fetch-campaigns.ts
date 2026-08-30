@@ -48,7 +48,7 @@ async function processCampaignJob() {
       skipped: skipCounts,
     });
 
-    // The campaignEmail query below does not join the user, so carry each
+    // The campaignLead query below does not join the user, so carry each
     // campaign's timezone across from the campaigns we already loaded.
     const campaignTimezones = new Map<string, string>(
       validCampaigns.map((c: any) => [c.id, c.user.timezone]),
@@ -65,7 +65,7 @@ async function processCampaignJob() {
 
     // Fetch all emails belonging to valid campaigns with RUNNING status,
     // where email status is PENDING or RUNNING (excluding REPLIED and BOUNCED)
-    const campaignEmails = await prisma.campaignEmail.findMany({
+    const campaignLeads = await prisma.campaignLead.findMany({
       where: {
         campaignId: { in: campaignIds },
         campaign: { status: "RUNNING" },
@@ -80,7 +80,7 @@ async function processCampaignJob() {
     // Stage 0 (fresh leads) should always be sent immediately, regardless of sent_at.
     // For follow-ups, use the per-stage delay from the matching pitch, falling back
     // to the campaign-wide daysInterval when a pitch has no explicit delay.
-    const validEmails = campaignEmails.filter((email: any) => {
+    const validEmails = campaignLeads.filter((email: any) => {
       if (isKnownBadAddress(email)) return false;
 
       if (email.stage === 0) return true;

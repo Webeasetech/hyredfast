@@ -11,7 +11,7 @@ export async function GET(request) {
   if (!(await ownsCampaign(auth.userId, campaign))) return notFound("Campaign");
 
   try {
-    const records = await prisma.campaignEmail.findMany({
+    const records = await prisma.campaignLead.findMany({
       where: { campaignId: campaign },
     });
 

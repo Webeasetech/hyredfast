@@ -63,7 +63,9 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       alreadyFulfilled: result.alreadyFulfilled,
-      companiesTotal: result.user?.companiesTotal,
+      credits: result.user?.credits,
+      planId: result.user?.planId,
+      planExpiresAt: result.user?.planExpiresAt,
     });
   } catch (error) {
     console.error("[payments/verify] failed:", error);

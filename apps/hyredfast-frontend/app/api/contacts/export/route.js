@@ -14,7 +14,7 @@ export async function GET(request) {
   try {
     const { where, orderBy } = buildLeadsFilter(searchParams);
 
-    const records = await prisma.campaignEmail.findMany({ where, orderBy });
+    const records = await prisma.campaignLead.findMany({ where, orderBy });
 
     return NextResponse.json({ items: records });
   } catch (error) {

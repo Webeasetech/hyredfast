@@ -12,12 +12,12 @@ export async function GET(request) {
 
   try {
     const [items, totalItems] = await Promise.all([
-      prisma.pitchEmail.findMany({
+      prisma.pitchTemplate.findMany({
         where: { campaignId: campaign },
         orderBy: { stage: "asc" },
         take: 25,
       }),
-      prisma.pitchEmail.count({ where: { campaignId: campaign } }),
+      prisma.pitchTemplate.count({ where: { campaignId: campaign } }),
     ]);
 
     return NextResponse.json({ items, totalItems, page: 1, perPage: 25 });

@@ -26,7 +26,7 @@ export async function POST(request) {
         desc,
         emailDeliveryPeriod: email_delivery_period,
         status: "PENDING",
-        setuped: false,
+        setupComplete: false,
       },
     });
 
@@ -37,7 +37,7 @@ export async function POST(request) {
       "Hey {{name}}, I am just following up on my previous emails.";
     const follow_up_subject = "Following Up {{name}}!";
 
-    await prisma.pitchEmail.create({
+    await prisma.pitchTemplate.create({
       data: {
         title: "First Reach out",
         message: first_pitch,
@@ -50,7 +50,7 @@ export async function POST(request) {
 
     if (stageCount > 1) {
       for (let i = 1; i < stageCount; i++) {
-        await prisma.pitchEmail.create({
+        await prisma.pitchTemplate.create({
           data: {
             title: `Follow Up ${i}`,
             message: later_pitches,

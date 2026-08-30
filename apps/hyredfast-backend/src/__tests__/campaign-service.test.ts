@@ -3,11 +3,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock prisma before importing the module under test
 vi.mock("../services/prisma.service.js", () => ({
   prisma: {
-    campaignEmail: {
+    campaignLead: {
       findMany: vi.fn(),
       update: vi.fn(),
     },
-    pitchEmail: {
+    pitchTemplate: {
       findFirst: vi.fn(),
     },
     campaignMessage: {
@@ -69,7 +69,7 @@ describe("fetchCampaignEmails", () => {
 
   it("returns campaign emails from prisma", async () => {
     const fakeEmails = [makeEmail()];
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue(
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue(
       fakeEmails as any,
     );
 
@@ -77,7 +77,7 @@ describe("fetchCampaignEmails", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("email-1");
-    expect(prisma.campaignEmail.findMany).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.findMany).toHaveBeenCalledWith({
       where: { id: { in: ["email-1"] } },
       include: {
         campaign: {
@@ -94,19 +94,19 @@ describe("fetchCampaignEmails", () => {
 
   it("chunks large ID lists and flattens results", async () => {
     const ids = Array.from({ length: 120 }, (_, i) => `email-${i}`);
-    vi.mocked(prisma.campaignEmail.findMany).mockResolvedValue([
+    vi.mocked(prisma.campaignLead.findMany).mockResolvedValue([
       makeEmail(),
     ] as any);
 
     const result = await fetchCampaignEmails(ids, 50);
 
     // 120 ids → 3 chunks (50 + 50 + 20)
-    expect(prisma.campaignEmail.findMany).toHaveBeenCalledTimes(3);
+    expect(prisma.campaignLead.findMany).toHaveBeenCalledTimes(3);
     expect(result).toHaveLength(3); // 1 email per chunk mock
   });
 
   it("rethrows prisma errors", async () => {
-    vi.mocked(prisma.campaignEmail.findMany).mockRejectedValue(
+    vi.mocked(prisma.campaignLead.findMany).mockRejectedValue(
       new Error("DB connection failed"),
     );
 
@@ -122,18 +122,18 @@ describe("fetchPitch", () => {
   it("passes campaign ID string (not object) to prisma query", async () => {
     const email = makeEmail();
 
-    vi.mocked(prisma.pitchEmail.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.pitchTemplate.findFirst).mockResolvedValue(null);
 
     await fetchPitch(email);
 
-    const callArgs = vi.mocked(prisma.pitchEmail.findFirst).mock.calls[0][0];
+    const callArgs = vi.mocked(prisma.pitchTemplate.findFirst).mock.calls[0][0];
     expect(callArgs?.where?.campaignId).toBe("campaign-1");
     expect(typeof callArgs?.where?.campaignId).toBe("string");
   });
 
   it("returns pitch when found (simulating fixed query)", async () => {
     const fakePitch = makePitch();
-    vi.mocked(prisma.pitchEmail.findFirst).mockResolvedValue(fakePitch as any);
+    vi.mocked(prisma.pitchTemplate.findFirst).mockResolvedValue(fakePitch as any);
 
     const email = makeEmail();
     const result = await fetchPitch(email);
@@ -142,7 +142,7 @@ describe("fetchPitch", () => {
   });
 
   it("returns null and does not throw on prisma error", async () => {
-    vi.mocked(prisma.pitchEmail.findFirst).mockRejectedValue(
+    vi.mocked(prisma.pitchTemplate.findFirst).mockRejectedValue(
       new Error("query failed"),
     );
 
@@ -155,7 +155,7 @@ describe("updateEmailStatus", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Identifiable stand-ins so the transaction's contents can be asserted.
-    vi.mocked(prisma.campaignEmail.update).mockReturnValue("row-write" as any);
+    vi.mocked(prisma.campaignLead.update).mockReturnValue("row-write" as any);
     vi.mocked(prisma.user.updateMany).mockReturnValue("credit-write" as any);
     vi.mocked(prisma.$transaction).mockResolvedValue([] as any);
   });
@@ -165,7 +165,7 @@ describe("updateEmailStatus", () => {
 
     await updateEmailStatus(email);
 
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: {
         status: "RUNNING",
@@ -202,7 +202,7 @@ describe("updateEmailStatus", () => {
 
     await updateEmailStatus(email);
 
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: {
         status: "COMPLETED",
@@ -219,7 +219,7 @@ describe("updateEmailStatus", () => {
 
     await updateEmailStatus(email);
 
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: {
         status: "COMPLETED",
@@ -270,7 +270,7 @@ describe("createCampaignMessage", () => {
         text: "<p>body</p>",
         pitchId: "pitch-1",
         messageId: "<msg-id@mail>",
-        campaignEmailId: "email-1",
+        campaignLeadId: "email-1",
       },
     });
   });

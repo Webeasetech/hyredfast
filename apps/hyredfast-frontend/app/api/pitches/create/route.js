@@ -25,7 +25,7 @@ export async function POST(request) {
   }
 
   try {
-    const last = await prisma.pitchEmail.findFirst({
+    const last = await prisma.pitchTemplate.findFirst({
       where: { campaignId: campaign },
       orderBy: { stage: "desc" },
       select: { stage: true },
@@ -34,7 +34,7 @@ export async function POST(request) {
     const nextStage = (last?.stage ?? -1) + 1;
 
     const [pitch] = await prisma.$transaction([
-      prisma.pitchEmail.create({
+      prisma.pitchTemplate.create({
         data: {
           title: `Follow Up ${nextStage}`,
           message:

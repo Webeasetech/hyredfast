@@ -18,10 +18,10 @@ export async function GET(request, props) {
     const records = await prisma.campaignMessage.findMany({
       where: {
         sent: false,
-        campaignEmail: { campaignId: campaign },
+        campaignLead: { campaignId: campaign },
       },
       orderBy: { created: "desc" },
-      include: { campaignEmail: true },
+      include: { campaignLead: true },
       take: PAGE_SIZE + 1,
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
     });
@@ -30,9 +30,9 @@ export async function GET(request, props) {
     const page = hasMore ? records.slice(0, PAGE_SIZE) : records;
 
     // Reshape to match old expand format
-    const shaped = page.map(({ campaignEmail, ...rest }) => ({
+    const shaped = page.map(({ campaignLead, ...rest }) => ({
       ...rest,
-      expand: { campaign_email: campaignEmail },
+      expand: { campaign_email: campaignLead },
     }));
 
     return NextResponse.json({

@@ -20,7 +20,7 @@ export async function POST(request) {
   if (!(await ownsCrmStage(auth.userId, stageId))) return notFound("Stage");
 
   try {
-    const lead = await prisma.campaignEmail.findFirst({
+    const lead = await prisma.campaignLead.findFirst({
       where: { campaignId: campaign, email },
       orderBy: { created: "desc" },
     });

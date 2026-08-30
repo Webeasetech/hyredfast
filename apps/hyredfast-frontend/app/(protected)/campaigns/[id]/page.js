@@ -68,6 +68,7 @@ export default function CampaignLeadsPage() {
     leadGroups,
     totalLeads,
     totalGroups,
+    perPage,
     currentPage,
     totalPages,
     searchQuery,
@@ -190,7 +191,7 @@ export default function CampaignLeadsPage() {
       email: lead.email,
       status: lead.status,
       stage: lead.stage || 0,
-      opened: lead.opened ? "Yes" : "No",
+      opened: lead.openCount ? "Yes" : "No",
       sent_from: lead.expand?.cred?.username || "-",
       sent_at: lead.sentAt || null,
       actions: {
@@ -429,8 +430,8 @@ export default function CampaignLeadsPage() {
       <div className="text-sm text-muted-foreground">
         {totalGroups > 0 && (
           <p>
-            Showing {Math.min((currentPage - 1) * 5 + 1, totalGroups)} to{" "}
-            {Math.min(currentPage * 5, totalGroups)} of {totalGroups} group
+            Showing {Math.min((currentPage - 1) * perPage + 1, totalGroups)} to{" "}
+            {Math.min(currentPage * perPage, totalGroups)} of {totalGroups} group
             {totalGroups === 1 ? "" : "s"} · {totalLeads} lead
             {totalLeads === 1 ? "" : "s"} in total
           </p>

@@ -38,7 +38,7 @@ async function getThreadingInfo(
   try {
     // Query campaign messages for threading information
     const threadInfo = await prisma.campaignMessage.findFirst({
-      where: { campaignEmailId: emailId },
+      where: { campaignLeadId: emailId },
       orderBy: { created: "desc" },
     });
 
@@ -50,7 +50,7 @@ async function getThreadingInfo(
     // Extract reply_to and build references from previous messages
     const replyTo = threadInfo.messageId;
     const allMessages = await prisma.campaignMessage.findMany({
-      where: { campaignEmailId: emailId },
+      where: { campaignLeadId: emailId },
       orderBy: { created: "asc" },
       select: { messageId: true },
     });
@@ -112,7 +112,7 @@ export async function sendCampaignEmail(
         to: email.email,
       });
 
-      await prisma.campaignEmail.update({
+      await prisma.campaignLead.update({
         where: { id: email.id },
         data: { status: "FAILED" },
       });
@@ -132,7 +132,7 @@ export async function sendCampaignEmail(
         `No pitch found for campaign ${email.campaign} at stage ${email.stage}`,
         txId,
       );
-      await prisma.campaignEmail.update({
+      await prisma.campaignLead.update({
         where: { id: email.id },
         data: { status: "FAILED" },
       });
@@ -151,7 +151,7 @@ export async function sendCampaignEmail(
         campaignId: email.campaign,
       });
 
-      await prisma.campaignEmail.update({
+      await prisma.campaignLead.update({
         where: { id: email.id },
         data: { status: "FAILED" },
       });
@@ -167,7 +167,7 @@ export async function sendCampaignEmail(
 
       for (const cred of allCreds) {
         const sentCount = await getCredentialSentCount(cred.id);
-        if (sentCount < (cred.dailyLimit || 20)) {
+        if (sentCount < cred.dailyLimit) {
           availableCreds.push(cred);
         }
       }
@@ -211,9 +211,9 @@ export async function sendCampaignEmail(
         emailProvider: credential.host,
       });
 
-      // Save the chosen credential's id in the campaigns_email record for follow-ups
+      // Save the chosen credential's id in the campaign_leads record for follow-ups
       log("INFO", `Saving selected credential to email record`, txId);
-      await prisma.campaignEmail.update({
+      await prisma.campaignLead.update({
         where: { id: email.id },
         data: { credId: credential.id },
       });
@@ -230,7 +230,7 @@ export async function sendCampaignEmail(
           },
         );
 
-        await prisma.campaignEmail.update({
+        await prisma.campaignLead.update({
           where: { id: email.id },
           data: { status: "FAILED" },
         });
@@ -250,7 +250,7 @@ export async function sendCampaignEmail(
           credentialId: savedCredentialId,
         });
 
-        await prisma.campaignEmail.update({
+        await prisma.campaignLead.update({
           where: { id: email.id },
           data: { status: "FAILED" },
         });
@@ -259,12 +259,12 @@ export async function sendCampaignEmail(
 
       // Check if credential has reached its daily limit
       const sentCount = await getCredentialSentCount(credential.id);
-      if (sentCount >= (credential.dailyLimit || 30)) {
+      if (sentCount >= credential.dailyLimit) {
         log("ERROR", `Daily limit reached for credential`, txId, {
           credentialId: credential.id,
           emailId: email.id,
           sentCount,
-          limit: credential.dailyLimit || 30,
+          limit: credential.dailyLimit,
         });
         return;
       }
@@ -289,7 +289,7 @@ export async function sendCampaignEmail(
         credentialId: credential?.id,
       });
 
-      await prisma.campaignEmail.update({
+      await prisma.campaignLead.update({
         where: { id: email.id },
         data: { status: "FAILED" },
       });
@@ -372,7 +372,7 @@ export async function sendCampaignEmail(
         to: email.email,
       });
 
-      await prisma.campaignEmail.update({
+      await prisma.campaignLead.update({
         where: { id: email.id },
         data: { status: "FAILED" },
       });
@@ -502,7 +502,7 @@ export async function sendCampaignEmail(
           errorMessage: error.message,
         });
 
-        await prisma.campaignEmail.update({
+        await prisma.campaignLead.update({
           where: { id: email.id },
           data: { status: "FAILED" },
         });
@@ -515,7 +515,7 @@ export async function sendCampaignEmail(
         });
 
         // For other errors, mark as failed but allow retry
-        await prisma.campaignEmail.update({
+        await prisma.campaignLead.update({
           where: { id: email.id },
           data: { status: "FAILED" },
         });

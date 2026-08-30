@@ -20,7 +20,7 @@ export async function PATCH(request) {
   if (delayDays !== undefined) data.delayDays = Number(delayDays);
 
   try {
-    const record = await prisma.pitchEmail.update({
+    const record = await prisma.pitchTemplate.update({
       where: { id: pitch },
       data,
     });

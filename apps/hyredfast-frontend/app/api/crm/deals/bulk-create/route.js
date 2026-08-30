@@ -21,7 +21,7 @@ export async function POST(request) {
     return notFound("Stage");
 
   try {
-    const leads = await prisma.campaignEmail.findMany({
+    const leads = await prisma.campaignLead.findMany({
       where: { campaignId: campaign },
     });
 

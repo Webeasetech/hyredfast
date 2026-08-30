@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
 import { Navbar } from "@/components/navbar";
-import AgentChat from "@/components/agent-chat";
 import useAuthStore from "@/store/auth.store";
 import { TourProvider } from "@/components/tour/tour-provider";
 
@@ -43,7 +42,9 @@ export default function ProtectedLayout({ children }) {
             {children}
           </main>
         </div>
-        <AgentChat />
+        {/* Agent chat is off while the AI features are disabled. The
+            component, its API routes and the agents service all remain —
+            re-mounting this line is the whole of turning it back on. */}
       </div>
     </TourProvider>
   );

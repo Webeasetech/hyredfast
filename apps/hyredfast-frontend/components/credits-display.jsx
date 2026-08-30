@@ -1,5 +1,5 @@
 "use client";
-import { BuildingAIcon, ExclamationTriangleIcon } from "mage-icons-react/bulk";
+import { EmailIcon, ExclamationTriangleIcon } from "mage-icons-react/bulk";
 import {
   Tooltip,
   TooltipContent,
@@ -13,18 +13,15 @@ import { Chip } from "@/components/ui/chip";
 const LOW = "border-red-300 bg-red-50 text-red-700";
 
 /**
- * Companies remaining — the billing unit users actually buy.
+ * Emails left in the current term — the billing unit users actually buy.
  *
- * This used to show two "credit" chips. Credits still exist as internal
- * metering for the send pipeline, but they are not what anyone purchases and
- * showing them made the balance unreadable.
+ * One credit is one email sent. Nothing refills: this is a lump bought up
+ * front and spent down, so a low number means low until they top up or renew.
  */
 export function CreditsDisplay({ user }) {
-  const remaining = Math.max(
-    0,
-    (user?.companiesTotal || 0) - (user?.companiesUsed || 0),
-  );
-  const isLow = remaining < 5;
+  const remaining = user?.balance?.remaining ?? 0;
+  // 250 is roughly a week of steady sending, which is enough warning to act on.
+  const isLow = remaining < 250;
 
   return (
     <TooltipProvider>
@@ -33,7 +30,7 @@ export function CreditsDisplay({ user }) {
           <TooltipTrigger asChild>
             <Chip
               size="sm"
-              icon={<BuildingAIcon />}
+              icon={<EmailIcon />}
               className={isLow ? LOW : undefined}
             >
               <span className="tabular-nums">
@@ -42,7 +39,7 @@ export function CreditsDisplay({ user }) {
             </Chip>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Companies remaining</p>
+            <p>Emails left</p>
           </TooltipContent>
         </Tooltip>
 
@@ -54,8 +51,8 @@ export function CreditsDisplay({ user }) {
             <TooltipContent className="max-w-64">
               <p className="text-xs">
                 {remaining === 0
-                  ? "No companies left."
-                  : `${remaining} companies left.`}
+                  ? "No emails left. Top up or renew to keep sending."
+                  : `${remaining.toLocaleString("en-IN")} emails left in this term.`}
               </p>
             </TooltipContent>
           </Tooltip>

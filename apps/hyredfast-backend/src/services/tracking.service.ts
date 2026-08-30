@@ -21,7 +21,7 @@ export async function trackEmailOpen(
 ): Promise<void> {
   try {
     // Get the email record
-    const email = await prisma.campaignEmail.findUnique({
+    const email = await prisma.campaignLead.findUnique({
       where: { id: emailId },
     });
 
@@ -33,14 +33,14 @@ export async function trackEmailOpen(
     log("INFO", `Tracking open for email: ${emailId}`, txId);
 
     // Create a record of the open event
-    await prisma.campaignOpen.create({
-      data: { campaignEmailId: emailId },
+    await prisma.emailOpen.create({
+      data: { campaignLeadId: emailId },
     });
 
     // Increment the opened count on the email
-    await prisma.campaignEmail.update({
+    await prisma.campaignLead.update({
       where: { id: emailId },
-      data: { opened: { increment: 1 } },
+      data: { openCount: { increment: 1 } },
     });
 
     log("INFO", `Successfully tracked open for email: ${emailId}`, txId);
@@ -64,14 +64,14 @@ export async function getEmailOpenStats(campaignId: string): Promise<any> {
 
   try {
     // Get all emails for this campaign
-    const emails = await prisma.campaignEmail.findMany({
+    const emails = await prisma.campaignLead.findMany({
       where: { campaignId: campaignId },
     });
 
     // Get open counts
     const totalEmails = emails.length;
     const openedEmails = emails.filter(
-      (email) => email.opened && email.opened > 0,
+      (email) => email.openCount && email.openCount > 0,
     ).length;
     const openRate = totalEmails > 0 ? (openedEmails / totalEmails) * 100 : 0;
 

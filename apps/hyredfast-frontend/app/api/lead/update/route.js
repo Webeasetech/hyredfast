@@ -19,7 +19,7 @@ export async function PATCH(request) {
       updateData.personalization = personalization;
     }
 
-    const record = await prisma.campaignEmail.update({
+    const record = await prisma.campaignLead.update({
       where: { id: lead },
       data: updateData,
     });

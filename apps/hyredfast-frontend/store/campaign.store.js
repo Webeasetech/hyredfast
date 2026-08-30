@@ -13,6 +13,10 @@ const useCampaignStore = create((set) => ({
   totalGroups: 0,
   currentPage: 1,
   totalPages: 1,
+  // Groups per page, as the server decided it. Kept here rather than repeated
+  // as a literal in the summary line, which would quietly lie the day the
+  // server's GROUPS_PER_PAGE changes.
+  perPage: 5,
   searchQuery: "",
 
   // Set current campaign
@@ -29,6 +33,7 @@ const useCampaignStore = create((set) => ({
       totalLeads: data.totalItems || 0,
       totalGroups: data.totalGroups || 0,
       totalPages: data.totalPages || 1,
+      perPage: data.perPage || 5,
     });
   },
 

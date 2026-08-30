@@ -17,16 +17,16 @@ export async function GET(request, props) {
   try {
     console.log(`[API] Fetching messages for lead: ${campaign_email_id}`);
     const messages = await prisma.campaignMessage.findMany({
-      where: { campaignEmailId: campaign_email_id },
+      where: { campaignLeadId: campaign_email_id },
       include: {
         pitch: true,
-        campaignEmail: true,
+        campaignLead: true,
       },
     });
 
     console.log(`[API] Fetching opens for lead: ${campaign_email_id}`);
-    const opens = await prisma.campaignOpen.findMany({
-      where: { campaignEmailId: campaign_email_id },
+    const opens = await prisma.emailOpen.findMany({
+      where: { campaignLeadId: campaign_email_id },
     });
 
     const leadTimeline = {
@@ -39,10 +39,10 @@ export async function GET(request, props) {
           return {
             date: new Date(msg.created),
             subject: subjectTemplate.render({
-              name: msg.campaignEmail.name,
+              name: msg.campaignLead.name,
             }),
             body: bodyTemplate.render({
-              name: msg.campaignEmail.name,
+              name: msg.campaignLead.name,
             }),
           };
         }),

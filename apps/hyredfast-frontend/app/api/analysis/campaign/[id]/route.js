@@ -36,20 +36,20 @@ export async function GET(request, props) {
     }
 
     // Fetch campaign emails count
-    const totalRecipients = await prisma.campaignEmail.count({
+    const totalRecipients = await prisma.campaignLead.count({
       where: { campaignId: id },
     });
 
     // Compute stats via aggregates
     const [emailsSent, responses, openCount] = await Promise.all([
       prisma.campaignMessage.count({
-        where: { sent: true, campaignEmail: { campaignId: id } },
+        where: { sent: true, campaignLead: { campaignId: id } },
       }),
       prisma.campaignMessage.count({
-        where: { sent: false, campaignEmail: { campaignId: id } },
+        where: { sent: false, campaignLead: { campaignId: id } },
       }),
-      prisma.campaignOpen.count({
-        where: { campaignEmail: { campaignId: id } },
+      prisma.emailOpen.count({
+        where: { campaignLead: { campaignId: id } },
       }),
     ]);
 
@@ -62,14 +62,14 @@ export async function GET(request, props) {
     // 1. Recent email sends
     try {
       const recentSends = await prisma.campaignMessage.findMany({
-        where: { sent: true, campaignEmail: { campaignId: id } },
+        where: { sent: true, campaignLead: { campaignId: id } },
         orderBy: { created: "desc" },
         take: 100,
-        include: { campaignEmail: true },
+        include: { campaignLead: true },
       });
 
       recentSends.forEach((message) => {
-        const ce = message.campaignEmail;
+        const ce = message.campaignLead;
         activities.push({
           type: "Email sent",
           timestamp: message.created,
@@ -84,15 +84,15 @@ export async function GET(request, props) {
 
     // 2. Recent email opens
     try {
-      const recentOpens = await prisma.campaignOpen.findMany({
-        where: { campaignEmail: { campaignId: id } },
+      const recentOpens = await prisma.emailOpen.findMany({
+        where: { campaignLead: { campaignId: id } },
         orderBy: { created: "desc" },
         take: 100,
-        include: { campaignEmail: true },
+        include: { campaignLead: true },
       });
 
       recentOpens.forEach((open) => {
-        const ce = open.campaignEmail;
+        const ce = open.campaignLead;
         activities.push({
           type: "Email opened",
           timestamp: open.created,
@@ -108,14 +108,14 @@ export async function GET(request, props) {
     // 3. Recent replies
     try {
       const recentReplies = await prisma.campaignMessage.findMany({
-        where: { sent: false, campaignEmail: { campaignId: id } },
+        where: { sent: false, campaignLead: { campaignId: id } },
         orderBy: { created: "desc" },
         take: 100,
-        include: { campaignEmail: true },
+        include: { campaignLead: true },
       });
 
       recentReplies.forEach((message) => {
-        const ce = message.campaignEmail;
+        const ce = message.campaignLead;
         activities.push({
           type: "Reply received",
           timestamp: message.created,
@@ -159,10 +159,10 @@ export async function GET(request, props) {
   }
 }
 
-function formatRecipientDetails(campaignEmail) {
-  if (!campaignEmail) return "Unknown recipient";
-  const name = campaignEmail.name;
-  const email = campaignEmail.email;
+function formatRecipientDetails(campaignLead) {
+  if (!campaignLead) return "Unknown recipient";
+  const name = campaignLead.name;
+  const email = campaignLead.email;
   if (name && email) return `${name} (${email})`;
   if (email) return email;
   if (name) return name;

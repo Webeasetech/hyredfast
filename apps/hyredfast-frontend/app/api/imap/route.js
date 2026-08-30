@@ -14,7 +14,7 @@ export async function PATCH(request) {
   const { message, subject } = await request.json();
 
   try {
-    const record = await prisma.pitchEmail.update({
+    const record = await prisma.pitchTemplate.update({
       where: { id: pitch },
       data: { message, subject },
     });

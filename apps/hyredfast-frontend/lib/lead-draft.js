@@ -8,7 +8,7 @@
  * thing drafts exist to prevent.
  */
 
-/** Columns every grid starts with, in order. Both map straight to CampaignEmail. */
+/** Columns every grid starts with, in order. Both map straight to CampaignLead. */
 export const BASE_COLUMNS = ["name", "email"];
 
 /**
@@ -35,7 +35,9 @@ export function extractVariablesFromPitches(pitches) {
   const vars = new Set();
 
   for (const pitch of pitches) {
-    const texts = [pitch.message, pitch.subject, pitch.dynamic_subject].filter(
+    // `dynamicSubject` is the Prisma field; the column is dynamic_subject. The
+    // camelCase name is the one that exists on the object.
+    const texts = [pitch.message, pitch.subject, pitch.dynamicSubject].filter(
       Boolean,
     );
     for (const text of texts) {
@@ -181,6 +183,11 @@ export const STATE_LABELS = {
   duplicate: "Duplicate",
   ready: "Ready",
   needsGroup: "Company and role needed",
+  // Raised at commit, not while typing: both depend on server state the grid
+  // does not hold (this month's quota, and how many contacts the application
+  // already has).
+  quota: "Company limit reached for this month",
+  contactCap: "This company already has the maximum contacts",
 };
 
 /** Only `ready` rows are eligible; everything else stays behind in the draft. */

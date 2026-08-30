@@ -21,7 +21,7 @@ export async function getCredentialSentCount(
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const sentCount = await prisma.campaignMessage.count({
       where: {
-        campaignEmail: {
+        campaignLead: {
           credId: credentialId,
         },
         sent: true,
