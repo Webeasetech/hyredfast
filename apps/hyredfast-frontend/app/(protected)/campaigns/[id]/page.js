@@ -4,7 +4,6 @@ import { useState, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
 import {
   UserPlusIcon,
-  FileUploadIcon,
   SearchIcon,
 } from "mage-icons-react/bulk";
 import { ArrowsAllDirectionIcon } from "mage-icons-react/stroke";
@@ -15,19 +14,21 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import useCampaignStore from "@/store/campaign.store";
 import StatusChip from "@/components/ui/status-chip";
+import { Skeleton } from "@/components/ui/skeleton";
 import DataTableActionsMenu from "@/components/campaigns/data-table-actions-menu";
-import { DataTable } from "@/components/campaigns/data-table";
-import ImportLeadsDialog from "@/components/campaigns/import-leads-dialog";
+import LeadGroupTable from "@/components/campaigns/lead-group-table";
+import TablePagination from "@/components/campaigns/table-pagination";
 import AddLeadDialog from "@/components/campaigns/add-lead-dialog";
+import LeadComposerDialog from "@/components/campaigns/lead-composer/lead-composer-dialog";
 import EditLeadDialog from "@/components/campaigns/edit-lead-dialog";
 import ExportLeadsButton from "@/components/campaigns/export-leads-button";
 import LeadsFilters from "@/components/campaigns/leads-filters";
-import LeadsGrowthChart from "@/components/campaigns/analytics/leads-growth-chart";
 import fetcher from "@/lib/fetcher";
 import { cn } from "@/lib/utils";
 import { remove } from "@/lib/apis";
 import { buildLeadsQuery } from "@/lib/leads-query";
 import { DEFAULT_LEAD_STATUSES } from "@/lib/constants/lead-status";
+import { groupColor } from "@/lib/group-colors";
 import { DateTime } from "luxon";
 
 const DEFAULT_FILTERS = {
@@ -64,7 +65,10 @@ export default function CampaignLeadsPage() {
 
   const {
     leads,
+    leadGroups,
     totalLeads,
+    totalGroups,
+    perPage,
     currentPage,
     totalPages,
     searchQuery,
@@ -75,17 +79,11 @@ export default function CampaignLeadsPage() {
   } = useCampaignStore();
 
   const [search, setSearch] = useState(searchQuery || "");
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [addLeadDialogOpen, setAddLeadDialogOpen] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
   const [editLeadDialogOpen, setEditLeadDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
-
-  // Fetch leads growth data
-  const { data: growthData } = useSWR(
-    campaignId ? `/api/contacts/leads-growth?campaign=${campaignId}` : null,
-    fetcher,
-  );
 
   // Fetch leads using SWR. Filtering, sorting and paging all happen server-side,
   // so a change to any of them re-keys this request.
@@ -183,15 +181,17 @@ export default function CampaignLeadsPage() {
     fetcher,
   );
 
-  // Format data for the table
-  const formattedData = useMemo(() => {
-    return leads.map((lead) => ({
+  // The server groups and pages; this only shapes each group's leads for the
+  // table. A page is 5 company/role groups and every lead inside them, so a
+  // company is never split across a page boundary.
+  const groups = useMemo(() => {
+    const toRow = (lead) => ({
       id: lead.id,
       name: lead.name,
       email: lead.email,
       status: lead.status,
       stage: lead.stage || 0,
-      opened: lead.opened ? "Yes" : "No",
+      opened: lead.openCount ? "Yes" : "No",
       sent_from: lead.expand?.cred?.username || "-",
       sent_at: lead.sentAt || null,
       actions: {
@@ -202,8 +202,19 @@ export default function CampaignLeadsPage() {
         onEdit: handleEditLead,
         onDelete: handleDeleteLead,
       },
+    });
+
+    return leadGroups.map((group) => ({
+      ...group,
+      rows: (group.items || []).map(toRow),
     }));
-  }, [leads, campaignId, handleViewTimeline, handleEditLead, handleDeleteLead]);
+  }, [
+    leadGroups,
+    campaignId,
+    handleViewTimeline,
+    handleEditLead,
+    handleDeleteLead,
+  ]);
 
   // Define columns
   const columns = useMemo(
@@ -334,12 +345,6 @@ export default function CampaignLeadsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Leads Growth Chart */}
-      <div className="border border-border bg-white p-4 rounded-lg">
-        <h3 className="text-lg font-semibold mb-2">Leads Added Over Time</h3>
-        <LeadsGrowthChart growthData={growthData} />
-      </div>
-
       {/* Search and actions */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <form
@@ -370,9 +375,9 @@ export default function CampaignLeadsPage() {
             <UserPlusIcon className="w-4 h-4 mr-2" />
             Add Lead
           </Button>
-          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-            <FileUploadIcon className="w-4 h-4 mr-2" />
-            Import
+          <Button onClick={() => setComposerOpen(true)}>
+            <UserPlusIcon className="w-4 h-4 mr-2" />
+            Import leads
           </Button>
           <ExportLeadsButton
             campaignId={campaignId}
@@ -389,11 +394,31 @@ export default function CampaignLeadsPage() {
         </div>
       )}
 
-      {/* Data table */}
-      <div className="border border-border bg-white min-h-[400px] rounded-lg">
-        <DataTable
-          columns={columns}
-          data={formattedData}
+      {/* Leads, in the company/role blocks the composer added them as */}
+      <div className="min-h-[400px] space-y-4">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-40 w-full rounded-lg" />
+          ))
+        ) : groups.length === 0 ? (
+          <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border border-border bg-white">
+            <p className="text-lg font-medium">No results found</p>
+            <p className="mt-1 text-muted-foreground">
+              Try adjusting your search or filters
+            </p>
+          </div>
+        ) : (
+          groups.map((group, index) => (
+            <LeadGroupTable
+              key={group.key}
+              group={group}
+              color={groupColor(index)}
+              columns={columns}
+            />
+          ))
+        )}
+
+        <TablePagination
           pageCount={totalPages}
           currentPage={currentPage}
           onPageChange={handlePageChange}
@@ -403,22 +428,35 @@ export default function CampaignLeadsPage() {
 
       {/* Summary */}
       <div className="text-sm text-muted-foreground">
-        {totalLeads > 0 && (
+        {totalGroups > 0 && (
           <p>
-            Showing {Math.min((currentPage - 1) * 15 + 1, totalLeads)} to{" "}
-            {Math.min(currentPage * 15, totalLeads)} of {totalLeads} leads
+            Showing {Math.min((currentPage - 1) * perPage + 1, totalGroups)} to{" "}
+            {Math.min(currentPage * perPage, totalGroups)} of {totalGroups} group
+            {totalGroups === 1 ? "" : "s"} · {totalLeads} lead
+            {totalLeads === 1 ? "" : "s"} in total
           </p>
         )}
       </div>
 
       {/* Import Dialog */}
-      <ImportLeadsDialog
-        open={importDialogOpen}
-        setOpen={setImportDialogOpen}
-        campaign={campaignId}
-      />
 
       {/* Add Lead Dialog */}
+      <LeadComposerDialog
+        open={composerOpen}
+        onOpenChange={(next) => {
+          setComposerOpen(next);
+          // Leads may have been committed while it was open.
+          if (!next) mutate();
+        }}
+        campaignId={campaignId}
+        onCommitted={() => {
+          // Closing programmatically does not fire onOpenChange, so the leads
+          // table has to be refreshed here as well as on a dismissed dialog.
+          setComposerOpen(false);
+          mutate();
+        }}
+      />
+
       <AddLeadDialog
         open={addLeadDialogOpen}
         setOpen={setAddLeadDialogOpen}

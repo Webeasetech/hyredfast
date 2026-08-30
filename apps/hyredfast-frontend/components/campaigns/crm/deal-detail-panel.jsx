@@ -180,7 +180,7 @@ export default function DealDetailPanel({
               </div>
               <div>
                 <span className="font-medium text-foreground">Opened:</span>{" "}
-                {lead?.opened ? "Yes" : "No"}
+                {lead?.openCount ? "Yes" : "No"}
               </div>
             </div>
           </div>

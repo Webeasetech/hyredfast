@@ -175,7 +175,11 @@ const MessageInbox = ({ campaignId }) => {
     setSending(true);
     try {
       await instance.post(`/api/inbox/${campaignId}/reply`, {
-        campaignEmailId: selectedMessage.campaign_email,
+        // The id is on the message row itself. It used to be read as
+        // `selectedMessage.campaign_email`, which is where the *lead object*
+        // lives — and only under `expand` — so this always sent undefined and
+        // the route answered 400.
+        campaignLeadId: selectedMessage.campaignLeadId,
         text: replyText.trim(),
         messageId: selectedMessage.id,
       });

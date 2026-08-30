@@ -46,10 +46,10 @@ async function processEmail(msg: any, username: string) {
       bounceResult.bounce && (hasErrorCode || hasErrorType || hasRecipient);
 
     if (isBounce) {
-      console.log("Saving bounced status", campaignMessage.campaignEmailId);
-      if (campaignMessage.campaignEmailId) {
-        await prisma.campaignEmail.update({
-          where: { id: campaignMessage.campaignEmailId },
+      console.log("Saving bounced status", campaignMessage.campaignLeadId);
+      if (campaignMessage.campaignLeadId) {
+        await prisma.campaignLead.update({
+          where: { id: campaignMessage.campaignLeadId },
           data: { status: "BOUNCED" },
         });
       }
@@ -76,15 +76,15 @@ async function processEmail(msg: any, username: string) {
         sent: false,
         text: parsedMessage.text ?? null,
         pitchId: campaignMessage.pitchId,
-        campaignEmailId: campaignMessage.campaignEmailId,
+        campaignLeadId: campaignMessage.campaignLeadId,
         timestamp: msg.envelope.date ? new Date(msg.envelope.date) : new Date(),
       },
     });
 
     // Update campaign email status to REPLIED
-    if (campaignMessage.campaignEmailId) {
-      await prisma.campaignEmail.update({
-        where: { id: campaignMessage.campaignEmailId },
+    if (campaignMessage.campaignLeadId) {
+      await prisma.campaignLead.update({
+        where: { id: campaignMessage.campaignLeadId },
         data: { status: "REPLIED" },
       });
     }

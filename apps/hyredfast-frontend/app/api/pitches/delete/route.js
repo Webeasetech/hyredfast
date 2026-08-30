@@ -19,7 +19,7 @@ export async function DELETE(request) {
   }
 
   try {
-    const pitch = await prisma.pitchEmail.findUnique({
+    const pitch = await prisma.pitchTemplate.findUnique({
       where: { id: pitchId },
       select: { id: true, stage: true, campaignId: true },
     });
@@ -36,7 +36,7 @@ export async function DELETE(request) {
     }
 
     // Must be the highest-numbered stage.
-    const last = await prisma.pitchEmail.findFirst({
+    const last = await prisma.pitchTemplate.findFirst({
       where: { campaignId: pitch.campaignId },
       orderBy: { stage: "desc" },
       select: { stage: true },
@@ -50,7 +50,7 @@ export async function DELETE(request) {
     }
 
     // Guard: don't strand leads sitting at or beyond this stage.
-    const inFlight = await prisma.campaignEmail.count({
+    const inFlight = await prisma.campaignLead.count({
       where: {
         campaignId: pitch.campaignId,
         stage: { gte: pitch.stage },
@@ -70,7 +70,7 @@ export async function DELETE(request) {
     // Delete the pitch and shrink the completion cap in lockstep.
     // Remaining stages are 0..(pitch.stage - 1), so maxStageCount = pitch.stage.
     await prisma.$transaction([
-      prisma.pitchEmail.delete({ where: { id: pitch.id } }),
+      prisma.pitchTemplate.delete({ where: { id: pitch.id } }),
       prisma.campaign.update({
         where: { id: pitch.campaignId },
         data: { maxStageCount: pitch.stage },

@@ -13,7 +13,7 @@ export async function DELETE(request, props) {
   if (!(await ownsContact(auth.userId, lead))) return notFound("Lead");
 
   try {
-    await prisma.campaignEmail.delete({ where: { id: lead } });
+    await prisma.campaignLead.delete({ where: { id: lead } });
     return NextResponse.json({ message: "Deleted" });
   } catch (error) {
     console.error(`[API] Error deleting lead ${lead}:`, error);

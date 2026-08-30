@@ -12,8 +12,8 @@ const { mockPrisma, enqueuedBatches, mockSendMail, mockRedis } = vi.hoisted(
   () => ({
     mockPrisma: {
       campaign: { findMany: vi.fn() },
-      campaignEmail: { findMany: vi.fn(), update: vi.fn() },
-      pitchEmail: { findFirst: vi.fn() },
+      campaignLead: { findMany: vi.fn(), update: vi.fn() },
+      pitchTemplate: { findFirst: vi.fn() },
       campaignMessage: {
         create: vi.fn(),
         findFirst: vi.fn(),
@@ -158,7 +158,7 @@ describe("E2E pipeline: fetch → batch → send", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     enqueuedBatches.length = 0;
-    mockPrisma.campaignEmail.update.mockResolvedValue({});
+    mockPrisma.campaignLead.update.mockResolvedValue({});
     mockPrisma.user.updateMany.mockResolvedValue({ count: 1 });
     mockPrisma.campaignMessage.create.mockResolvedValue({});
     mockSendMail.mockResolvedValue({ messageId: "<msg-1@test>" });
@@ -173,23 +173,23 @@ describe("E2E pipeline: fetch → batch → send", () => {
 
   it("fetchPitch correctly passes campaign ID string to prisma query", async () => {
     const emailFromDb = fullCampaignEmail();
-    mockPrisma.campaignEmail.findMany.mockResolvedValue([emailFromDb]);
-    mockPrisma.pitchEmail.findFirst.mockResolvedValue(null);
+    mockPrisma.campaignLead.findMany.mockResolvedValue([emailFromDb]);
+    mockPrisma.pitchTemplate.findFirst.mockResolvedValue(null);
 
     await processEmailBatchJob(["ce-1"]);
 
     // Verify: campaignId is the string ID, not the full object
-    const pitchQuery = mockPrisma.pitchEmail.findFirst.mock.calls[0][0];
+    const pitchQuery = mockPrisma.pitchTemplate.findFirst.mock.calls[0][0];
     expect(pitchQuery.where.campaignId).toBe("campaign-1");
     expect(typeof pitchQuery.where.campaignId).toBe("string");
   });
 
   it("HAPPY PATH: full pipeline works when pitch IS found", async () => {
     const emailFromDb = fullCampaignEmail();
-    mockPrisma.campaignEmail.findMany.mockResolvedValue([emailFromDb]);
+    mockPrisma.campaignLead.findMany.mockResolvedValue([emailFromDb]);
 
     // Simulate: pitch IS found (as if the bug were fixed)
-    mockPrisma.pitchEmail.findFirst.mockResolvedValue(fullPitch());
+    mockPrisma.pitchTemplate.findFirst.mockResolvedValue(fullPitch());
 
     const results = await processEmailBatchJob(["ce-1"]);
 
@@ -201,13 +201,13 @@ describe("E2E pipeline: fetch → batch → send", () => {
     expect(mailOpts.subject).toContain("Lead Person"); // personalized
 
     // Credential was saved to the email record
-    expect(mockPrisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(mockPrisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "ce-1" },
       data: { credId: "cred-1" },
     });
 
     // Status was updated (RUNNING, stage 1)
-    expect(mockPrisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(mockPrisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "ce-1" },
       data: {
         status: "RUNNING",
@@ -229,8 +229,8 @@ describe("E2E pipeline: fetch → batch → send", () => {
   it("HAPPY PATH: tracking pixel is added when enabled", async () => {
     const emailFromDb = fullCampaignEmail();
     emailFromDb.campaign.isTrackingEnabled = true;
-    mockPrisma.campaignEmail.findMany.mockResolvedValue([emailFromDb]);
-    mockPrisma.pitchEmail.findFirst.mockResolvedValue(fullPitch());
+    mockPrisma.campaignLead.findMany.mockResolvedValue([emailFromDb]);
+    mockPrisma.pitchTemplate.findFirst.mockResolvedValue(fullPitch());
 
     await processEmailBatchJob(["ce-1"]);
 
@@ -244,8 +244,8 @@ describe("E2E pipeline: fetch → batch → send", () => {
     emailFromDb.status = "RUNNING";
     emailFromDb.credId = "cred-1";
 
-    mockPrisma.campaignEmail.findMany.mockResolvedValue([emailFromDb]);
-    mockPrisma.pitchEmail.findFirst.mockResolvedValue(fullPitch());
+    mockPrisma.campaignLead.findMany.mockResolvedValue([emailFromDb]);
+    mockPrisma.pitchTemplate.findFirst.mockResolvedValue(fullPitch());
     mockPrisma.campaignMessage.findFirst.mockResolvedValue({
       messageId: "<prev@smtp>",
     });
@@ -258,7 +258,7 @@ describe("E2E pipeline: fetch → batch → send", () => {
     // Email was sent successfully
     expect(mockSendMail).toHaveBeenCalledTimes(1);
     // Status was updated (not FAILED)
-    expect(mockPrisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(mockPrisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "ce-1" },
       data: {
         status: "COMPLETED",
@@ -269,13 +269,13 @@ describe("E2E pipeline: fetch → batch → send", () => {
   });
 
   it("SMTP error marks email as FAILED", async () => {
-    mockPrisma.campaignEmail.findMany.mockResolvedValue([fullCampaignEmail()]);
-    mockPrisma.pitchEmail.findFirst.mockResolvedValue(fullPitch());
+    mockPrisma.campaignLead.findMany.mockResolvedValue([fullCampaignEmail()]);
+    mockPrisma.pitchTemplate.findFirst.mockResolvedValue(fullPitch());
     mockSendMail.mockRejectedValue(new Error("Connection refused"));
 
     await processEmailBatchJob(["ce-1"]);
 
-    expect(mockPrisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(mockPrisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "ce-1" },
       data: { status: "FAILED" },
     });
@@ -285,15 +285,15 @@ describe("E2E pipeline: fetch → batch → send", () => {
     // Enqueued during MORNING, still queued at 3 PM.
     vi.setSystemTime(new Date("2026-03-25T15:00:00Z"));
 
-    mockPrisma.campaignEmail.findMany.mockResolvedValue([fullCampaignEmail()]);
-    mockPrisma.pitchEmail.findFirst.mockResolvedValue(fullPitch());
+    mockPrisma.campaignLead.findMany.mockResolvedValue([fullCampaignEmail()]);
+    mockPrisma.pitchTemplate.findFirst.mockResolvedValue(fullPitch());
 
     const results = await processEmailBatchJob(["ce-1"]);
 
     expect(mockSendMail).not.toHaveBeenCalled();
     expect(results).toEqual([]);
     // Nothing written, so the next tick inside the window picks it up as is.
-    expect(mockPrisma.campaignEmail.update).not.toHaveBeenCalled();
+    expect(mockPrisma.campaignLead.update).not.toHaveBeenCalled();
     expect(mockPrisma.user.updateMany).not.toHaveBeenCalled();
     expect(mockPrisma.campaignMessage.create).not.toHaveBeenCalled();
   });
@@ -302,8 +302,8 @@ describe("E2E pipeline: fetch → batch → send", () => {
     mockRedis.set.mockResolvedValue(null);
     mockRedis.pttl.mockResolvedValue(12000);
 
-    mockPrisma.campaignEmail.findMany.mockResolvedValue([fullCampaignEmail()]);
-    mockPrisma.pitchEmail.findFirst.mockResolvedValue(fullPitch());
+    mockPrisma.campaignLead.findMany.mockResolvedValue([fullCampaignEmail()]);
+    mockPrisma.pitchTemplate.findFirst.mockResolvedValue(fullPitch());
 
     await expect(processEmailBatchJob(["ce-1"])).rejects.toMatchObject({
       name: "CredentialBusyError",
@@ -311,14 +311,14 @@ describe("E2E pipeline: fetch → batch → send", () => {
 
     expect(mockSendMail).not.toHaveBeenCalled();
     // Nothing written, so the row is untouched when the job comes back.
-    expect(mockPrisma.campaignEmail.update).not.toHaveBeenCalled();
+    expect(mockPrisma.campaignLead.update).not.toHaveBeenCalled();
     expect(mockPrisma.user.updateMany).not.toHaveBeenCalled();
     expect(mockPrisma.campaignMessage.create).not.toHaveBeenCalled();
   });
 
   it("rate-limit error does NOT mark FAILED (left for retry)", async () => {
-    mockPrisma.campaignEmail.findMany.mockResolvedValue([fullCampaignEmail()]);
-    mockPrisma.pitchEmail.findFirst.mockResolvedValue(fullPitch());
+    mockPrisma.campaignLead.findMany.mockResolvedValue([fullCampaignEmail()]);
+    mockPrisma.pitchTemplate.findFirst.mockResolvedValue(fullPitch());
 
     const rateLimitErr = Object.assign(new Error("Too many login attempts"), {
       code: "EAUTH",
@@ -330,7 +330,7 @@ describe("E2E pipeline: fetch → batch → send", () => {
     await processEmailBatchJob(["ce-1"]);
 
     // Should NOT have FAILED status update — only the credId save
-    const failedCalls = mockPrisma.campaignEmail.update.mock.calls.filter(
+    const failedCalls = mockPrisma.campaignLead.update.mock.calls.filter(
       (call: any) => call[0]?.data?.status === "FAILED",
     );
     expect(failedCalls).toHaveLength(0);
@@ -348,7 +348,7 @@ describe("E2E: fetch-campaigns time gating", () => {
     vi.setSystemTime(new Date("2026-03-25T09:00:00Z")); // Wednesday 9am
 
     mockPrisma.campaign.findMany.mockResolvedValue([fullCampaign()]);
-    mockPrisma.campaignEmail.findMany.mockResolvedValue([
+    mockPrisma.campaignLead.findMany.mockResolvedValue([
       {
         id: "ce-1",
         stage: 0,

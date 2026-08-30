@@ -95,13 +95,13 @@ const Builder = ({ campaign }) => {
 
     const replied = contacts.filter((c) => c.status === "REPLIED").length;
     const opened = contacts.filter(
-      (c) => c.opened > 0 && c.status !== "REPLIED",
+      (c) => c.openCount > 0 && c.status !== "REPLIED",
     ).length;
     const noReply = contacts.filter(
       (c) =>
         c.stage >= (pitches.length || 1) &&
         c.status !== "REPLIED" &&
-        c.opened === 0,
+        c.openCount === 0,
     ).length;
 
     return {

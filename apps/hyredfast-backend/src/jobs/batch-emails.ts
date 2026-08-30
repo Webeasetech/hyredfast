@@ -40,12 +40,12 @@ export async function processEmailBatchJob(
     }
 
     log("INFO", `Fetching campaign emails`, batchId);
-    const campaignEmails = await fetchCampaignEmails(emailIds);
-    log("INFO", `Fetched ${campaignEmails.length} campaign emails`, batchId);
+    const campaignLeads = await fetchCampaignEmails(emailIds);
+    log("INFO", `Fetched ${campaignLeads.length} campaign emails`, batchId);
 
     // Extract and setup email transporters from the campaigns' emails arrays
     log("INFO", `Extracting unique credentials`, batchId);
-    const uniqueCredentials = extractUniqueCredentials(campaignEmails);
+    const uniqueCredentials = extractUniqueCredentials(campaignLeads);
     log(
       "INFO",
       `Found ${uniqueCredentials.length} unique credentials`,
@@ -55,7 +55,7 @@ export async function processEmailBatchJob(
     setupEmailTransporters(uniqueCredentials);
 
     // Group emails by credential to avoid rate limiting
-    const emailsByCredential = groupEmailsByCredential(campaignEmails);
+    const emailsByCredential = groupEmailsByCredential(campaignLeads);
 
     log("INFO", `Grouped emails by credential`, batchId, {
       credentialCount: emailsByCredential.size,
@@ -78,13 +78,13 @@ export async function processEmailBatchJob(
 
     log("INFO", `Completed email batch job`, batchId, {
       duration: `${duration}ms`,
-      totalEmails: campaignEmails.length,
+      totalEmails: campaignLeads.length,
       successCount: results.length,
       deferredCount: deferred.length,
-      failureCount: campaignEmails.length - results.length - deferred.length,
+      failureCount: campaignLeads.length - results.length - deferred.length,
       successRate:
-        campaignEmails.length > 0
-          ? `${Math.round((results.length / campaignEmails.length) * 100)}%`
+        campaignLeads.length > 0
+          ? `${Math.round((results.length / campaignLeads.length) * 100)}%`
           : "N/A",
     });
 
@@ -103,15 +103,15 @@ export async function processEmailBatchJob(
 
 /**
  * Groups emails by credential ID to avoid rate limiting.
- * @param campaignEmails - List of campaign emails.
+ * @param campaignLeads - List of campaign emails.
  * @returns Map of credential IDs to arrays of emails.
  */
 function groupEmailsByCredential(
-  campaignEmails: EmailRecord[],
+  campaignLeads: EmailRecord[],
 ): Map<string, EmailRecord[]> {
   const emailsByCredential = new Map<string, EmailRecord[]>();
 
-  for (const email of campaignEmails) {
+  for (const email of campaignLeads) {
     const credId = email.credId || "unassigned";
     if (!emailsByCredential.has(credId)) {
       emailsByCredential.set(credId, []);

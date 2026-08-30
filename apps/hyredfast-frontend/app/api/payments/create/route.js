@@ -14,8 +14,9 @@ import {
  *
  * The client sends only a planId. The amount comes from the PLANS constant on
  * the server — never from the request body — so a tampered request cannot buy
- * 100 companies for ₹1.
+ * a term for ₹1.
  */
+
 export async function POST(request) {
   let auth;
   try {
@@ -57,7 +58,7 @@ export async function POST(request) {
       notes: {
         userId: user.id,
         planId: plan.id,
-        companies: String(plan.companies),
+        credits: String(plan.credits),
       },
     });
 
@@ -66,7 +67,7 @@ export async function POST(request) {
         userId: user.id,
         razorpayOrderId: order.id,
         planId: plan.id,
-        companiesGranted: plan.companies,
+        creditsGranted: plan.credits,
         amount: plan.amount,
         currency: "INR",
         status: "CREATED",
@@ -78,7 +79,8 @@ export async function POST(request) {
       orderId: order.id,
       amount: plan.amount,
       currency: "INR",
-      companies: plan.companies,
+      credits: plan.credits,
+      termMonths: plan.termMonths ?? null,
       planLabel: plan.label,
       keyId: getKeyId(),
       mode: getMode(),

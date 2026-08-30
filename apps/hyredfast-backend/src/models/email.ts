@@ -12,7 +12,7 @@ export interface EmailRecord {
   credId?: string | null;
   sentAt?: Date | null;
   campaignId?: string | null;
-  opened?: number;
+  openCount?: number;
   verified?: string;
   campaign?: CampaignRecord;
 }
@@ -57,7 +57,7 @@ export interface CredentialRecord {
   secure: boolean;
   username: string;
   password: string;
-  dailyLimit?: number;
+  dailyLimit: number;
   userId?: string;
 }
 
@@ -75,5 +75,5 @@ export interface CampaignMessageRecord {
   text: string;
   pitchId: string;
   messageId: string;
-  campaignEmailId: string;
+  campaignLeadId: string;
 }

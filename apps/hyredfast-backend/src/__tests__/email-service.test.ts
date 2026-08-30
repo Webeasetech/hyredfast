@@ -12,7 +12,7 @@ vi.mock("../config/redis.js", () => ({ redis: mockRedis }));
 
 vi.mock("../services/prisma.service.js", () => ({
   prisma: {
-    campaignEmail: { update: vi.fn() },
+    campaignLead: { update: vi.fn() },
     campaignMessage: {
       findFirst: vi.fn(),
       findMany: vi.fn(),
@@ -113,7 +113,7 @@ function setupHappyPath() {
   });
   vi.mocked(getCredentialSentCount).mockResolvedValue(0);
   vi.mocked(getEmailTransporter).mockReturnValue(mockTransporter as any);
-  vi.mocked(prisma.campaignEmail.update).mockResolvedValue({} as any);
+  vi.mocked(prisma.campaignLead.update).mockResolvedValue({} as any);
   vi.mocked(updateEmailStatus).mockResolvedValue();
   vi.mocked(createCampaignMessage).mockResolvedValue();
   mockTransporter.sendMail.mockResolvedValue({ messageId: "<msg-123@smtp>" });
@@ -145,7 +145,7 @@ describe("sendCampaignEmail", () => {
 
     await sendCampaignEmail(email, "tx");
 
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: { status: "FAILED" },
     });
@@ -157,7 +157,7 @@ describe("sendCampaignEmail", () => {
 
     await sendCampaignEmail(email, "tx");
 
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: { status: "FAILED" },
     });
@@ -170,7 +170,7 @@ describe("sendCampaignEmail", () => {
 
     await sendCampaignEmail(makeEmail(), "tx");
 
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: { status: "FAILED" },
     });
@@ -192,7 +192,7 @@ describe("sendCampaignEmail", () => {
 
     await sendCampaignEmail(email, "tx");
 
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: { status: "FAILED" },
     });
@@ -206,7 +206,7 @@ describe("sendCampaignEmail", () => {
     await sendCampaignEmail(makeEmail(), "tx");
 
     // Should NOT mark as FAILED — just returns
-    expect(prisma.campaignEmail.update).not.toHaveBeenCalledWith(
+    expect(prisma.campaignLead.update).not.toHaveBeenCalledWith(
       expect.objectContaining({ data: { status: "FAILED" } }),
     );
     expect(mockTransporter.sendMail).not.toHaveBeenCalled();
@@ -222,7 +222,7 @@ describe("sendCampaignEmail", () => {
 
     await sendCampaignEmail(email, "tx");
 
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: { status: "FAILED" },
     });
@@ -247,7 +247,7 @@ describe("sendCampaignEmail", () => {
 
     await sendCampaignEmail(email, "tx");
 
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: { status: "FAILED" },
     });
@@ -266,7 +266,7 @@ describe("sendCampaignEmail", () => {
     await sendCampaignEmail(email, "tx");
 
     // The code does NOT mark FAILED here — just returns with no status update
-    expect(prisma.campaignEmail.update).not.toHaveBeenCalledWith(
+    expect(prisma.campaignLead.update).not.toHaveBeenCalledWith(
       expect.objectContaining({ data: { status: "FAILED" } }),
     );
   });
@@ -288,7 +288,7 @@ describe("sendCampaignEmail", () => {
 
     await sendCampaignEmail(email, "tx");
 
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: { status: "FAILED" },
     });
@@ -309,7 +309,7 @@ describe("sendCampaignEmail", () => {
 
     await sendCampaignEmail(email, "tx");
 
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: { status: "FAILED" },
     });
@@ -323,7 +323,7 @@ describe("sendCampaignEmail", () => {
     await sendCampaignEmail(makeEmail(), "tx");
 
     // Silently returns — no FAILED status set
-    expect(prisma.campaignEmail.update).not.toHaveBeenCalledWith(
+    expect(prisma.campaignLead.update).not.toHaveBeenCalledWith(
       expect.objectContaining({ data: { status: "FAILED" } }),
     );
     expect(mockTransporter.sendMail).not.toHaveBeenCalled();
@@ -339,7 +339,7 @@ describe("sendCampaignEmail", () => {
 
     await sendCampaignEmail(makeEmail(), "tx");
 
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: { status: "FAILED" },
     });
@@ -358,7 +358,7 @@ describe("sendCampaignEmail", () => {
     await sendCampaignEmail(makeEmail(), "tx");
 
     // Email status should NOT be updated — left for retry
-    expect(prisma.campaignEmail.update).not.toHaveBeenCalledWith(
+    expect(prisma.campaignLead.update).not.toHaveBeenCalledWith(
       expect.objectContaining({ data: { status: "FAILED" } }),
     );
   });
@@ -372,7 +372,7 @@ describe("sendCampaignEmail", () => {
 
     await sendCampaignEmail(makeEmail(), "tx");
 
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: { status: "FAILED" },
     });
@@ -387,7 +387,7 @@ describe("sendCampaignEmail", () => {
     await sendCampaignEmail(makeEmail(), "tx");
 
     // The outer catch only logs — does not update status
-    expect(prisma.campaignEmail.update).not.toHaveBeenCalled();
+    expect(prisma.campaignLead.update).not.toHaveBeenCalled();
   });
 
   // ================== Tracking pixel ==================
@@ -422,7 +422,7 @@ describe("sendCampaignEmail", () => {
     await sendCampaignEmail(makeEmail(), "tx");
 
     // First update call is saving the credId
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: { credId: "cred-1" },
     });
@@ -452,7 +452,7 @@ describe("sendCampaignEmail", () => {
 
     expect(mockTransporter.sendMail).not.toHaveBeenCalled();
     // The row is left exactly as it was so a later attempt can pick it up.
-    expect(prisma.campaignEmail.update).not.toHaveBeenCalled();
+    expect(prisma.campaignLead.update).not.toHaveBeenCalled();
   });
 
   it("moves to a free mailbox when one of the campaign's is busy", async () => {
@@ -476,7 +476,7 @@ describe("sendCampaignEmail", () => {
     await sendCampaignEmail(email, "tx");
 
     expect(mockTransporter.sendMail).toHaveBeenCalled();
-    expect(prisma.campaignEmail.update).toHaveBeenCalledWith({
+    expect(prisma.campaignLead.update).toHaveBeenCalledWith({
       where: { id: "email-1" },
       data: { credId: "cred-free" },
     });

@@ -20,9 +20,6 @@ const SCHEDULER_TICK_SECONDS = 15 * 60;
 // runs late, and a full window would rebuild the backlog this exists to avoid.
 const QUEUE_HORIZON_SECONDS = SCHEDULER_TICK_SECONDS * 2;
 
-// Matches the fallback sendCampaignEmail applies when picking a stage 0 sender.
-const DEFAULT_DAILY_LIMIT = 20;
-
 /**
  * Seconds until the campaign's delivery period closes.
  * @param {DateTime} currentTime - Current time in the campaign owner's timezone.
@@ -68,10 +65,12 @@ export function credentialSendBudget(
 
   const sendsInWindow = Math.floor(windowSeconds / SEND_SPACING_SECONDS);
 
-  const dailyLimit = credential.dailyLimit ?? DEFAULT_DAILY_LIMIT;
+  // dailyLimit is NOT NULL with a default in the schema, so the scheduler and
+  // the sender are sizing against the same number rather than each picking a
+  // fallback of its own.
   const allowanceLeft = Math.max(
     0,
-    dailyLimit - (sentToday.get(credential.id) ?? 0),
+    credential.dailyLimit - (sentToday.get(credential.id) ?? 0),
   );
 
   return Math.min(sendsInWindow, allowanceLeft);

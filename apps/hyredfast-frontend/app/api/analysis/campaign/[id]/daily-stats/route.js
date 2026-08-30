@@ -32,8 +32,11 @@ export async function GET(request, props) {
       );
     }
 
-    // Aggregate daily stats from campaign_messages and campaign_opens
+    // Aggregate daily stats from campaign_messages and email_opens
     // Using raw SQL for date grouping since Prisma groupBy doesn't support date truncation natively
+    //
+    // Raw SQL, so these are real table and column names rather than Prisma
+    // fields — they have to be updated by hand whenever the schema is renamed.
     const dailyStats = await prisma.$queryRaw`
       WITH msg_stats AS (
         SELECT
@@ -41,18 +44,18 @@ export async function GET(request, props) {
           COUNT(*) FILTER (WHERE cm.sent = true) as sent,
           COUNT(*) FILTER (WHERE cm.sent = false) as replies
         FROM campaign_messages cm
-        JOIN campaigns_email ce ON cm.campaign_email = ce.id
-        WHERE ce.campaign = ${id}
+        JOIN campaign_leads cl ON cm.campaign_lead_id = cl.id
+        WHERE cl.campaign_id = ${id}
         GROUP BY DATE(cm.created)
       ),
       open_stats AS (
         SELECT
-          DATE(co.created) as day,
+          DATE(eo.created) as day,
           COUNT(*) as opens
-        FROM campaign_opens co
-        JOIN campaigns_email ce ON co.campaign_email = ce.id
-        WHERE ce.campaign = ${id}
-        GROUP BY DATE(co.created)
+        FROM email_opens eo
+        JOIN campaign_leads cl ON eo.campaign_lead_id = cl.id
+        WHERE cl.campaign_id = ${id}
+        GROUP BY DATE(eo.created)
       )
       SELECT
         ms.day,

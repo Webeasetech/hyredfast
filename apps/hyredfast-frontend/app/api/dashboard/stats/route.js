@@ -21,7 +21,7 @@ export async function GET(request) {
     // Compute dashboard stats via aggregates
     const [totalContacts, totalCampaigns, emailsSent, responses] =
       await Promise.all([
-        prisma.campaignEmail.count({
+        prisma.campaignLead.count({
           where: { campaign: { userId, deleted: false } },
         }),
         prisma.campaign.count({
@@ -30,13 +30,13 @@ export async function GET(request) {
         prisma.campaignMessage.count({
           where: {
             sent: true,
-            campaignEmail: { campaign: { userId, deleted: false } },
+            campaignLead: { campaign: { userId, deleted: false } },
           },
         }),
         prisma.campaignMessage.count({
           where: {
             sent: false,
-            campaignEmail: { campaign: { userId, deleted: false } },
+            campaignLead: { campaign: { userId, deleted: false } },
           },
         }),
       ]);
@@ -52,18 +52,18 @@ export async function GET(request) {
     const formattedRecentCampaigns = await Promise.all(
       recentCampaigns.map(async (campaign) => {
         const [stagesSum, openedSum] = await Promise.all([
-          prisma.campaignEmail
+          prisma.campaignLead
             .aggregate({
               where: { campaignId: campaign.id },
               _sum: { stage: true },
             })
             .then((r) => r._sum.stage || 0),
-          prisma.campaignEmail
+          prisma.campaignLead
             .aggregate({
               where: { campaignId: campaign.id },
-              _sum: { opened: true },
+              _sum: { openCount: true },
             })
-            .then((r) => r._sum.opened || 0),
+            .then((r) => r._sum.openCount || 0),
         ]);
         return {
           id: campaign.id,
@@ -82,17 +82,17 @@ export async function GET(request) {
       const recentSends = await prisma.campaignMessage.findMany({
         where: {
           sent: true,
-          campaignEmail: { campaign: { userId, deleted: false } },
+          campaignLead: { campaign: { userId, deleted: false } },
         },
         orderBy: { created: "desc" },
         take: 2,
         include: {
-          campaignEmail: { include: { campaign: true } },
+          campaignLead: { include: { campaign: true } },
         },
       });
 
       recentSends.forEach((message) => {
-        const ce = message.campaignEmail;
+        const ce = message.campaignLead;
         activities.push({
           type: "Email sent",
           timestamp: message.created,
@@ -109,19 +109,19 @@ export async function GET(request) {
 
     // 2. Recent email opens
     try {
-      const recentOpens = await prisma.campaignOpen.findMany({
+      const recentOpens = await prisma.emailOpen.findMany({
         where: {
-          campaignEmail: { campaign: { userId, deleted: false } },
+          campaignLead: { campaign: { userId, deleted: false } },
         },
         orderBy: { created: "desc" },
         take: 1,
         include: {
-          campaignEmail: { include: { campaign: true } },
+          campaignLead: { include: { campaign: true } },
         },
       });
 
       recentOpens.forEach((open) => {
-        const ce = open.campaignEmail;
+        const ce = open.campaignLead;
         activities.push({
           type: "Email opened",
           timestamp: open.created,
@@ -141,17 +141,17 @@ export async function GET(request) {
       const recentReplies = await prisma.campaignMessage.findMany({
         where: {
           sent: false,
-          campaignEmail: { campaign: { userId, deleted: false } },
+          campaignLead: { campaign: { userId, deleted: false } },
         },
         orderBy: { created: "desc" },
         take: 2,
         include: {
-          campaignEmail: { include: { campaign: true } },
+          campaignLead: { include: { campaign: true } },
         },
       });
 
       recentReplies.forEach((message) => {
-        const ce = message.campaignEmail;
+        const ce = message.campaignLead;
         activities.push({
           type: "Reply received",
           timestamp: message.created,
@@ -190,10 +190,10 @@ export async function GET(request) {
   }
 }
 
-function formatRecipientDetails(campaignEmail) {
-  if (!campaignEmail) return "Unknown recipient";
-  const name = campaignEmail.name;
-  const email = campaignEmail.email;
+function formatRecipientDetails(campaignLead) {
+  if (!campaignLead) return "Unknown recipient";
+  const name = campaignLead.name;
+  const email = campaignLead.email;
   if (name && email) return `${name} (${email})`;
   if (email) return email;
   if (name) return name;

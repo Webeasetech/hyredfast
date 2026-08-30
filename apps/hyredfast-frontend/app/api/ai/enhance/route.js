@@ -62,11 +62,8 @@ export async function POST(request) {
       ],
     });
 
-    console.log(`[API] Decreasing AI credits for user: ${currUser.userId}`);
-    await prisma.user.update({
-      where: { id: currUser.userId },
-      data: { aiCredits: { decrement: 1 } },
-    });
+    // aiCredits is not metered while the AI features are disabled. The column
+    // stays so the balance survives, and nothing spends it.
 
     const enhancedText = response.choices[0].message.content;
     console.log("[API] Text enhancement completed successfully");

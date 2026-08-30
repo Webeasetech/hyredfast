@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { queueRoutes } from "./routes/queue.routes.js";
@@ -5,8 +6,6 @@ import imapQueue from "./queues/imap.queue.js";
 import { campaignWorker } from "./workers/campaign.worker.js";
 import { batchemailWorker } from "./workers/batchemail.worker.js";
 import { imapWorker } from "./workers/imap.worker.js";
-
-import "dotenv/config";
 import { trackingRoutes } from "./routes/tracking.routes.js";
 import { miscRoutes } from "./routes/misc.routes.js";
 import { imapRoutes } from "./routes/imap.routes.js";

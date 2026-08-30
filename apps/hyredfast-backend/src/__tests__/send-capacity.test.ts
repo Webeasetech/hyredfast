@@ -88,15 +88,28 @@ describe("credentialSendBudget", () => {
     ).toBe(0);
   });
 
-  it("falls back to the sender's default daily limit", () => {
+  // There is no fallback any more: daily_limit is NOT NULL with a default of
+  // 20 in the database, so the scheduler sizes against the same number the
+  // sender enforces. It used to pick its own, and disagreed with the sender's
+  // follow-up path, which used 30.
+  it("sizes against the mailbox's own limit, whatever it is set to", () => {
     expect(
       credentialSendBudget(
-        { id: "cred-1", dailyLimit: null },
+        { id: "cred-1", dailyLimit: 20 },
         at("2026-03-25T06:00:00"),
         "MORNING",
         sentNothing,
       ),
     ).toBe(20);
+
+    expect(
+      credentialSendBudget(
+        { id: "cred-1", dailyLimit: 5 },
+        at("2026-03-25T06:00:00"),
+        "MORNING",
+        sentNothing,
+      ),
+    ).toBe(5);
   });
 
   it("gives nothing once the window has closed", () => {

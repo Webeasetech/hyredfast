@@ -49,17 +49,37 @@ export async function ownsLeadListItem(userId, itemId) {
 /** Lead carries userId directly (the pre-campaign repository). */
 export async function ownsLead(userId, leadId) {
   if (!leadId) return false;
-  const found = await prisma.lead.findFirst({
+  const found = await prisma.savedLead.findFirst({
     where: { id: leadId, userId },
     select: { id: true },
   });
   return !!found;
 }
 
-/** CampaignEmail — a contact inside a campaign. Scoped via its campaign. */
+/** LeadDraft — the composer's staging area. Scoped via its campaign. */
+export async function ownsLeadDraft(userId, draftId) {
+  if (!draftId) return false;
+  const found = await prisma.leadDraft.findFirst({
+    where: { id: draftId, campaign: { userId } },
+    select: { id: true },
+  });
+  return !!found;
+}
+
+/** A single row inside a draft. Scoped via the draft's campaign. */
+export async function ownsLeadDraftRow(userId, rowId) {
+  if (!rowId) return false;
+  const found = await prisma.leadDraftRow.findFirst({
+    where: { id: rowId, draft: { campaign: { userId } } },
+    select: { id: true },
+  });
+  return !!found;
+}
+
+/** CampaignLead — a contact inside a campaign. Scoped via its campaign. */
 export async function ownsContact(userId, contactId) {
   if (!contactId) return false;
-  const found = await prisma.campaignEmail.findFirst({
+  const found = await prisma.campaignLead.findFirst({
     where: { id: contactId, campaign: { userId } },
     select: { id: true },
   });
@@ -77,7 +97,7 @@ export async function ownsCredential(userId, credentialId) {
 
 export async function ownsPitch(userId, pitchId) {
   if (!pitchId) return false;
-  const found = await prisma.pitchEmail.findFirst({
+  const found = await prisma.pitchTemplate.findFirst({
     where: { id: pitchId, campaign: { userId } },
     select: { id: true },
   });

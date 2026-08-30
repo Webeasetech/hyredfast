@@ -17,7 +17,7 @@ import { ACTIVE_LEAD_STATUSES } from "@/lib/constants/lead-status";
 async function leadStatsByCampaign(campaignIds) {
   if (campaignIds.length === 0) return {};
 
-  const groups = await prisma.campaignEmail.groupBy({
+  const groups = await prisma.campaignLead.groupBy({
     by: ["campaignId", "status"],
     where: { campaignId: { in: campaignIds } },
     _count: { _all: true },

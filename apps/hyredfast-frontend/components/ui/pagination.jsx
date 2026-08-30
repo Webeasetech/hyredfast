@@ -34,10 +34,20 @@ function PaginationItem({ ...props }) {
   return <li data-slot="pagination-item" {...props} />;
 }
 
-function PaginationLink({ className, isActive, size = "icon", ...props }) {
+function PaginationLink({
+  className,
+  isActive,
+  size = "icon",
+  disabled,
+  ...props
+}) {
   return (
     <a
       aria-current={isActive ? "page" : undefined}
+      // These are anchors without an href, so `:disabled` never matches and
+      // buttonVariants' disabled styles do nothing. Carry the state on
+      // aria-disabled and style off that instead.
+      aria-disabled={disabled || undefined}
       data-slot="pagination-link"
       data-active={isActive}
       className={cn(
@@ -45,6 +55,7 @@ function PaginationLink({ className, isActive, size = "icon", ...props }) {
           variant: isActive ? "outline" : "ghost",
           size,
         }),
+        "cursor-pointer aria-disabled:pointer-events-none aria-disabled:opacity-50",
         className,
       )}
       {...props}

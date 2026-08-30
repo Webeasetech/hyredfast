@@ -45,7 +45,7 @@ export async function DELETE(request, props) {
 
     // Safe to remove. Clear any leftover join rows from finished/deleted
     // campaigns first (the FK is ON DELETE RESTRICT), then delete the
-    // credential. Sticky-sender references on sent emails (campaigns_email.cred)
+    // credential. Sticky-sender references on sent emails (campaign_leads.credential_id)
     // are ON DELETE SET NULL and clear automatically.
     await prisma.$transaction([
       prisma.campaignEmailCredential.deleteMany({

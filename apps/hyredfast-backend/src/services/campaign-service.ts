@@ -40,7 +40,7 @@ export async function fetchCampaignEmails(
     );
 
     chunkedRequests.push(
-      prisma.campaignEmail.findMany({
+      prisma.campaignLead.findMany({
         where: { id: { in: chunk } },
         include: {
           campaign: {
@@ -92,7 +92,7 @@ export async function fetchPitch(
   );
 
   try {
-    const result = await prisma.pitchEmail.findFirst({
+    const result = await prisma.pitchTemplate.findFirst({
       where: {
         stage: email.stage,
         campaignId: email.campaign?.id,
@@ -147,7 +147,7 @@ export async function updateEmailStatus(email: EmailRecord): Promise<void> {
     });
 
     const writes: any[] = [
-      prisma.campaignEmail.update({
+      prisma.campaignLead.update({
         where: { id: email.id },
         data: {
           status: nextStatus,
@@ -213,7 +213,7 @@ export async function createCampaignMessage(
         text: body,
         pitchId: pitch.id,
         messageId: messageId,
-        campaignEmailId: email.id,
+        campaignLeadId: email.id,
       },
     });
 

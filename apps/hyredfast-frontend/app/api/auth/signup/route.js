@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import prisma from "@/lib/prisma";
-import { FREE_TRIAL_COMPANIES } from "@/lib/constants/plans";
 
 export async function POST(request) {
   const { email, password, name, timezone } = await request.json();
@@ -39,7 +38,6 @@ export async function POST(request) {
         password: hashedPassword,
         name: name || null,
         timezone: timezone || null,
-        companiesTotal: FREE_TRIAL_COMPANIES,
       },
     });
 

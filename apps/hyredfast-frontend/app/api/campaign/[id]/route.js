@@ -61,7 +61,7 @@ export async function PATCH(request, props) {
   if (authResponse) return authResponse;
 
   const {
-    setuped,
+    setupComplete,
     title,
     max_stage_count,
     days_interval,
@@ -89,7 +89,7 @@ export async function PATCH(request, props) {
     }
 
     const data = {};
-    if (setuped !== undefined) data.setuped = setuped;
+    if (setupComplete !== undefined) data.setupComplete = setupComplete;
     if (title !== undefined) data.title = title;
     if (max_stage_count !== undefined) data.maxStageCount = max_stage_count;
     if (days_interval !== undefined) data.daysInterval = days_interval;

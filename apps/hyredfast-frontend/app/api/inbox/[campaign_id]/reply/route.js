@@ -14,38 +14,38 @@ export async function POST(request, props) {
     return notFound("Campaign");
 
   try {
-    const { campaignEmailId, text, messageId } = await request.json();
+    const { campaignLeadId, text, messageId } = await request.json();
 
-    if (!campaignEmailId || !text) {
+    if (!campaignLeadId || !text) {
       return NextResponse.json(
         { message: "Missing required fields" },
         { status: 400 },
       );
     }
 
-    const campaignEmail = await prisma.campaignEmail.findUnique({
-      where: { id: campaignEmailId },
+    const campaignLead = await prisma.campaignLead.findUnique({
+      where: { id: campaignLeadId },
       include: { cred: true },
     });
 
-    if (!campaignEmail) {
+    if (!campaignLead) {
       return NextResponse.json(
         { message: "Campaign email not found" },
         { status: 404 },
       );
     }
 
-    const recipientEmail = campaignEmail.email;
-    const recipientName = campaignEmail.name;
+    const recipientEmail = campaignLead.email;
+    const recipientName = campaignLead.name;
 
-    if (!campaignEmail.cred) {
+    if (!campaignLead.cred) {
       return NextResponse.json(
         { message: "No email credentials found for this contact" },
         { status: 404 },
       );
     }
 
-    const emailCredential = campaignEmail.cred;
+    const emailCredential = campaignLead.cred;
 
     const transporter = nodemailer.createTransport({
       host: emailCredential.host,

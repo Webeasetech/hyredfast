@@ -1,7 +1,7 @@
 /**
- * Lead (CampaignEmail) statuses.
+ * Lead (CampaignLead) statuses.
  *
- * `CampaignEmail.status` is a plain String column, not a Prisma enum, so this
+ * `CampaignLead.status` is a plain String column, not a Prisma enum, so this
  * list is the single source of truth for the values the app writes and filters
  * on. Backend writers: campaign-service.ts (PENDING → RUNNING → COMPLETED,
  * FAILED) and imap.service.ts (REPLIED, BOUNCED).

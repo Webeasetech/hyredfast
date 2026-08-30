@@ -25,7 +25,7 @@ export async function GET(request) {
     const oneMonthAgo = new Date(todayUTC);
     oneMonthAgo.setUTCMonth(oneMonthAgo.getUTCMonth() - 1);
 
-    const records = await prisma.campaignEmail.findMany({
+    const records = await prisma.campaignLead.findMany({
       where: {
         campaignId: campaign,
         created: { gte: oneMonthAgo },

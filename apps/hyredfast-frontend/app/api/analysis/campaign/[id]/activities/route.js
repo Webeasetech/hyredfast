@@ -64,19 +64,19 @@ export async function GET(request, props) {
       const sends = await prisma.campaignMessage.findMany({
         where: {
           sent: true,
-          campaignEmail: { campaignId: id },
+          campaignLead: { campaignId: id },
           created: { gte: dayStart, lte: dayEnd },
         },
         orderBy: { created: "desc" },
         take: 50,
         include: {
-          campaignEmail: true,
+          campaignLead: true,
           pitch: true,
         },
       });
 
       sends.forEach((msg) => {
-        const ce = msg.campaignEmail;
+        const ce = msg.campaignLead;
         const pitch = msg.pitch;
         let subject = "";
         let body = "";
@@ -107,18 +107,18 @@ export async function GET(request, props) {
 
     // 2. Email opens
     try {
-      const opens = await prisma.campaignOpen.findMany({
+      const opens = await prisma.emailOpen.findMany({
         where: {
-          campaignEmail: { campaignId: id },
+          campaignLead: { campaignId: id },
           created: { gte: dayStart, lte: dayEnd },
         },
         orderBy: { created: "desc" },
         take: 50,
-        include: { campaignEmail: true },
+        include: { campaignLead: true },
       });
 
       opens.forEach((open) => {
-        const ce = open.campaignEmail;
+        const ce = open.campaignLead;
         activities.push({
           type: "Email opened",
           timestamp: open.created,
@@ -135,16 +135,16 @@ export async function GET(request, props) {
       const replies = await prisma.campaignMessage.findMany({
         where: {
           sent: false,
-          campaignEmail: { campaignId: id },
+          campaignLead: { campaignId: id },
           created: { gte: dayStart, lte: dayEnd },
         },
         orderBy: { created: "desc" },
         take: 50,
-        include: { campaignEmail: true },
+        include: { campaignLead: true },
       });
 
       replies.forEach((msg) => {
-        const ce = msg.campaignEmail;
+        const ce = msg.campaignLead;
         activities.push({
           type: "Reply received",
           timestamp: msg.created,

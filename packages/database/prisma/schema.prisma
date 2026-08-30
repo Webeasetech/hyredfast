@@ -21,15 +21,18 @@ model User {
   name      String?
   avatar    String?
   timezone  String?
-  // Internal metering. Users buy COMPANIES, never credits — these stay because
-  // the send pipeline still debits `credits` per email.
-  credits   Float?   @default(0)
+  // The billing meter. One credit is one email sent, debited in the same
+  // transaction that advances the lead's stage. This is the ONLY thing that
+  // limits sending — there is no company allowance any more.
+  credits   Int      @default(0)
+  // Retained but inert: nothing decrements it while the AI features are off.
   aiCredits Float?   @default(0) @map("ai_credits")
-  // The billing unit. companiesTotal is granted on payment, companiesUsed is
-  // consumed when a company is added to the workspace.
-  companiesTotal Int @default(0) @map("companies_total")
-  companiesUsed  Int @default(0) @map("companies_used")
-  isSetup   Boolean  @default(false) @map("issetup")
+  // A plan grants a lump of credits and an expiry date. Credits do not refill
+  // monthly — they are spent down, and unspent ones die with the term.
+  planId        String?   @map("plan_id")
+  planStartedAt DateTime? @map("plan_started_at")
+  planExpiresAt DateTime? @map("plan_expires_at")
+  isSetup   Boolean  @default(false) @map("is_setup")
   // Product walkthrough (react-joyride tour) — shown while false, flipped true
   // once the user completes, skips, or closes it, so it never shows again.
   tourCompleted Boolean @default(false) @map("tour_completed")
@@ -44,10 +47,12 @@ model User {
   emailCredentials   EmailCredential[]
   creditTransactions CreditTransaction[]
   leadLists          LeadList[]
-  leads              Lead[]
+  leadDrafts         LeadDraft[]
+  savedLeads         SavedLead[]
   chatMessages       AgentChatMessage[]
   payments           Payment[]
   profile            UserProfile?
+  companies          Company[]
 
   @@map("users")
 }
@@ -61,7 +66,7 @@ model User {
 // onboarded" stay distinguishable.
 model UserProfile {
   id     String @id @default(cuid())
-  userId String @unique @map("user")
+  userId String @unique @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Presets plus anything the user typed themselves, so this stays free-form
@@ -111,14 +116,14 @@ model UserProfile {
 // idempotent: the client callback and the webhook race, and only one wins.
 model Payment {
   id     String @id @default(cuid())
-  userId String @map("user")
+  userId String @map("user_id")
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   razorpayOrderId   String  @unique @map("razorpay_order_id")
   razorpayPaymentId String? @unique @map("razorpay_payment_id")
 
-  planId           String  @map("plan_id") // "starter" | "topup"
-  companiesGranted Int     @map("companies_granted")
+  planId           String  @map("plan_id") // "quarterly" | "topup"
+  creditsGranted   Int     @map("credits_granted")
   amount           Int // paise, GST-inclusive
   currency         String  @default("INR")
   // CREATED | PAID | FAILED | REFUNDED
@@ -142,7 +147,7 @@ model Payment {
 // before any business logic runs.
 model PaymentEvent {
   id        String   @id @default(cuid())
-  paymentId String?  @map("payment")
+  paymentId String?  @map("payment_id")
   payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 
   eventId   String @unique @map("event_id")
@@ -155,42 +160,31 @@ model PaymentEvent {
 }
 
 // ==========================================
-// Assets
-// ==========================================
-model Asset {
-  id      String   @id @default(cuid())
-  name    String?
-  field   String?
-  created DateTime @default(now())
-  updated DateTime @updatedAt
-
-  @@map("assets")
-}
-
-// ==========================================
 // Campaigns
 // ==========================================
 model Campaign {
   id                  String           @id @default(cuid())
   title               String?
-  userId              String?          @map("user")
+  userId              String?          @map("user_id")
   user                User?            @relation(fields: [userId], references: [id])
   maxStageCount       Int?             @map("max_stage_count")
   status              String?          @default("PENDING")
   daysInterval        Int?             @map("days_interval")
-  setuped             Boolean          @default(false)
+  setupComplete       Boolean          @default(false) @map("setup_complete")
   desc                String?          @db.Text
   emailDeliveryPeriod String?          @map("email_delivery_period")
   ignoreVerification  Boolean          @default(false) @map("ignore_verification")
   deleted             Boolean          @default(false)
   dynamicSubject      Boolean          @default(false) @map("dynamic_subject")
-  isTrackingEnabled   Boolean          @default(false)
+  isTrackingEnabled   Boolean          @default(false) @map("is_tracking_enabled")
   activeDays          Json?            @map("active_days")
   created             DateTime         @default(now())
   updated             DateTime         @updatedAt
 
-  campaignEmails               CampaignEmail[]
-  pitches                      PitchEmail[]
+  campaignLeads                CampaignLead[]
+  applications                 JobApplication[]
+  leadDraft                    LeadDraft?
+  pitches                      PitchTemplate[]
   crmStages                    CrmStage[]
   crmActivities                CrmActivity[]
   crmDeals                     CrmDeal[]
@@ -216,7 +210,7 @@ model CampaignEmailCredential {
 // ==========================================
 model EmailCredential {
   id              String    @id @default(cuid())
-  userId          String?   @map("user")
+  userId          String?   @map("user_id")
   user            User?     @relation(fields: [userId], references: [id])
   username        String?
   password        String?
@@ -224,15 +218,18 @@ model EmailCredential {
   port            Int?
   secure          Boolean   @default(false)
   status          String?   @default("Inactive")
-  imapEmail       String?
-  imapPassword    String?
-  imapHost        String?
-  dailyLimit      Int?
-  lastCheckedTime DateTime?
+  imapEmail       String?   @map("imap_email")
+  imapPassword    String?   @map("imap_password")
+  imapHost        String?   @map("imap_host")
+  // Not null with a default, so "how many may this mailbox send today" has one
+  // answer. It used to be nullable, and each reader supplied its own fallback:
+  // the scheduler sized the queue against 20 while a follow-up send allowed 30.
+  dailyLimit      Int       @default(20) @map("daily_limit")
+  lastCheckedTime DateTime? @map("last_checked_time")
   created         DateTime  @default(now())
   updated         DateTime  @updatedAt
 
-  campaignEmails     CampaignEmail[]
+  campaignEmails     CampaignLead[]
   campaignEmailCreds CampaignEmailCredential[]
 
   @@map("email_credentials")
@@ -241,7 +238,7 @@ model EmailCredential {
 // ==========================================
 // Campaign Emails (contacts in a campaign)
 // ==========================================
-model CampaignEmail {
+model CampaignLead {
   id                   String           @id @default(cuid())
   name                 String?
   email                String?
@@ -249,26 +246,32 @@ model CampaignEmail {
   personalization      Json?
   sentAt               DateTime?        @map("sent_at")
   stage                Int?             @default(0)
-  campaignId           String?          @map("campaign")
+  campaignId           String?          @map("campaign_id")
   campaign             Campaign?        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  opened               Int?             @default(0)
+  openCount            Int?             @default(0) @map("open_count")
   verified             String?          @default("PENDING")
   verificationMessage  String?          @map("verification_message") @db.Text
   verificationResponse String?          @map("verification_response") @db.Text
-  credId               String?          @map("cred")
+  credId               String?          @map("credential_id")
   cred                 EmailCredential? @relation(fields: [credId], references: [id])
+  // The company/role this contact was added under. Nullable only so the column
+  // could be added to a live table; every write path sets it.
+  applicationId        String?          @map("application_id")
+  application          JobApplication?     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   created              DateTime         @default(now())
   updated              DateTime         @updatedAt
 
   campaignMessages CampaignMessage[]
-  campaignOpens    CampaignOpen[]
+  emailOpens       EmailOpen[]
   crmDeals         CrmDeal[]
 
   @@index([email])
   // Read on every send and on every scheduler tick to size a mailbox's
   // remaining daily allowance.
   @@index([credId])
-  @@map("campaigns_email")
+  // The leads list reads a page of applications and every contact inside them.
+  @@index([applicationId])
+  @@map("campaign_leads")
 }
 
 // ==========================================
@@ -277,19 +280,19 @@ model CampaignEmail {
 model CampaignMessage {
   id              String         @id @default(cuid())
   text            String?        @db.Text
-  pitchId         String?        @map("pitch")
-  pitch           PitchEmail?    @relation(fields: [pitchId], references: [id])
+  pitchId         String?        @map("pitch_id")
+  pitch           PitchTemplate?    @relation(fields: [pitchId], references: [id])
   sent            Boolean        @default(false)
   messageId       String?        @map("message_id")
-  campaignEmailId String?        @map("campaign_email")
-  campaignEmail   CampaignEmail? @relation(fields: [campaignEmailId], references: [id], onDelete: Cascade)
+  campaignLeadId  String?        @map("campaign_lead_id")
+  campaignLead    CampaignLead? @relation(fields: [campaignLeadId], references: [id], onDelete: Cascade)
   timestamp       DateTime?
   created         DateTime       @default(now())
   updated         DateTime       @updatedAt
 
   // Daily allowance counts sent rows per credential over a rolling day, and
   // reply matching looks a message up by its Message-ID on every inbound mail.
-  @@index([campaignEmailId, sent, created])
+  @@index([campaignLeadId, sent, created])
   @@index([messageId])
   @@map("campaign_messages")
 }
@@ -297,24 +300,27 @@ model CampaignMessage {
 // ==========================================
 // Campaign Opens (tracking)
 // ==========================================
-model CampaignOpen {
+model EmailOpen {
   id              String         @id @default(cuid())
-  campaignEmailId String?        @map("campaign_email")
-  campaignEmail   CampaignEmail? @relation(fields: [campaignEmailId], references: [id])
+  campaignLeadId  String?        @map("campaign_lead_id")
+  // Cascades, like CampaignMessage does. Without it, deleting a lead only set
+  // this column to null and left the open events behind forever — they belong
+  // to nothing and every analytics query has to exclude them.
+  campaignLead    CampaignLead? @relation(fields: [campaignLeadId], references: [id], onDelete: Cascade)
   created         DateTime       @default(now())
   updated         DateTime       @updatedAt
 
-  @@map("campaign_opens")
+  @@map("email_opens")
 }
 
 // ==========================================
 // Pitches (email templates per campaign stage)
 // ==========================================
-model PitchEmail {
+model PitchTemplate {
   id             String    @id @default(cuid())
   title          String?
   subject        String?
-  campaignId     String?   @map("campaign")
+  campaignId     String?   @map("campaign_id")
   campaign       Campaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   stage          Int?
   message        String?   @db.Text
@@ -325,7 +331,7 @@ model PitchEmail {
 
   campaignMessages CampaignMessage[]
 
-  @@map("pitches_email")
+  @@map("pitch_templates")
 }
 
 // ==========================================
@@ -333,7 +339,7 @@ model PitchEmail {
 // ==========================================
 model CreditTransaction {
   id        String    @id @default(cuid())
-  userId    String?   @map("user")
+  userId    String?   @map("user_id")
   user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   amount    Float?
   timestamp DateTime?
@@ -349,15 +355,15 @@ model CreditTransaction {
 // ==========================================
 model CrmActivity {
   id          String    @id @default(cuid())
-  dealId      String?   @map("deal")
+  dealId      String?   @map("deal_id")
   deal        CrmDeal?  @relation(fields: [dealId], references: [id])
-  campaignId  String?   @map("campaign")
+  campaignId  String?   @map("campaign_id")
   campaign    Campaign? @relation(fields: [campaignId], references: [id])
   type        String?
   description String?   @db.Text
-  fromStageId String?   @map("from_stage")
+  fromStageId String?   @map("from_stage_id")
   fromStage   CrmStage? @relation("fromStage", fields: [fromStageId], references: [id])
-  toStageId   String?   @map("to_stage")
+  toStageId   String?   @map("to_stage_id")
   toStage     CrmStage? @relation("toStage", fields: [toStageId], references: [id])
   created     DateTime  @default(now())
   updated     DateTime  @updatedAt
@@ -370,11 +376,11 @@ model CrmActivity {
 // ==========================================
 model CrmDeal {
   id         String         @id @default(cuid())
-  leadId     String?        @map("lead")
-  lead       CampaignEmail? @relation(fields: [leadId], references: [id])
-  campaignId String?        @map("campaign")
+  leadId     String?        @map("campaign_lead_id")
+  lead       CampaignLead? @relation(fields: [leadId], references: [id])
+  campaignId String?        @map("campaign_id")
   campaign   Campaign?      @relation(fields: [campaignId], references: [id])
-  stageId    String?        @map("stage")
+  stageId    String?        @map("stage_id")
   stage      CrmStage?      @relation(fields: [stageId], references: [id])
   created    DateTime       @default(now())
   updated    DateTime       @updatedAt
@@ -390,7 +396,7 @@ model CrmDeal {
 model CrmStage {
   id         String    @id @default(cuid())
   name       String?
-  campaignId String?   @map("campaign")
+  campaignId String?   @map("campaign_id")
   campaign   Campaign? @relation(fields: [campaignId], references: [id])
   order      Int?
   color      String?
@@ -411,7 +417,7 @@ model CrmStage {
 // ==========================================
 model LeadListItem {
   id              String    @id @default(cuid())
-  leadListId      String?   @map("lead_list")
+  leadListId      String?   @map("lead_list_id")
   leadList        LeadList? @relation(fields: [leadListId], references: [id])
   name            String?
   email           String?
@@ -431,7 +437,7 @@ model LeadList {
   id          String   @id @default(cuid())
   name        String?
   description String?  @db.Text
-  userId      String?  @map("user")
+  userId      String?  @map("user_id")
   user        User?    @relation(fields: [userId], references: [id])
   created     DateTime @default(now())
   updated     DateTime @updatedAt
@@ -442,18 +448,140 @@ model LeadList {
 }
 
 // ==========================================
+// Companies and Applications
+// ==========================================
+// The billable hierarchy: User -> Company -> JobApplication -> CampaignLead.
+//
+// Company sits at USER level, not inside a campaign, because the billing unit
+// is the company and a user targeting Bayer from two campaigns has still only
+// picked one employer. Scoping it per campaign would charge them twice for the
+// same decision, and would stop shared company research from ever deduping.
+//
+// JobApplication is the company/role pairing the composer already writes in
+// ("applying at Bayer as Software Engineer"). Roles are free: the quota counts
+// Company rows, so applying to two roles at one employer costs one company.
+//
+// Campaign keeps only what it was ever really for: start, pause and stop of
+// sending. It points at applications rather than owning the leads directly.
+model Company {
+  id     String @id @default(cuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name String
+  // Case- and punctuation-folded `name`, and the uniqueness key. "Bayer",
+  // "bayer" and "Bayer  " are one company and must consume one slot, so the
+  // dedupe cannot be left to whatever the user typed.
+  slug String
+  // Normalised domain, when known. The key shared company research will cache
+  // on, since research is about the employer and not about the user.
+  domain String?
+
+  applications JobApplication[]
+
+  // The dedupe that makes the quota honest.
+  @@unique([userId, slug])
+  @@index([userId])
+  @@map("companies")
+}
+
+model JobApplication {
+  id        String  @id @default(cuid())
+  companyId String  @map("company_id")
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  role String?
+  // Folded `role`, unique within the company. Null role folds to "" so a
+  // company can hold exactly one role-less application rather than an
+  // unbounded pile of them.
+  roleSlug String @map("role_slug")
+
+  // Which campaign sends for this application. Required: an application only
+  // means anything as something a campaign sends for, and the composer always
+  // commits into one.
+  campaignId String   @map("campaign_id")
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  contacts CampaignLead[]
+
+  created DateTime @default(now())
+  updated DateTime @updatedAt
+
+  // Scoped to the campaign, so two campaigns may both work Bayer as Software
+  // Engineer. Billing is unaffected: the quota counts Company rows, and both
+  // point at the same one.
+  @@unique([companyId, roleSlug, campaignId])
+  @@index([campaignId])
+  @@map("job_applications")
+}
+
+// ==========================================
+// Lead Drafts
+// ==========================================
+// The composer's staging area. Rows here are deliberately allowed to be
+// invalid — half-typed names, blank emails, columns not filled in yet — because
+// a draft that refuses to save what you typed loses your work on close, which
+// is the whole thing it exists to prevent.
+//
+// They are kept out of CampaignLead rather than living there behind a
+// status flag: that table is read by the send workers, the rolling daily
+// allowance query, analytics and the CRM, and every one of those would need a
+// "not a draft" guard forever, including queries written later by someone who
+// never heard the rule. A miss there means mailing a prospect an unrendered
+// template. Commit is the single gate where validation runs.
+//
+// There is deliberately no column set stored here. The grid's columns are the
+// variables the campaign's pitches reference, derived on every read — storing a
+// copy would go stale the moment someone edits a template.
+model LeadDraft {
+  id         String   @id @default(cuid())
+  campaignId String   @unique @map("campaign_id")
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  userId     String?  @map("user_id")
+  user       User?    @relation(fields: [userId], references: [id])
+  created    DateTime @default(now())
+  updated    DateTime @updatedAt
+
+  rows LeadDraftRow[]
+
+  @@map("lead_drafts")
+}
+
+
+model LeadDraftRow {
+  id       String    @id @default(cuid())
+  draftId  String    @map("draft_id")
+  draft    LeadDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  // Explicit, so a debounced save never reshuffles the grid under the cursor.
+  position Int       @default(0)
+  name     String?
+  email    String?
+  // Everything past name/email, mirroring CampaignLead.personalization so
+  // commit is a straight copy. Company and role live in here too — they are
+  // stated once per group in the UI and written onto every row in it, so the
+  // stored shape of a row is unchanged and no endpoint has to know about groups.
+  personalization Json?
+  created  DateTime @default(now())
+  updated  DateTime @updatedAt
+
+  // The grid always reads a whole draft in display order.
+  @@index([draftId, position])
+  @@map("lead_draft_rows")
+}
+
+// ==========================================
 // Leads
 // ==========================================
-model Lead {
+model SavedLead {
   id      String   @id @default(cuid())
-  userId  String?  @map("user")
+  userId  String?  @map("user_id")
   user    User?    @relation(fields: [userId], references: [id])
   website String?
   data    Json?
   created DateTime @default(now())
   updated DateTime @updatedAt
 
-  @@map("leads")
+  @@map("saved_leads")
 }
 
 
@@ -464,7 +592,7 @@ model TemplateCampaignPitch {
   id                 String            @id @default(cuid())
   title              String?
   subject            String?
-  campaignTemplateId String?           @map("campaign_template")
+  campaignTemplateId String?           @map("campaign_template_id")
   campaignTemplate   TemplateCampaign? @relation(fields: [campaignTemplateId], references: [id])
   stage              Int?
   message            String?           @db.Text
@@ -511,9 +639,9 @@ model AgentChatMessage {
 }
 
 // ==========================================
-// Waitlist
+// WaitlistSignup
 // ==========================================
-model Waitlist {
+model WaitlistSignup {
   id       String   @id @default(cuid())
   username String?
   email    String
@@ -523,6 +651,6 @@ model Waitlist {
   updated  DateTime @updatedAt
 
   @@index([email])
-  @@map("waitlist")
+  @@map("waitlist_signups")
 }
 

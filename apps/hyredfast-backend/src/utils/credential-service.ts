@@ -13,23 +13,23 @@ export const emailTransporters = new Map<string, nodemailer.Transporter>();
 
 /**
  * Extracts unique email credentials from campaign emails.
- * @param campaignEmails - List of campaign email objects.
+ * @param campaignLeads - List of campaign email objects.
  * @returns Unique email credentials.
  */
 export function extractUniqueCredentials(
-  campaignEmails: any[],
+  campaignLeads: any[],
 ): CredentialRecord[] {
   const txId = uuidv4().substring(0, 8);
   log(
     "INFO",
-    `Extracting unique credentials from ${campaignEmails.length} emails`,
+    `Extracting unique credentials from ${campaignLeads.length} emails`,
     txId,
   );
 
   const credentialsMap = new Map<string, CredentialRecord>();
   let totalCredentialsFound = 0;
 
-  campaignEmails.forEach((email: any) => {
+  campaignLeads.forEach((email: any) => {
     const creds = email.campaign?.campaignEmailCredentials;
     if (creds && Array.isArray(creds)) {
       creds.forEach((cec: any) => {

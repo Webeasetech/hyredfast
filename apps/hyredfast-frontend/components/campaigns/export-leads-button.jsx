@@ -22,7 +22,7 @@ function downloadCSV(leads, campaignId) {
     lead.email,
     lead.status,
     lead.stage || 0,
-    lead.opened ? "Yes" : "No",
+    lead.openCount ? "Yes" : "No",
     lead.sentAt
       ? DateTime.fromISO(lead.sentAt).toFormat("dd LLL yyyy, h:mm a")
       : "",
