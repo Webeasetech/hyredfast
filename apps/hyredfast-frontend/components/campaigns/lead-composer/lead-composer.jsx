@@ -17,7 +17,8 @@ import {
   BASE_COLUMNS,
   classifyRow,
   groupRows,
-  isBlankRow,
+  isGroupComplete,
+  isRowFilled,
   normaliseEmail,
   seedColumns,
   displayColumns,
@@ -391,9 +392,14 @@ export default function LeadComposer({ campaignId, onCommitted }) {
     }
   }, [draftId, flush, onCommitted]);
 
-  // Every group keeps one empty row at the bottom, the way a spreadsheet does:
-  // type into the last row and another appears beneath it. Covers pasting too,
-  // so there is always somewhere to carry on typing.
+  // A group grows an empty row at the bottom the way a spreadsheet does: finish
+  // the last row and another appears beneath it. Covers pasting too, so there is
+  // always somewhere to carry on typing.
+  //
+  // "Finish" means every field a lead needs — name, email, the group's company
+  // and role, and any variable the templates ask for. Offering the next row
+  // before then invites a screen of half-filled leads, none of which can be
+  // committed.
   const reshaping = useRef(false);
   const appendBudget = useRef(0);
   useEffect(() => {
@@ -401,7 +407,8 @@ export default function LeadComposer({ campaignId, onCommitted }) {
 
     const needsRow = groups.find(
       (g) =>
-        g.rows.length === 0 || !isBlankRow(g.rows[g.rows.length - 1], columns),
+        g.rows.length === 0 ||
+        (isGroupComplete(g) && isRowFilled(g.rows[g.rows.length - 1], columns)),
     );
     if (!needsRow) {
       appendBudget.current = 0; // settled — restore the allowance

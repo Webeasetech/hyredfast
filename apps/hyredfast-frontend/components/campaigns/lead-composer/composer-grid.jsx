@@ -75,6 +75,9 @@ export default function ComposerGrid({
   onCellEdit,
   onDeleteRow,
   onPaste,
+  /** Called with a fixed column's name when its cell is clicked, so the group
+      header's matching field can take focus. The value lives there, not here. */
+  onFixedFocus,
 }) {
   // Checkbox, row number, one column per field, delete. No gap and no padding:
   // the gridlines are each cell's own border, the way a sheet draws them.
@@ -154,17 +157,24 @@ export default function ComposerGrid({
                 // Mirrors the group header, and follows it as it changes.
                 if (col in fixedValues) {
                   const shown = fixedValues[col];
+                  // Reads as a cell, behaves as a shortcut: clicking where the
+                  // value is sends the caret to where it is edited, rather than
+                  // leaving a dead cell and no hint of where the value comes from.
                   return (
-                    <span
+                    <button
                       key={col}
+                      type="button"
                       title={shown || undefined}
+                      aria-label={`Edit ${col} for these leads`}
+                      onClick={() => onFixedFocus?.(col)}
                       className={cn(
-                        "flex h-8 items-center truncate border-r border-border px-2 text-sm",
+                        "flex h-8 w-full min-w-0 items-center border-r border-border px-2 text-left text-sm",
+                        "hover:bg-muted/60 focus:outline-2 focus:-outline-offset-2 focus:outline-primary",
                         shown ? "text-muted-foreground" : "text-muted-foreground/40",
                       )}
                     >
-                      {shown || `no ${col} yet`}
-                    </span>
+                      <span className="truncate">{shown || `no ${col} yet`}</span>
+                    </button>
                   );
                 }
 

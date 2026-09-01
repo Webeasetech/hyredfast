@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import ComposerGrid from "@/components/campaigns/lead-composer/composer-grid";
-import { isGroupComplete } from "@/lib/lead-draft";
+import { isBlankRow, isGroupComplete } from "@/lib/lead-draft";
 
 /**
  * A blank to fill in, sitting inside a sentence.
@@ -17,7 +17,7 @@ import { isGroupComplete } from "@/lib/lead-draft";
  * The value is held locally while focused so a save landing mid-keystroke can't
  * move the cursor.
  */
-function InlineField({ value, placeholder, label, onCommit }) {
+function InlineField({ value, placeholder, label, onCommit, inputRef }) {
   const [draft, setDraft] = useState(value ?? "");
   const focused = useRef(false);
 
@@ -27,6 +27,7 @@ function InlineField({ value, placeholder, label, onCommit }) {
 
   return (
     <Input
+      ref={inputRef}
       value={draft}
       placeholder={placeholder}
       aria-label={label}
@@ -82,6 +83,20 @@ export default function LeadGroup({
   onFieldCommit,
 }) {
   const complete = isGroupComplete(group);
+  const fieldRefs = useRef({});
+
+  // The company and role columns are read-only per row because the value is the
+  // group's. Clicking one is still the obvious way to reach for it, so send the
+  // caret to the header field that owns it instead of doing nothing.
+  const focusField = (field) => {
+    const input = fieldRefs.current[field];
+    if (!input) return;
+    input.focus();
+    input.select();
+  };
+
+  // The trailing empty row is somewhere to type, not a lead.
+  const leadCount = group.rows.filter((r) => !isBlankRow(r, columns)).length;
 
   return (
     <section
@@ -109,6 +124,9 @@ export default function LeadGroup({
           <span>I&apos;m looking to apply at</span>
           <InlineField
             label="Company"
+            inputRef={(el) => {
+              fieldRefs.current.company = el;
+            }}
             value={group.company}
             placeholder="company"
             onCommit={(v) => onFieldCommit(group, "company", v)}
@@ -116,6 +134,9 @@ export default function LeadGroup({
           <span>as</span>
           <InlineField
             label="Role"
+            inputRef={(el) => {
+              fieldRefs.current.role = el;
+            }}
             value={group.role}
             placeholder="role"
             onCommit={(v) => onFieldCommit(group, "role", v)}
@@ -127,7 +148,7 @@ export default function LeadGroup({
               its rows with the header checkbox and using the bulk action, so
               there is one way to delete rather than two. */}
           <span className={cn("text-xs", color.muted)}>
-            {group.rows.length} lead{group.rows.length === 1 ? "" : "s"}
+            {leadCount} lead{leadCount === 1 ? "" : "s"}
           </span>
         </div>
       </div>
@@ -154,6 +175,7 @@ export default function LeadGroup({
         onCellEdit={onCellEdit}
         onDeleteRow={onDeleteRow}
         onPaste={(e) => onPaste(group, e)}
+        onFixedFocus={focusField}
       />
     </section>
   );

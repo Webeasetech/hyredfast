@@ -148,6 +148,23 @@ export function isBlankRow(row, columns = BASE_COLUMNS) {
 }
 
 /**
+ * True when a row has something in every column a user can type into.
+ *
+ * Narrower than `classifyRow`: it asks nothing about validity or duplicates,
+ * only whether the row still has a blank in it. It gates the trailing empty
+ * row — a half-typed lead should be finished before the grid offers somewhere
+ * to start the next one. Company and role are excluded because they are the
+ * group's, not the row's; the composer checks those with `isGroupComplete`.
+ */
+export function isRowFilled(row, columns = BASE_COLUMNS) {
+  if (!row?.name?.trim()) return false;
+  if (!row?.email?.trim()) return false;
+  return columns
+    .filter((c) => !BASE_COLUMNS.includes(c) && !GROUP_FIELDS.includes(c))
+    .every((c) => String(row?.personalization?.[c] ?? "").trim());
+}
+
+/**
  * Classify one row.
  *
  * `seen` is a Set of already-claimed emails, mutated as you walk the rows, so a
