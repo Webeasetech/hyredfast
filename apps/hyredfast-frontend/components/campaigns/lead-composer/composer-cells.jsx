@@ -13,8 +13,12 @@ import { REQUIRED_FIELDS } from "@/lib/lead-draft";
  * layout: which columns, in which order, in which rows.
  */
 
-/** A cell in an error state: outlined red, tinted, and carrying its reason. */
-const errorClasses = "bg-red-50 outline-1 -outline-offset-1 outline-red-500";
+/**
+ * A cell in an error state: tinted and red-lettered, carrying its reason as a
+ * title. No outline of its own — the gridlines are the only borders here, and a
+ * box drawn inside one cell reads as a wider column than its neighbours.
+ */
+const errorClasses = "bg-red-50 text-red-700";
 
 /**
  * One editable cell. Commits on blur and Enter, reverts on Escape.
@@ -66,7 +70,7 @@ export function EditableCell({ value, placeholder, onCommit, onEdit, error }) {
         "outline-none placeholder:text-muted-foreground/50",
         // Inset, so the active cell's outline never clips against a neighbour.
         "focus:bg-white focus:outline-2 focus:-outline-offset-2 focus:outline-primary",
-        error && `${errorClasses} text-red-900 placeholder:text-red-400`,
+        error && `${errorClasses} placeholder:text-red-400`,
       )}
     />
   );
@@ -93,7 +97,7 @@ export function FixedCell({ column, value, error, onFocusField }) {
         "flex h-8 w-full min-w-0 items-center border-r border-border px-2 text-left text-sm",
         "hover:bg-muted/60 focus:outline-2 focus:-outline-offset-2 focus:outline-primary",
         error
-          ? `${errorClasses} text-red-700`
+          ? errorClasses
           : value
             ? "text-muted-foreground"
             : "text-muted-foreground/40",
