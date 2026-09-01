@@ -53,9 +53,14 @@ function extractVariablesFromPitches(pitches) {
   return [...vars].filter((v) => !builtIn.has(v));
 }
 
+// The four a lead cannot go out without. Company and role are what place the
+// contact under a job application; the server rejects a lead missing any of
+// them, so asking here is what keeps that rejection from being a surprise.
 const leadSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address"),
+  name: z.string().trim().min(1, "Name is required"),
+  email: z.string().trim().email("Invalid email address"),
+  company: z.string().trim().min(1, "Company is required"),
+  role: z.string().trim().min(1, "Role is required"),
 });
 
 const VERIFY_RESULT_CONFIG = {
@@ -109,6 +114,8 @@ const AddLeadDialog = ({ open = false, setOpen, campaign, onSuccess }) => {
   const [leadData, setLeadData] = useState({
     name: "",
     email: "",
+    company: "",
+    role: "",
   });
   const [formError, setFormError] = useState(null);
   const [showPersonalization, setShowPersonalization] = useState(false);
@@ -183,8 +190,6 @@ const AddLeadDialog = ({ open = false, setOpen, campaign, onSuccess }) => {
     [suggestedVariables, personalization],
   );
 
-  console.log(pitchesData);
-
   const { trigger, isMutating } = useSWRMutation("/api/contacts/import", post, {
     onSuccess: () => {
       const addedEmail = leadData.email;
@@ -193,8 +198,10 @@ const AddLeadDialog = ({ open = false, setOpen, campaign, onSuccess }) => {
       toast.success("Lead added successfully");
       onSuccess?.({ email: addedEmail });
     },
-    onError: () => {
-      toast.error("Error adding lead");
+    onError: (error) => {
+      // The route rejects a lead missing one of the four with a message naming
+      // which one; showing "Error adding lead" instead would hide the fix.
+      toast.error(error?.response?.data?.message || "Error adding lead");
     },
   });
 
@@ -213,19 +220,22 @@ const AddLeadDialog = ({ open = false, setOpen, campaign, onSuccess }) => {
       leadSchema.parse(leadData);
       setFormError(null);
 
-      // Add the lead
+      // Company and role travel in personalization: that is where every read
+      // path looks for them, and what {{company}} and {{role}} render from.
+      const { name, email, company, role } = leadData;
       await trigger({
         contacts: [
           {
-            ...leadData,
-            personalization: personalization,
+            name,
+            email,
+            personalization: { ...personalization, company, role },
           },
         ],
         campaign,
       });
 
       // Reset form
-      setLeadData({ name: "", email: "" });
+      setLeadData({ name: "", email: "", company: "", role: "" });
       setPersonalization({});
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -343,6 +353,34 @@ const AddLeadDialog = ({ open = false, setOpen, campaign, onSuccess }) => {
                           </Button>
                         );
                       })()}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="company">Company</Label>
+                    <Input
+                      id="company"
+                      name="company"
+                      placeholder="Google"
+                      value={leadData.company}
+                      onChange={handleInputChange}
+                      required
+                      className="border-border"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Input
+                      id="role"
+                      name="role"
+                      placeholder="Software Engineer"
+                      value={leadData.role}
+                      onChange={handleInputChange}
+                      required
+                      className="border-border"
+                    />
                   </div>
                 </div>
 

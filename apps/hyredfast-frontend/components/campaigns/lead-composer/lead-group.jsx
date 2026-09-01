@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import ComposerGrid from "@/components/campaigns/lead-composer/composer-grid";
@@ -17,7 +16,7 @@ import { isBlankRow, isGroupComplete } from "@/lib/lead-draft";
  * The value is held locally while focused so a save landing mid-keystroke can't
  * move the cursor.
  */
-function InlineField({ value, placeholder, label, onCommit, inputRef }) {
+function InlineField({ value, placeholder, label, error, onCommit, inputRef }) {
   const [draft, setDraft] = useState(value ?? "");
   const focused = useRef(false);
 
@@ -31,6 +30,8 @@ function InlineField({ value, placeholder, label, onCommit, inputRef }) {
       value={draft}
       placeholder={placeholder}
       aria-label={label}
+      aria-invalid={error ? true : undefined}
+      title={error || undefined}
       // +1 so the caret has somewhere to sit past the last character.
       size={Math.max(placeholder.length, draft.length) + 1}
       onFocus={() => {
@@ -53,15 +54,16 @@ function InlineField({ value, placeholder, label, onCommit, inputRef }) {
         "h-8 w-auto max-w-full bg-white px-2 py-1 text-sm font-medium",
         "placeholder:font-normal",
         // An unfilled blank is outlined amber, so the gap in the sentence shows
-        // before anyone reads the warning underneath it.
-        !draft.trim() && "border-amber-400",
+        // before anyone reads the warning underneath it. Once a submit has
+        // reported it, the same blank is an error rather than a heads-up.
+        error ? "border-red-500 bg-red-50" : !draft.trim() && "border-amber-400",
       )}
     />
   );
 }
 
 /**
- * One company/role pairing and its leads.
+ * One job application: a company, a role, and the leads written to about it.
  *
  * Presented as an accordion item but never collapses: the leads are the point
  * of the screen, and hiding them behind a toggle would put a click between the
@@ -73,6 +75,7 @@ export default function LeadGroup({
   color,
   columns,
   states,
+  errors,
   selected,
   onToggleRow,
   onToggleAll,
@@ -93,6 +96,16 @@ export default function LeadGroup({
     if (!input) return;
     input.focus();
     input.select();
+  };
+
+  // A missing group field is reported on every row it spoils, so the header
+  // only needs the first one it finds.
+  const fieldError = (field) => {
+    for (const row of group.rows) {
+      const message = errors?.[row.id]?.[field];
+      if (message) return message;
+    }
+    return null;
   };
 
   // The trailing empty row is somewhere to type, not a lead.
@@ -129,6 +142,7 @@ export default function LeadGroup({
             }}
             value={group.company}
             placeholder="company"
+            error={fieldError("company")}
             onCommit={(v) => onFieldCommit(group, "company", v)}
           />
           <span>as</span>
@@ -139,6 +153,7 @@ export default function LeadGroup({
             }}
             value={group.role}
             placeholder="role"
+            error={fieldError("role")}
             onCommit={(v) => onFieldCommit(group, "role", v)}
           />
         </p>
@@ -168,6 +183,7 @@ export default function LeadGroup({
         // them the moment either field is committed.
         fixedValues={{ company: group.company, role: group.role }}
         states={states}
+        errors={errors}
         selected={selected}
         onToggleRow={onToggleRow}
         onToggleAll={(checked) => onToggleAll(group, checked)}
@@ -175,7 +191,7 @@ export default function LeadGroup({
         onCellEdit={onCellEdit}
         onDeleteRow={onDeleteRow}
         onPaste={(e) => onPaste(group, e)}
-        onFixedFocus={focusField}
+        onFocusField={focusField}
       />
     </section>
   );

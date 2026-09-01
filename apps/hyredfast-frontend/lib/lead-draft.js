@@ -150,7 +150,7 @@ export function isBlankRow(row, columns = BASE_COLUMNS) {
 /**
  * True when a row identifies a person: a name and an email.
  *
- * Narrower than `classifyRow`: it asks nothing about validity, duplicates, or
+ * Narrower than `rowErrors`: it asks nothing about validity, duplicates, or
  * the variables a template happens to want. It gates the trailing empty row —
  * who the lead is should be down before the grid offers somewhere to start the
  * next one, and the rest can be filled in any order after that. Company and
@@ -162,32 +162,101 @@ export function isRowFilled(row) {
 }
 
 /**
- * Classify one row.
+ * The four fields a lead cannot exist without, marked with an asterisk in the
+ * grid header. Two are the row's and two are its group's, but a lead is only a
+ * lead once it has all four: who to write to, and what they are being written
+ * to about.
+ */
+export const REQUIRED_FIELDS = [...BASE_COLUMNS, ...GROUP_FIELDS];
+
+export const FIELD_LABELS = {
+  name: "Name",
+  email: "Email",
+  company: "Company",
+  role: "Role",
+};
+
+/**
+ * Every problem with one row, keyed by the column it belongs to.
+ *
+ * Returns `{ [column]: { code, message } }` — empty when the row is good to
+ * commit. Keying by column is what lets the grid put each message on the cell
+ * that caused it instead of reporting "this row is wrong" and leaving the user
+ * hunting; the codes let callers group and count without matching on prose.
+ *
+ * Codes:
+ *   required  — one of the four, left empty
+ *   invalid   — filled in, but not a usable value
+ *   duplicate — this address is already spoken for
+ *   template  — a variable the campaign's pitches reference, left empty
  *
  * `seen` is a Set of already-claimed emails, mutated as you walk the rows, so a
  * duplicate marks the *second* occurrence rather than both. Seed it with the
  * campaign's existing contacts and the same pass also catches re-adding someone
- * who is already in the campaign — which today's CSV import never did, so
- * overlapping imports quietly created doubles.
+ * who is already in the campaign — which the CSV import this replaced never
+ * did, so overlapping imports quietly created doubles.
  *
- * Returns one of: blank | incomplete | invalid | duplicate | ready
+ * `group` carries company and role: they are stated once per group, so a row
+ * cannot answer for them on its own. Passing no group therefore reports both as
+ * missing, which is the safe direction for a caller that forgets.
  */
-export function classifyRow(row, { columns = BASE_COLUMNS, seen } = {}) {
-  if (isBlankRow(row, columns)) return "blank";
+export function rowErrors(row, { columns = BASE_COLUMNS, group, seen } = {}) {
+  const errors = {};
+  const required = (field) => ({
+    code: "required",
+    message: `${FIELD_LABELS[field]} is required`,
+  });
+
+  if (!String(row?.name ?? "").trim()) errors.name = required("name");
 
   const email = normaliseEmail(row?.email);
-  if (!email) return "incomplete";
-  if (!isValidEmail(email)) return "invalid";
-  if (seen?.has(email)) return "duplicate";
+  if (!email) {
+    errors.email = required("email");
+  } else if (!isValidEmail(email)) {
+    errors.email = {
+      code: "invalid",
+      message: "That doesn't look like an email address",
+    };
+  } else if (seen?.has(email)) {
+    errors.email = {
+      code: "duplicate",
+      message: "This address is already in the campaign",
+    };
+  }
 
-  // Every column the templates asked for has to be filled, or the lead goes out
-  // with a visible {{placeholder}} in the body.
-  const missing = columns
-    .filter((c) => !BASE_COLUMNS.includes(c))
-    .some((c) => !String(row?.personalization?.[c] ?? "").trim());
-  if (missing) return "incomplete";
+  for (const field of GROUP_FIELDS) {
+    if (!String(group?.[field] ?? "").trim()) errors[field] = required(field);
+  }
 
-  return "ready";
+  // Not one of the four, but still not optional: the pitches reference it, so
+  // leaving it empty sends an email with a gap where personal text should be.
+  for (const col of columns) {
+    if (BASE_COLUMNS.includes(col) || GROUP_FIELDS.includes(col)) continue;
+    if (!String(row?.personalization?.[col] ?? "").trim()) {
+      errors[col] = {
+        code: "template",
+        message: `Your emails use {{${col}}}, so this can't be empty`,
+      };
+    }
+  }
+
+  return errors;
+}
+
+export function hasErrors(errors) {
+  return Object.keys(errors || {}).length > 0;
+}
+
+/**
+ * Name one row's worst problem: incomplete | invalid | duplicate | ready.
+ *
+ * A summary of `rowErrors`, not a second opinion — everything deciding whether
+ * a lead may be committed lives in one place, and this only picks the label.
+ */
+export function stateFromErrors(errors) {
+  if (errors?.email?.code === "duplicate") return "duplicate";
+  if (errors?.email?.code === "invalid") return "invalid";
+  return hasErrors(errors) ? "incomplete" : "ready";
 }
 
 export const STATE_LABELS = {

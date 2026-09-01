@@ -15,15 +15,20 @@ import { cn } from "@/lib/utils";
 import { groupColor } from "@/lib/group-colors";
 import {
   BASE_COLUMNS,
-  classifyRow,
   groupRows,
+  isBlankRow,
   isGroupComplete,
   isRowFilled,
   normaliseEmail,
+  rowErrors,
   seedColumns,
+  stateFromErrors,
   displayColumns,
   editableColumns,
 } from "@/lib/lead-draft";
+
+/** Stable identity, so groups don't re-render while no errors are shown. */
+const NO_ERRORS = {};
 
 const SAVE_LABELS = {
   idle: "All changes saved",
@@ -74,6 +79,9 @@ export default function LeadComposer({ campaignId, onCommitted }) {
   const [draftId, setDraftId] = useState(null);
   const [committing, setCommitting] = useState(false);
   const [selected, setSelected] = useState(() => new Set());
+  // Errors are held back until the user asks to add the leads. Narrating every
+  // gap in a row being typed would flag a lead as broken before it is finished.
+  const [showErrors, setShowErrors] = useState(false);
 
   const { data: draft, isLoading } = useSWR(
     campaignId ? `/api/lead-drafts?campaign=${campaignId}` : null,
@@ -143,23 +151,56 @@ export default function LeadComposer({ campaignId, onCommitted }) {
     [contacts],
   );
 
-  // Walked across every group, not per group: two companies can't both claim
-  // the same address, and a duplicate marks the second occurrence, not both.
-  const { states, readyCount } = useMemo(() => {
+  /**
+   * Validate the whole draft in one pass.
+   *
+   * Walked across every group rather than per group: two companies can't both
+   * claim the same address, and a duplicate marks the second occurrence, not
+   * both. Company and role come from the row's group, since a row cannot answer
+   * for them alone.
+   *
+   * `leadCount` is what the submit button offers to add — every row someone has
+   * typed into, sound or not. The button never disables on validation, so the
+   * count has to mean "these are the leads", not "these are the good ones".
+   */
+  const { states, errors, leadCount, brokenCount, problems } = useMemo(() => {
     const seen = new Set(existingEmails);
-    const result = {};
-    let ready = 0;
+    const states = {};
+    const errors = {};
+    const problems = [];
+    let leadCount = 0;
+    let brokenCount = 0;
+
     for (const group of groups) {
       for (const row of group.rows) {
-        const state = classifyRow(row, { columns, seen });
-        result[row.id] = state;
+        if (isBlankRow(row, columns)) {
+          states[row.id] = "blank";
+          continue;
+        }
+        leadCount += 1;
+
+        const found = rowErrors(row, { columns, group, seen });
+        const state = stateFromErrors(found);
+        states[row.id] = state;
+
         if (state === "ready") {
           seen.add(normaliseEmail(row.email));
-          ready += 1;
+          continue;
         }
+
+        brokenCount += 1;
+        // The grid wants a message per cell; the summary wants each distinct
+        // reason once, however many rows share it.
+        errors[row.id] = Object.fromEntries(
+          Object.entries(found).map(([col, error]) => {
+            if (!problems.includes(error.message)) problems.push(error.message);
+            return [col, error.message];
+          }),
+        );
       }
     }
-    return { states: result, readyCount: ready };
+
+    return { states, errors, leadCount, brokenCount, problems };
   }, [groups, columns, existingEmails]);
 
   const applyCell = useCallback((rowId, col, value) => {
@@ -360,8 +401,37 @@ export default function LeadComposer({ campaignId, onCommitted }) {
     [pasteColumns, addRows],
   );
 
+  /**
+   * Add the leads, or say what is stopping them.
+   *
+   * The button is never disabled on validation — a disabled control with no
+   * stated reason leaves the user guessing which cell is at fault. Pressing it
+   * is what asks the question, and the answer is a message plus the offending
+   * cells turning red.
+   */
   const handleCommit = useCallback(async () => {
     flush(); // land in-flight edits before the server reads the rows
+
+    if (leadCount === 0) {
+      toast.error("Nothing to add yet", {
+        description: "Fill in a row, then add it to the campaign.",
+      });
+      return;
+    }
+
+    if (brokenCount > 0) {
+      setShowErrors(true);
+      toast.error(
+        `${brokenCount} lead${brokenCount === 1 ? "" : "s"} can't be added yet`,
+        {
+          description:
+            problems.slice(0, 2).join(". ") +
+            (problems.length > 2 ? ". Check the highlighted cells." : "."),
+        },
+      );
+      return;
+    }
+
     setCommitting(true);
     try {
       const { committed, skipped } = await instance.post(
@@ -374,6 +444,8 @@ export default function LeadComposer({ campaignId, onCommitted }) {
         });
         return;
       }
+
+      setShowErrors(false);
 
       toast.success(
         `Added ${committed} lead${committed === 1 ? "" : "s"} to the campaign`,
@@ -390,7 +462,7 @@ export default function LeadComposer({ campaignId, onCommitted }) {
     } finally {
       setCommitting(false);
     }
-  }, [draftId, flush, onCommitted]);
+  }, [draftId, flush, onCommitted, leadCount, brokenCount, problems]);
 
   // A group grows an empty row at the bottom the way a spreadsheet does: finish
   // the last row and another appears beneath it. Covers pasting too, so there is
@@ -505,6 +577,7 @@ export default function LeadComposer({ campaignId, onCommitted }) {
                 color={groupColor(index)}
                 columns={gridColumns}
                 states={states}
+                errors={showErrors ? errors : NO_ERRORS}
                 selected={selected}
                 onToggleRow={toggleRow}
                 onToggleAll={toggleAllInGroup}
@@ -542,14 +615,11 @@ export default function LeadComposer({ campaignId, onCommitted }) {
           )}
         </div>
 
-        <Button
-          size="lg"
-          onClick={handleCommit}
-          disabled={readyCount === 0 || committing}
-        >
+        {/* Disabled only while the request is in flight, never on validation. */}
+        <Button size="lg" onClick={handleCommit} disabled={committing}>
           {committing
             ? "Adding…"
-            : `Add ${readyCount} lead${readyCount === 1 ? "" : "s"} to campaign`}
+            : `Add ${leadCount} lead${leadCount === 1 ? "" : "s"} to campaign`}
         </Button>
       </div>
     </div>

@@ -1,66 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2Icon } from "mage-icons-react/bulk";
 import { cn } from "@/lib/utils";
 import { BASE_COLUMNS, STATE_LABELS } from "@/lib/lead-draft";
+import {
+  EditableCell,
+  FixedCell,
+  HeaderCell,
+} from "@/components/campaigns/lead-composer/composer-cells";
 
 /**
- * One cell. Commits on blur and Enter, reverts on Escape.
+ * The grid for one group's leads.
  *
- * A bare input rather than the Input component: that one is form chrome —
- * rounded, shadowed, ring on focus — and a spreadsheet cell wants the opposite.
- * This fills its cell edge to edge, the gridline is its own right border, and
- * focus draws an inset outline the way a sheet marks the active cell.
- *
- * The value is held locally while focused so a debounced save landing
- * mid-keystroke can't yank the text out from under the cursor.
+ * Layout only: which columns, in which order, in which rows. What a cell does
+ * lives in `composer-cells`, and what counts as an error lives in
+ * `lib/lead-draft` — this just places them.
  */
-function EditableCell({ value, placeholder, onCommit, onEdit, invalid }) {
-  const [draft, setDraft] = useState(value ?? "");
-  const focused = useRef(false);
-
-  useEffect(() => {
-    if (!focused.current) setDraft(value ?? "");
-  }, [value]);
-
-  return (
-    <input
-      value={draft}
-      placeholder={placeholder}
-      aria-invalid={invalid || undefined}
-      onFocus={() => {
-        focused.current = true;
-      }}
-      onChange={(e) => {
-        setDraft(e.target.value);
-        onEdit?.(e.target.value);
-      }}
-      onBlur={() => {
-        focused.current = false;
-        onCommit(draft);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") e.currentTarget.blur();
-        if (e.key === "Escape") {
-          setDraft(value ?? "");
-          focused.current = false;
-          e.currentTarget.blur();
-        }
-      }}
-      className={cn(
-        "h-8 w-full min-w-0 border-r border-border bg-transparent px-2 text-sm",
-        "outline-none placeholder:text-muted-foreground/50",
-        // Inset, so the active cell's outline never clips against a neighbour.
-        "focus:bg-white focus:outline-2 focus:-outline-offset-2 focus:outline-primary",
-        invalid && "text-red-700",
-      )}
-    />
-  );
-}
-
 export default function ComposerGrid({
   rows,
   columns,
@@ -68,6 +25,9 @@ export default function ComposerGrid({
       the same for every row, so they are shown but not editable per row. */
   fixedValues = {},
   states,
+  /** rowId -> { column: message }. Empty until a submit has been attempted:
+      typing a lead in should not be narrated as a series of failures. */
+  errors = {},
   selected,
   onToggleRow,
   onToggleAll,
@@ -77,7 +37,7 @@ export default function ComposerGrid({
   onPaste,
   /** Called with a fixed column's name when its cell is clicked, so the group
       header's matching field can take focus. The value lives there, not here. */
-  onFixedFocus,
+  onFocusField,
 }) {
   // Checkbox, row number, one column per field, delete. No gap and no padding:
   // the gridlines are each cell's own border, the way a sheet draws them.
@@ -107,13 +67,7 @@ export default function ComposerGrid({
             #
           </span>
           {columns.map((col) => (
-            <span
-              key={col}
-              className="flex h-8 items-center truncate border-r border-border px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground"
-              title={col}
-            >
-              {col}
-            </span>
+            <HeaderCell key={col} column={col} />
           ))}
           <span className="h-8" />
         </div>
@@ -122,6 +76,7 @@ export default function ComposerGrid({
         {rows.map((row, index) => {
           const state = states[row.id] || "blank";
           const isSelected = selected.has(row.id);
+          const cellErrors = errors[row.id] || {};
 
           return (
             <div
@@ -153,47 +108,31 @@ export default function ComposerGrid({
                 )}
               </span>
 
-              {columns.map((col) => {
+              {columns.map((col) =>
                 // Mirrors the group header, and follows it as it changes.
-                if (col in fixedValues) {
-                  const shown = fixedValues[col];
-                  // Reads as a cell, behaves as a shortcut: clicking where the
-                  // value is sends the caret to where it is edited, rather than
-                  // leaving a dead cell and no hint of where the value comes from.
-                  return (
-                    <button
-                      key={col}
-                      type="button"
-                      title={shown || undefined}
-                      aria-label={`Edit ${col} for these leads`}
-                      onClick={() => onFixedFocus?.(col)}
-                      className={cn(
-                        "flex h-8 w-full min-w-0 items-center border-r border-border px-2 text-left text-sm",
-                        "hover:bg-muted/60 focus:outline-2 focus:-outline-offset-2 focus:outline-primary",
-                        shown ? "text-muted-foreground" : "text-muted-foreground/40",
-                      )}
-                    >
-                      <span className="truncate">{shown || `no ${col} yet`}</span>
-                    </button>
-                  );
-                }
-
-                const isBase = BASE_COLUMNS.includes(col);
-                const value = isBase ? row[col] : row.personalization?.[col];
-                const invalid =
-                  col === "email" && ["invalid", "duplicate"].includes(state);
-
-                return (
+                col in fixedValues ? (
+                  <FixedCell
+                    key={col}
+                    column={col}
+                    value={fixedValues[col]}
+                    error={cellErrors[col]}
+                    onFocusField={onFocusField}
+                  />
+                ) : (
                   <EditableCell
                     key={col}
-                    value={value}
+                    value={
+                      BASE_COLUMNS.includes(col)
+                        ? row[col]
+                        : row.personalization?.[col]
+                    }
                     placeholder={col === "email" ? "name@company.com" : col}
-                    invalid={invalid}
+                    error={cellErrors[col]}
                     onEdit={(v) => onCellEdit?.(row.id, col, v)}
                     onCommit={(v) => onCellCommit(row.id, col, v)}
                   />
-                );
-              })}
+                ),
+              )}
 
               <Button
                 variant="ghost"

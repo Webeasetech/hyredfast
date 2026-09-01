@@ -5,6 +5,7 @@ import { ownsCampaign, notFound } from "@/lib/authz";
 import { ensureCompany, companyContactRoom } from "@/lib/quota";
 import { roleSlug as toRoleSlug } from "@/lib/company";
 import { MAX_ACTIVE_CONTACTS_PER_COMPANY } from "@/lib/constants/plans";
+import { hasErrors, rowErrors } from "@/lib/lead-draft";
 
 /**
  * Add contacts to a campaign one at a time (the Add Lead dialog).
@@ -15,8 +16,11 @@ import { MAX_ACTIVE_CONTACTS_PER_COMPANY } from "@/lib/constants/plans";
  * grouped leads list alongside composed ones instead of falling into the "no
  * company set" bucket, and it consumes a quota slot on the same terms.
  *
- * A contact naming no company resolves to the user's "(Unassigned)"
- * placeholder, which is free — it represents no decision to apply anywhere.
+ * Validated with the composer's rules rather than its own, so the two doors
+ * into `campaign_leads` agree on what a lead is: a name, an email that parses,
+ * and the company and role that place it under a job application. Template
+ * variables are not required here — this path has no grid to show them in, and
+ * the dialog offers them as suggestions instead.
  */
 export async function POST(request) {
   const { auth, response: authResponse } = tryAuth(request);
@@ -27,6 +31,30 @@ export async function POST(request) {
   if (!(await ownsCampaign(auth.userId, campaign))) return notFound("Campaign");
   if (!Array.isArray(contacts) || contacts.length === 0) {
     return NextResponse.json({ message: "No contacts", count: 0 });
+  }
+
+  // Checked before anything is written, so a batch cannot half-import and leave
+  // the user guessing which half landed.
+  for (const contact of contacts) {
+    const errors = rowErrors(contact, {
+      group: {
+        company: contact?.personalization?.company,
+        role: contact?.personalization?.role,
+      },
+    });
+    if (hasErrors(errors)) {
+      const [first] = Object.values(errors);
+      return NextResponse.json(
+        {
+          message:
+            contacts.length > 1 && contact?.email
+              ? `${first.message} (${contact.email})`
+              : first.message,
+          count: 0,
+        },
+        { status: 400 },
+      );
+    }
   }
 
   try {

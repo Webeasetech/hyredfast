@@ -240,8 +240,11 @@ model EmailCredential {
 // ==========================================
 model CampaignLead {
   id                   String           @id @default(cuid())
-  name                 String?
-  email                String?
+  // Required: a lead is a person to write to. Both write paths (the composer's
+  // commit and the add-lead dialog) reject a contact missing either, and this
+  // is the backstop for a path that forgets.
+  name                 String
+  email                String
   status               String?          @default("PENDING")
   personalization      Json?
   sentAt               DateTime?        @map("sent_at")
