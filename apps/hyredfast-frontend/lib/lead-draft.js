@@ -148,20 +148,17 @@ export function isBlankRow(row, columns = BASE_COLUMNS) {
 }
 
 /**
- * True when a row has something in every column a user can type into.
+ * True when a row identifies a person: a name and an email.
  *
- * Narrower than `classifyRow`: it asks nothing about validity or duplicates,
- * only whether the row still has a blank in it. It gates the trailing empty
- * row — a half-typed lead should be finished before the grid offers somewhere
- * to start the next one. Company and role are excluded because they are the
- * group's, not the row's; the composer checks those with `isGroupComplete`.
+ * Narrower than `classifyRow`: it asks nothing about validity, duplicates, or
+ * the variables a template happens to want. It gates the trailing empty row —
+ * who the lead is should be down before the grid offers somewhere to start the
+ * next one, and the rest can be filled in any order after that. Company and
+ * role are the group's rather than the row's, so the composer pairs this with
+ * `isGroupComplete`.
  */
-export function isRowFilled(row, columns = BASE_COLUMNS) {
-  if (!row?.name?.trim()) return false;
-  if (!row?.email?.trim()) return false;
-  return columns
-    .filter((c) => !BASE_COLUMNS.includes(c) && !GROUP_FIELDS.includes(c))
-    .every((c) => String(row?.personalization?.[c] ?? "").trim());
+export function isRowFilled(row) {
+  return Boolean(row?.name?.trim() && row?.email?.trim());
 }
 
 /**

@@ -241,7 +241,7 @@ export default function LeadComposer({ campaignId, onCommitted }) {
     // indistinguishable from another unnamed one. Name the first before making
     // a second.
     if (groups.some((g) => !g.company && !g.role)) {
-      toast("Name the empty group first", {
+      toast("Finish the empty job application first", {
         description: "Give it a company and role, then add another.",
       });
       return;
@@ -396,10 +396,9 @@ export default function LeadComposer({ campaignId, onCommitted }) {
   // the last row and another appears beneath it. Covers pasting too, so there is
   // always somewhere to carry on typing.
   //
-  // "Finish" means every field a lead needs — name, email, the group's company
-  // and role, and any variable the templates ask for. Offering the next row
-  // before then invites a screen of half-filled leads, none of which can be
-  // committed.
+  // "Finish" means the four fields that make a lead a lead: a name, an email,
+  // and the group's company and role. Offering the next row before then invites
+  // a screen of half-filled leads, none of which can be committed.
   const reshaping = useRef(false);
   const appendBudget = useRef(0);
   useEffect(() => {
@@ -408,7 +407,7 @@ export default function LeadComposer({ campaignId, onCommitted }) {
     const needsRow = groups.find(
       (g) =>
         g.rows.length === 0 ||
-        (isGroupComplete(g) && isRowFilled(g.rows[g.rows.length - 1], columns)),
+        (isGroupComplete(g) && isRowFilled(g.rows[g.rows.length - 1])),
     );
     if (!needsRow) {
       appendBudget.current = 0; // settled — restore the allowance
@@ -485,12 +484,12 @@ export default function LeadComposer({ campaignId, onCommitted }) {
           <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-white py-16 text-center">
             <p className="text-sm font-medium">No leads yet</p>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Leads are grouped by the company and role you&apos;re writing to,
-              so you only enter those once.
+              Leads are grouped by the job you&apos;re applying for, so the
+              company and role are entered once for all of them.
             </p>
             <Button className="mt-1" onClick={handleAddGroup}>
               <PlusIcon className="mr-1.5 h-4 w-4" />
-              Add company + role
+              Add a job application
             </Button>
           </div>
         ) : (
@@ -517,10 +516,12 @@ export default function LeadComposer({ campaignId, onCommitted }) {
               />
             ))}
 
-            <Button variant="outline" onClick={handleAddGroup}>
-              <PlusIcon className="mr-1.5 h-4 w-4" />
-              Add company + role
-            </Button>
+            <div className="flex justify-center pt-1">
+              <Button variant="outline" onClick={handleAddGroup}>
+                <PlusIcon className="mr-1.5 h-4 w-4" />
+                Add another job application
+              </Button>
+            </div>
           </>
         )}
       </div>
