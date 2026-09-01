@@ -64,6 +64,35 @@ function parseClipboardBlock(text, columns) {
 }
 
 /**
+ * What is wrong, tallied — one line per reason, not one per row and not one
+ * sentence run into the next. The cells themselves carry the full wording; this
+ * is the count and where to look.
+ */
+function ProblemList({ problems }) {
+  const shown = problems.slice(0, 4);
+  const rest = problems.length - shown.length;
+
+  return (
+    <>
+      <ul className="mt-1 space-y-0.5">
+        {shown.map(({ summary, count }) => (
+          <li key={summary} className="flex items-baseline gap-1.5">
+            <span className="tabular-nums font-medium">{count}</span>
+            <span>
+              {count === 1 ? "cell" : "cells"} — {summary.toLowerCase()}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-1">
+        {rest > 0 ? `And ${rest} more. ` : ""}
+        Highlighted in red below.
+      </p>
+    </>
+  );
+}
+
+/**
  * The lead composer.
  *
  * Leads are written per company and role rather than one flat list: those two
@@ -162,12 +191,16 @@ export default function LeadComposer({ campaignId, onCommitted }) {
    * `leadCount` is what the submit button offers to add — every row someone has
    * typed into, sound or not. The button never disables on validation, so the
    * count has to mean "these are the leads", not "these are the good ones".
+   *
+   * `problems` tallies rows per reason rather than collecting sentences: ten
+   * rows missing a signature is one line saying so, not ten, and not one
+   * sentence run into the next.
    */
   const { states, errors, leadCount, brokenCount, problems } = useMemo(() => {
     const seen = new Set(existingEmails);
     const states = {};
     const errors = {};
-    const problems = [];
+    const counts = new Map();
     let leadCount = 0;
     let brokenCount = 0;
 
@@ -189,16 +222,21 @@ export default function LeadComposer({ campaignId, onCommitted }) {
         }
 
         brokenCount += 1;
-        // The grid wants a message per cell; the summary wants each distinct
-        // reason once, however many rows share it.
+        // The grid wants a message per cell; the toast wants each distinct
+        // reason once, with the number of rows behind it.
         errors[row.id] = Object.fromEntries(
           Object.entries(found).map(([col, error]) => {
-            if (!problems.includes(error.message)) problems.push(error.message);
+            counts.set(error.summary, (counts.get(error.summary) ?? 0) + 1);
             return [col, error.message];
           }),
         );
       }
     }
+
+    // Commonest first: the one line that clears the most rows leads.
+    const problems = [...counts]
+      .map(([summary, count]) => ({ summary, count }))
+      .sort((a, b) => b.count - a.count);
 
     return { states, errors, leadCount, brokenCount, problems };
   }, [groups, columns, existingEmails]);
@@ -423,11 +461,7 @@ export default function LeadComposer({ campaignId, onCommitted }) {
       setShowErrors(true);
       toast.error(
         `${brokenCount} lead${brokenCount === 1 ? "" : "s"} can't be added yet`,
-        {
-          description:
-            problems.slice(0, 2).join(". ") +
-            (problems.length > 2 ? ". Check the highlighted cells." : "."),
-        },
+        { description: <ProblemList problems={problems} /> },
       );
       return;
     }

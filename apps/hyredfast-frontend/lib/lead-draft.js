@@ -190,6 +190,11 @@ export const FIELD_LABELS = {
  *   duplicate — this address is already spoken for
  *   template  — a variable the campaign's pitches reference, left empty
  *
+ * Each error carries two forms. `message` is what the cell says when you hover
+ * it, written to one person about one cell. `summary` is what a count is made
+ * of — "Invalid email", not "That doesn't look like an email address" — because
+ * a tally of full sentences reads as a wall rather than a list.
+ *
  * `seen` is a Set of already-claimed emails, mutated as you walk the rows, so a
  * duplicate marks the *second* occurrence rather than both. Seed it with the
  * campaign's existing contacts and the same pass also catches re-adding someone
@@ -205,6 +210,7 @@ export function rowErrors(row, { columns = BASE_COLUMNS, group, seen } = {}) {
   const required = (field) => ({
     code: "required",
     message: `${FIELD_LABELS[field]} is required`,
+    summary: `Missing ${FIELD_LABELS[field].toLowerCase()}`,
   });
 
   if (!String(row?.name ?? "").trim()) errors.name = required("name");
@@ -216,11 +222,13 @@ export function rowErrors(row, { columns = BASE_COLUMNS, group, seen } = {}) {
     errors.email = {
       code: "invalid",
       message: "That doesn't look like an email address",
+      summary: "Invalid email",
     };
   } else if (seen?.has(email)) {
     errors.email = {
       code: "duplicate",
       message: "This address is already in the campaign",
+      summary: "Duplicate email",
     };
   }
 
@@ -236,6 +244,7 @@ export function rowErrors(row, { columns = BASE_COLUMNS, group, seen } = {}) {
       errors[col] = {
         code: "template",
         message: `Your emails use {{${col}}}, so this can't be empty`,
+        summary: `Missing ${col}`,
       };
     }
   }
