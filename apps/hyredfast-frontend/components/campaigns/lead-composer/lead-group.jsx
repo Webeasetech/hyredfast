@@ -77,12 +77,17 @@ export default function LeadGroup({
   states,
   errors,
   selected,
+  active,
+  widthOf,
+  onResizeColumn,
   onToggleRow,
   onToggleAll,
   onCellCommit,
   onCellEdit,
   onDeleteRow,
   onPaste,
+  onMove,
+  onActivate,
   onFieldCommit,
 }) {
   const complete = isGroupComplete(group);
@@ -114,16 +119,21 @@ export default function LeadGroup({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border bg-white",
+        // Square, and no overflow clipping: rounded corners would cut the
+        // gridlines, and an `overflow-hidden` ancestor is what silently stops
+        // the headers below from sticking.
+        "w-max min-w-full border bg-white",
         // Incomplete outranks the group's own colour — it is the one thing here
         // that needs acting on.
         complete ? color.border : "border-amber-300",
       )}
     >
-      {/* Header — one sentence, fixed for every lead below it */}
+      {/* Header — one sentence, fixed for every lead below it. Sticks to the
+          top of the sheet so a long block never leaves you asking which job
+          application you are typing into. */}
       <div
         className={cn(
-          "flex items-center gap-3 border-b px-3 py-2",
+          "sticky top-0 z-30 flex h-12 items-center gap-3 border-b px-3",
           color.header,
           color.border,
         )}
@@ -185,12 +195,17 @@ export default function LeadGroup({
         states={states}
         errors={errors}
         selected={selected}
+        active={active}
+        widthOf={widthOf}
+        onResizeColumn={onResizeColumn}
         onToggleRow={onToggleRow}
         onToggleAll={(checked) => onToggleAll(group, checked)}
         onCellCommit={onCellCommit}
         onCellEdit={onCellEdit}
         onDeleteRow={onDeleteRow}
         onPaste={(e) => onPaste(group, e)}
+        onMove={onMove}
+        onActivate={onActivate}
         onFocusField={focusField}
       />
     </section>

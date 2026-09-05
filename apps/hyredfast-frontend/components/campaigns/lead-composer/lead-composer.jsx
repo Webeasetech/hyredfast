@@ -3,11 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import { toast } from "sonner";
-import { PlusIcon } from "mage-icons-react/stroke";
+import Link from "next/link";
+import { ArrowLeftIcon, PlusIcon } from "mage-icons-react/stroke";
+import { InformationCircleIcon } from "mage-icons-react/bulk";
 import { Button } from "@/components/ui/button";
 import { PanelSkeleton } from "@/components/skeletons";
 import LeadGroup from "@/components/campaigns/lead-composer/lead-group";
+import SheetHelpDialog from "@/components/campaigns/lead-composer/sheet-help-dialog";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
+import { useColumnWidths } from "@/hooks/use-column-widths";
+import { moveFocus } from "@/lib/sheet-navigation";
 import fetcher from "@/lib/fetcher";
 import { post, remove, patch } from "@/lib/apis";
 import instance from "@/lib/axios";
@@ -30,11 +35,13 @@ import {
 /** Stable identity, so groups don't re-render while no errors are shown. */
 const NO_ERRORS = {};
 
+// Short, because they sit inside the draft pill. The pill's job is to say the
+// sheet is keeping up, not to narrate the request.
 const SAVE_LABELS = {
-  idle: "All changes saved",
+  idle: "Saved",
   saving: "Saving…",
-  saved: "All changes saved",
-  error: "Couldn't save — retrying on next edit",
+  saved: "Saved",
+  error: "Couldn't save",
 };
 
 /** Split a pasted spreadsheet block. Clipboard data from Sheets/Excel is TSV. */
@@ -108,9 +115,14 @@ export default function LeadComposer({ campaignId, onCommitted }) {
   const [draftId, setDraftId] = useState(null);
   const [committing, setCommitting] = useState(false);
   const [selected, setSelected] = useState(() => new Set());
-  // Errors are held back until the user asks to add the leads. Narrating every
-  // gap in a row being typed would flag a lead as broken before it is finished.
+  // Errors are held back until the user asks to publish. Narrating every gap in
+  // a row being typed would flag a lead as broken before it is finished.
   const [showErrors, setShowErrors] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  // The cell holding focus, so the sheet can tint its row and column heading.
+  const [active, setActive] = useState(null);
+
+  const { widthOf, setColumnWidth } = useColumnWidths(campaignId);
 
   const { data: draft, isLoading } = useSWR(
     campaignId ? `/api/lead-drafts?campaign=${campaignId}` : null,
@@ -240,6 +252,30 @@ export default function LeadComposer({ campaignId, onCommitted }) {
 
     return { states, errors, leadCount, brokenCount, problems };
   }, [groups, columns, existingEmails]);
+
+  // One flat order for the whole sheet, so Enter at the bottom of one job
+  // application carries on into the next rather than stopping at a border.
+  const rowIds = useMemo(
+    () => groups.flatMap((g) => g.rows.map((r) => r.id)),
+    [groups],
+  );
+
+  const handleMove = useCallback(
+    ({ rowId, column, rowStep, columnStep }) =>
+      moveFocus({
+        rowIds,
+        columns: pasteColumns,
+        rowId,
+        column,
+        rowStep,
+        columnStep,
+      }),
+    [rowIds, pasteColumns],
+  );
+
+  const handleActivate = useCallback((rowId, column) => {
+    setActive({ rowId, column });
+  }, []);
 
   const applyCell = useCallback((rowId, col, value) => {
     setRows((prev) =>
@@ -451,8 +487,8 @@ export default function LeadComposer({ campaignId, onCommitted }) {
     flush(); // land in-flight edits before the server reads the rows
 
     if (leadCount === 0) {
-      toast.error("Nothing to add yet", {
-        description: "Fill in a row, then add it to the campaign.",
+      toast.error("Nothing to publish yet", {
+        description: "Fill in a row, then publish it to the campaign.",
       });
       return;
     }
@@ -460,7 +496,7 @@ export default function LeadComposer({ campaignId, onCommitted }) {
     if (brokenCount > 0) {
       setShowErrors(true);
       toast.error(
-        `${brokenCount} lead${brokenCount === 1 ? "" : "s"} can't be added yet`,
+        `${brokenCount} lead${brokenCount === 1 ? "" : "s"} can't be published yet`,
         { description: <ProblemList problems={problems} /> },
       );
       return;
@@ -473,7 +509,7 @@ export default function LeadComposer({ campaignId, onCommitted }) {
       );
 
       if (committed === 0) {
-        toast.error("Nothing to add yet", {
+        toast.error("Nothing to publish yet", {
           description: "Fill in an email for at least one row.",
         });
         return;
@@ -482,7 +518,7 @@ export default function LeadComposer({ campaignId, onCommitted }) {
       setShowErrors(false);
 
       toast.success(
-        `Added ${committed} lead${committed === 1 ? "" : "s"} to the campaign`,
+        `Published ${committed} lead${committed === 1 ? "" : "s"} to the campaign`,
       );
       if (skipped?.length) {
         toast(
@@ -492,7 +528,7 @@ export default function LeadComposer({ campaignId, onCommitted }) {
       }
       onCommitted?.({ committed, skipped });
     } catch {
-      toast.error("Couldn't add these leads");
+      toast.error("Couldn't publish these leads");
     } finally {
       setCommitting(false);
     }
@@ -545,49 +581,43 @@ export default function LeadComposer({ campaignId, onCommitted }) {
     );
   }
 
-  const templateColumns = pasteColumns.filter(
-    (c) => !BASE_COLUMNS.includes(c),
-  );
-
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      {/* Toolbar. Height is reserved rather than derived from its contents: the
-          bulk-delete button only exists while rows are selected, and letting it
-          size the bar makes everything below it jump on every select. */}
-      <div className="flex min-h-12 flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-1.5 md:px-6">
-        <div className="flex items-center gap-3">
+    // One panel filling the shell's content area, with its own header and
+    // action bar pinned and only the rows scrolling between them. `h-full`
+    // works because the shell's main is a flex child of a full-height column.
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-white">
+      <header className="shrink-0 border-b border-border bg-white px-4 py-3 md:px-6">
+        <Link
+          href={`/campaigns/${campaignId}`}
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeftIcon className="h-3.5 w-3.5" />
+          Back to campaign
+        </Link>
+
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+          <h1 className="text-xl font-semibold">Import leads</h1>
+        </div>
+      </header>
+
+      {/* Nothing occupies this space until there is something to say. */}
+      {selected.size > 0 && (
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border bg-primary/5 px-4 py-1.5 md:px-6">
           <span className="text-sm font-medium">
-            {selected.size > 0
-              ? `${selected.size} selected`
-              : `${groups.length} compan${groups.length === 1 ? "y" : "ies"}`}
+            {selected.size} row{selected.size === 1 ? "" : "s"} selected
           </span>
-          <span
-            className={cn(
-              "text-xs",
-              saveStatus === "error" ? "text-red-600" : "text-muted-foreground",
-            )}
-            role="status"
-            aria-live="polite"
-          >
-            {SAVE_LABELS[saveStatus]}
-          </span>
+          <Button variant="outline" size="sm" onClick={handleDeleteSelected}>
+            Delete {selected.size}
+          </Button>
         </div>
+      )}
 
-        <div className="flex items-center gap-2">
-          {/* Only appears with a selection — deselecting is the header
-              checkbox's job, so there is no separate way out of this state. */}
-          {selected.size > 0 && (
-            <Button variant="outline" size="sm" onClick={handleDeleteSelected}>
-              Delete {selected.size}
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Groups */}
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/20 p-4 md:p-6">
+      {/* The sheet. One scroll container for every job application, so the
+          blocks scroll sideways together and read as one sheet rather than as
+          a stack of unrelated tables. */}
+      <div className="min-h-0 flex-1 overflow-auto bg-muted/20 p-4 md:p-6">
         {groups.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-white py-16 text-center">
+          <div className="flex flex-col items-center justify-center gap-3 border border-dashed border-border bg-white py-16 text-center">
             <p className="text-sm font-medium">No leads yet</p>
             <p className="max-w-sm text-sm text-muted-foreground">
               Leads are grouped by the job you&apos;re applying for, so the
@@ -599,7 +629,7 @@ export default function LeadComposer({ campaignId, onCommitted }) {
             </Button>
           </div>
         ) : (
-          <>
+          <div className="space-y-4">
             {groups.map((group, index) => (
               <LeadGroup
                 // Keyed by a row id, not by group.key: the key is derived from
@@ -613,12 +643,17 @@ export default function LeadComposer({ campaignId, onCommitted }) {
                 states={states}
                 errors={showErrors ? errors : NO_ERRORS}
                 selected={selected}
+                active={active}
+                widthOf={widthOf}
+                onResizeColumn={setColumnWidth}
                 onToggleRow={toggleRow}
                 onToggleAll={toggleAllInGroup}
                 onCellEdit={applyCell}
                 onCellCommit={handleCellCommit}
                 onDeleteRow={handleDeleteRow}
                 onPaste={handlePaste}
+                onMove={handleMove}
+                onActivate={handleActivate}
                 onFieldCommit={handleFieldCommit}
               />
             ))}
@@ -629,33 +664,52 @@ export default function LeadComposer({ campaignId, onCommitted }) {
                 Add another job application
               </Button>
             </div>
-          </>
+          </div>
         )}
       </div>
 
-      {/* Action bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/30 px-4 py-3 md:px-6">
-        <div className="text-sm text-muted-foreground">
-          <p>
-            Type in the last row and another appears. Paste a block of cells
-            from a spreadsheet to fill several at once.
-          </p>
-          {templateColumns.length > 0 && (
-            <p className="mt-0.5">
-              {templateColumns.join(", ")}{" "}
-              {templateColumns.length === 1 ? "comes" : "come"} from the
-              variables your emails use.
-            </p>
-          )}
+      {/* Action bar. The draft state is stated where the decision to leave it
+          is made, next to the button that ends it. */}
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-border bg-white px-4 py-3 md:px-6">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5 px-2 text-muted-foreground"
+            onClick={() => setHelpOpen(true)}
+          >
+            <InformationCircleIcon className="h-4 w-4" />
+            How this works
+          </Button>
+
+          <span className="flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 py-1 pl-2.5 pr-3 text-xs text-amber-800">
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 rounded-full bg-amber-500"
+            />
+            <span className="font-medium">Draft</span>
+            <span
+              className={cn(
+                "border-l border-amber-300 pl-2",
+                saveStatus === "error" ? "text-red-600" : "text-amber-800/80",
+              )}
+              role="status"
+              aria-live="polite"
+            >
+              {SAVE_LABELS[saveStatus]}
+            </span>
+          </span>
         </div>
 
         {/* Disabled only while the request is in flight, never on validation. */}
         <Button size="lg" onClick={handleCommit} disabled={committing}>
           {committing
-            ? "Adding…"
-            : `Add ${leadCount} lead${leadCount === 1 ? "" : "s"} to campaign`}
+            ? "Publishing…"
+            : `Publish ${leadCount} lead${leadCount === 1 ? "" : "s"} to campaign`}
         </Button>
       </div>
+
+      <SheetHelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }
