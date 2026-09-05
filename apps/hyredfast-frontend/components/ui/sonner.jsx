@@ -7,15 +7,17 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { Toaster as Sonner } from "sonner";
 
 const Toaster = ({ ...props }) => {
-  const { theme = "system" } = useTheme();
-
   return (
     <Sonner
-      theme={theme}
+      // Pinned, not read from the OS. The app ships no ThemeProvider and its
+      // tokens are light-only, but sonner reads `prefers-color-scheme` for
+      // "system" and colours descriptions #e8e8e8 when it resolves to dark —
+      // near-white text on a toast whose background stayed light, which is how
+      // a toast could report an error nobody could read.
+      theme="light"
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,

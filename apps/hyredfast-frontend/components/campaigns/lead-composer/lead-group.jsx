@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import ComposerGrid from "@/components/campaigns/lead-composer/composer-grid";
-import { isGroupComplete } from "@/lib/lead-draft";
+import { isBlankRow, isGroupComplete } from "@/lib/lead-draft";
 
 /**
  * A blank to fill in, sitting inside a sentence.
@@ -17,7 +16,7 @@ import { isGroupComplete } from "@/lib/lead-draft";
  * The value is held locally while focused so a save landing mid-keystroke can't
  * move the cursor.
  */
-function InlineField({ value, placeholder, label, onCommit }) {
+function InlineField({ value, placeholder, label, error, onCommit, inputRef }) {
   const [draft, setDraft] = useState(value ?? "");
   const focused = useRef(false);
 
@@ -27,9 +26,12 @@ function InlineField({ value, placeholder, label, onCommit }) {
 
   return (
     <Input
+      ref={inputRef}
       value={draft}
       placeholder={placeholder}
       aria-label={label}
+      aria-invalid={error ? true : undefined}
+      title={error || undefined}
       // +1 so the caret has somewhere to sit past the last character.
       size={Math.max(placeholder.length, draft.length) + 1}
       onFocus={() => {
@@ -52,15 +54,16 @@ function InlineField({ value, placeholder, label, onCommit }) {
         "h-8 w-auto max-w-full bg-white px-2 py-1 text-sm font-medium",
         "placeholder:font-normal",
         // An unfilled blank is outlined amber, so the gap in the sentence shows
-        // before anyone reads the warning underneath it.
-        !draft.trim() && "border-amber-400",
+        // before anyone reads the warning underneath it. Once a submit has
+        // reported it, the same blank is an error rather than a heads-up.
+        error ? "border-red-500 bg-red-50" : !draft.trim() && "border-amber-400",
       )}
     />
   );
 }
 
 /**
- * One company/role pairing and its leads.
+ * One job application: a company, a role, and the leads written to about it.
  *
  * Presented as an accordion item but never collapses: the leads are the point
  * of the screen, and hiding them behind a toggle would put a click between the
@@ -72,30 +75,65 @@ export default function LeadGroup({
   color,
   columns,
   states,
+  errors,
   selected,
+  active,
+  widthOf,
+  onResizeColumn,
   onToggleRow,
   onToggleAll,
   onCellCommit,
   onCellEdit,
   onDeleteRow,
   onPaste,
+  onMove,
+  onActivate,
   onFieldCommit,
 }) {
   const complete = isGroupComplete(group);
+  const fieldRefs = useRef({});
+
+  // The company and role columns are read-only per row because the value is the
+  // group's. Clicking one is still the obvious way to reach for it, so send the
+  // caret to the header field that owns it instead of doing nothing.
+  const focusField = (field) => {
+    const input = fieldRefs.current[field];
+    if (!input) return;
+    input.focus();
+    input.select();
+  };
+
+  // A missing group field is reported on every row it spoils, so the header
+  // only needs the first one it finds.
+  const fieldError = (field) => {
+    for (const row of group.rows) {
+      const message = errors?.[row.id]?.[field];
+      if (message) return message;
+    }
+    return null;
+  };
+
+  // The trailing empty row is somewhere to type, not a lead.
+  const leadCount = group.rows.filter((r) => !isBlankRow(r, columns)).length;
 
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border bg-white",
+        // Square, and no overflow clipping: rounded corners would cut the
+        // gridlines, and an `overflow-hidden` ancestor is what silently stops
+        // the headers below from sticking.
+        "w-max min-w-full border bg-white",
         // Incomplete outranks the group's own colour — it is the one thing here
         // that needs acting on.
         complete ? color.border : "border-amber-300",
       )}
     >
-      {/* Header — one sentence, fixed for every lead below it */}
+      {/* Header — one sentence, fixed for every lead below it. Sticks to the
+          top of the sheet so a long block never leaves you asking which job
+          application you are typing into. */}
       <div
         className={cn(
-          "flex items-center gap-3 border-b px-3 py-2",
+          "sticky top-0 z-30 flex h-12 items-center gap-3 border-b px-3",
           color.header,
           color.border,
         )}
@@ -109,15 +147,23 @@ export default function LeadGroup({
           <span>I&apos;m looking to apply at</span>
           <InlineField
             label="Company"
+            inputRef={(el) => {
+              fieldRefs.current.company = el;
+            }}
             value={group.company}
             placeholder="company"
+            error={fieldError("company")}
             onCommit={(v) => onFieldCommit(group, "company", v)}
           />
           <span>as</span>
           <InlineField
             label="Role"
+            inputRef={(el) => {
+              fieldRefs.current.role = el;
+            }}
             value={group.role}
             placeholder="role"
+            error={fieldError("role")}
             onCommit={(v) => onFieldCommit(group, "role", v)}
           />
         </p>
@@ -127,7 +173,7 @@ export default function LeadGroup({
               its rows with the header checkbox and using the bulk action, so
               there is one way to delete rather than two. */}
           <span className={cn("text-xs", color.muted)}>
-            {group.rows.length} lead{group.rows.length === 1 ? "" : "s"}
+            {leadCount} lead{leadCount === 1 ? "" : "s"}
           </span>
         </div>
       </div>
@@ -147,13 +193,20 @@ export default function LeadGroup({
         // them the moment either field is committed.
         fixedValues={{ company: group.company, role: group.role }}
         states={states}
+        errors={errors}
         selected={selected}
+        active={active}
+        widthOf={widthOf}
+        onResizeColumn={onResizeColumn}
         onToggleRow={onToggleRow}
         onToggleAll={(checked) => onToggleAll(group, checked)}
         onCellCommit={onCellCommit}
         onCellEdit={onCellEdit}
         onDeleteRow={onDeleteRow}
         onPaste={(e) => onPaste(group, e)}
+        onMove={onMove}
+        onActivate={onActivate}
+        onFocusField={focusField}
       />
     </section>
   );

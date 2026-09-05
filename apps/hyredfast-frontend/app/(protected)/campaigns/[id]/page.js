@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import {
   UserPlusIcon,
   SearchIcon,
@@ -19,7 +20,6 @@ import DataTableActionsMenu from "@/components/campaigns/data-table-actions-menu
 import LeadGroupTable from "@/components/campaigns/lead-group-table";
 import TablePagination from "@/components/campaigns/table-pagination";
 import AddLeadDialog from "@/components/campaigns/add-lead-dialog";
-import LeadComposerDialog from "@/components/campaigns/lead-composer/lead-composer-dialog";
 import EditLeadDialog from "@/components/campaigns/edit-lead-dialog";
 import ExportLeadsButton from "@/components/campaigns/export-leads-button";
 import LeadsFilters from "@/components/campaigns/leads-filters";
@@ -80,7 +80,6 @@ export default function CampaignLeadsPage() {
 
   const [search, setSearch] = useState(searchQuery || "");
   const [addLeadDialogOpen, setAddLeadDialogOpen] = useState(false);
-  const [composerOpen, setComposerOpen] = useState(false);
   const [editLeadDialogOpen, setEditLeadDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
@@ -375,9 +374,11 @@ export default function CampaignLeadsPage() {
             <UserPlusIcon className="w-4 h-4 mr-2" />
             Add Lead
           </Button>
-          <Button onClick={() => setComposerOpen(true)}>
-            <UserPlusIcon className="w-4 h-4 mr-2" />
-            Import leads
+          <Button asChild>
+            <Link href={`/campaigns/${campaignId}/import`}>
+              <UserPlusIcon className="w-4 h-4 mr-2" />
+              Import leads
+            </Link>
           </Button>
           <ExportLeadsButton
             campaignId={campaignId}
@@ -437,25 +438,6 @@ export default function CampaignLeadsPage() {
           </p>
         )}
       </div>
-
-      {/* Import Dialog */}
-
-      {/* Add Lead Dialog */}
-      <LeadComposerDialog
-        open={composerOpen}
-        onOpenChange={(next) => {
-          setComposerOpen(next);
-          // Leads may have been committed while it was open.
-          if (!next) mutate();
-        }}
-        campaignId={campaignId}
-        onCommitted={() => {
-          // Closing programmatically does not fire onOpenChange, so the leads
-          // table has to be refreshed here as well as on a dismissed dialog.
-          setComposerOpen(false);
-          mutate();
-        }}
-      />
 
       <AddLeadDialog
         open={addLeadDialogOpen}

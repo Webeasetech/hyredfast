@@ -135,11 +135,18 @@ export default function CampaignLayout({ children }) {
   // Check if a tab is active
   const isTabActive = (href) => pathname === href;
 
+  // The lead sheet is a workspace, not a tab: it wants the height, and none of
+  // the tabs above would be the page you are on. It keeps the app's sidebar and
+  // navbar and brings its own header.
+  const isSheet = pathname === `/campaigns/${campaignId}/import`;
+
   // Determine if the start button should be disabled
   const isStartButtonDisabled =
     isUpdatingStatus ||
     !currentCampaign ||
     (!hasEmails && currentCampaign.status !== "RUNNING");
+
+  if (isSheet) return children;
 
   return (
     <div className="space-y-6">

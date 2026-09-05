@@ -6,9 +6,11 @@ import { ensureCompany, companyContactRoom } from "@/lib/quota";
 import { roleSlug as toRoleSlug } from "@/lib/company";
 import { MAX_ACTIVE_CONTACTS_PER_COMPANY } from "@/lib/constants/plans";
 import {
-  classifyRow,
   groupRows,
+  hasErrors,
+  isBlankRow,
   normaliseEmail,
+  rowErrors,
   seedColumns,
   STATE_LABELS,
 } from "@/lib/lead-draft";
@@ -69,21 +71,32 @@ export async function POST(request, props) {
     );
 
     const skipped = [];
-    const valid = [];
+    // Grouped before validating, not after: company and role are the group's,
+    // so a row on its own cannot be judged complete. This is what stops a lead
+    // naming no employer from committing into the "(Unassigned)" placeholder.
+    const validGroups = [];
+    let validCount = 0;
 
-    for (const row of draft.rows) {
-      const state = classifyRow(row, { columns, seen });
-      if (state === "ready") {
+    for (const group of groupRows(draft.rows)) {
+      const rows = [];
+      for (const row of group.rows) {
+        // Blank rows are neither committed nor reported — they are just the
+        // empty rows at the bottom of a grid.
+        if (isBlankRow(row, columns)) continue;
+
+        const errors = rowErrors(row, { columns, group, seen });
+        if (hasErrors(errors)) {
+          skipped.push({ id: row.id, reason: Object.values(errors)[0].message });
+          continue;
+        }
         seen.add(normaliseEmail(row.email));
-        valid.push(row);
-      } else if (state !== "blank") {
-        skipped.push({ id: row.id, reason: STATE_LABELS[state] });
+        rows.push(row);
       }
-      // Blank rows are neither committed nor reported — they are just the empty
-      // rows at the bottom of a grid.
+      if (rows.length) validGroups.push({ ...group, rows });
+      validCount += rows.length;
     }
 
-    if (valid.length === 0) {
+    if (validCount === 0) {
       return NextResponse.json({ committed: 0, skipped });
     }
 
@@ -95,7 +108,7 @@ export async function POST(request, props) {
     // Shared across groups: two roles at one employer draw on the same room.
     const roomByCompany = new Map();
 
-    for (const group of groupRows(valid)) {
+    for (const group of validGroups) {
       const { company } = await ensureCompany(auth.userId, group.company);
 
       const slug = toRoleSlug(group.role);
